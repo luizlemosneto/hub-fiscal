@@ -459,11 +459,20 @@ table.rt{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%
 #viewHome .mod.hero-card{grid-template-columns:1fr;justify-items:center;gap:8px;padding:26px 28px 22px}
 #viewHome .mod.hero-card .sigla{grid-row:auto;align-self:auto}
 #viewHome .mod .passos{justify-content:center}
-.mod.hero-xml{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
-  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 11%,var(--surface)),color-mix(in srgb,var(--accent-2) 7%,var(--surface)));
+.home-cols{display:grid;grid-template-columns:minmax(200px,230px) minmax(0,1fr);gap:18px;align-items:start;margin-top:clamp(28px,5vw,48px)}
+.home-cols .mods{margin-top:0}
+.home-side{position:sticky;top:24px}
+.mod.hero-xml{min-height:min(480px,calc(100vh - 80px));justify-content:center;gap:8px;padding:26px 18px 22px;
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 13%,var(--surface)),color-mix(in srgb,var(--accent-2) 7%,var(--surface)));
   box-shadow:0 26px 54px -34px var(--glow)}
-.mod.hero-xml::after{content:"Novo";position:absolute;top:16px;right:18px;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 11px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink)}
-.mod.hero-xml .sigla{font-size:clamp(2.6rem,6vw,4.2rem)}
+.mod.hero-xml .novo{position:absolute;top:14px;right:14px;font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink)}
+.mod.hero-xml .sigla{font-size:clamp(2.6rem,5vw,3.4rem);margin:10px 0 0}
+.mod.hero-xml h2{margin:6px 0 0}
+.mod.hero-xml .passos{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
+.mod.hero-xml .passos span{font-size:.75rem;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface-2)}
+.mod.hero-xml .abrir{margin-top:8px}
+@media (max-width:900px){.home-cols{grid-template-columns:1fr}.home-side{position:static}.mod.hero-xml{min-height:0}}
 
 /* ===== Transições e movimento ===== */
 .wrap{transition:max-width .5s var(--ease)}
@@ -814,19 +823,23 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   <main id="viewHome">
     <h1>Hub Fiscal & Previdenciário</h1>
     <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
+    <div class="home-cols">
+    <aside class="home-side">
+      <a class="mod hero-xml" href="#xml" data-go="xml">
+        <span class="novo">Novo</span>
+        <span class="sigla">XML</span>
+        <h2>Leitura de XML do eSocial</h2>
+        <p>Lê os XMLs de qualquer evento (S-1010, S-1200, S-5011, S-5001…), inclusive dentro de ZIP, tira duplicados e retificados e exporta em planilha ou Parquet, com os eventos empilhados prontos para o módulo Rubricas.</p>
+        <div class="passos"><span>Qualquer evento</span><span>Abre ZIP</span><span>Sem duplicados</span><span>Planilha ou Parquet</span><span>Pronto para Rubricas</span></div>
+        <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
+      </a>
+    </aside>
     <div class="mods">
       <a class="mod hero-card" href="#rubricas" data-go="rubricas">
         <span class="sigla">Rubricas</span>
         <h2>Mapeamento de rubricas</h2>
         <p>Lê os eventos empilhados, junta as rubricas repetidas e sugere o ponto de cada uma pela natureza. Você confere, ajusta e baixa a planilha com patronal, GILRAT e outras entidades calculados.</p>
         <div class="passos"><span>Eventos empilhados</span><span>Empresas</span><span>Revisão</span><span>Planilha de oportunidades</span></div>
-        <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
-      </a>
-      <a class="mod hero-card hero-xml" href="#xml" data-go="xml">
-        <span class="sigla">XML</span>
-        <h2>Leitura de XML do eSocial</h2>
-        <p>Lê os XMLs de qualquer evento (S-1010, S-1200, S-5011, S-5001…), tira duplicados e retificados e exporta em planilha ou Parquet, inclusive os eventos empilhados para o módulo Rubricas.</p>
-        <div class="passos"><span>Qualquer evento</span><span>Sem duplicados</span><span>Planilha ou Parquet</span><span>Pronto para Rubricas</span></div>
         <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
       </a>
       <a class="mod" href="#darf" data-go="darf">
@@ -868,6 +881,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <p>Análise tributária pelas naturezas do eSocial, com Project, painel HTML e memórias de cálculo.</p>
         <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
       </a>
+    </div>
     </div>
   </main>
 
