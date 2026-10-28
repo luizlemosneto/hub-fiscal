@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --bg:#EEF2EF; --surface:#FFFFFF; --surface-2:#F5F8F6;
@@ -1213,7 +1214,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <div class="drop" id="dropXml" tabindex="0" role="group" aria-label="Enviar XMLs do eSocial">
           <span class="slot-tag">XML</span>
           <p class="big">Eventos do eSocial</p>
-          <p>Solte aqui os arquivos .xml ou escolha uma pasta inteira. Pode enviar vários lotes: eles se somam.</p>
+          <p>Solte aqui os arquivos .xml ou .zip (o módulo abre os zips sozinho, até zip dentro de zip) ou escolha uma pasta inteira. Pode enviar vários lotes: eles se somam.</p>
           <div class="pick-row">
             <label class="pick" for="xmlPasta">Selecionar pasta</label>
             <label class="pick sec" for="xmlArqs">Selecionar arquivos</label>
@@ -1226,12 +1227,13 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <div class="prog-track"><div class="prog-fill" id="xmlprogFill"></div><div class="prog-shine" id="xmlprogShine"></div></div>
       </div>
       <input type="file" id="xmlPasta" webkitdirectory directory multiple>
-      <input type="file" id="xmlArqs" accept=".xml,text/xml,application/xml" multiple>
+      <input type="file" id="xmlArqs" accept=".xml,.zip,text/xml,application/xml,application/zip" multiple>
     </div>
 
     <details class="how">
       <summary>Como a leitura funciona</summary>
       <ol>
+        <li>Arquivos .zip são abertos automaticamente, inclusive zip dentro de zip e pastas internas; só os .xml são lidos.</li>
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Nos S-1200 vale o mais recente de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o mais recente de cada competência; nos S-5001, o mais recente de cada CPF e competência. Quem foi substituído por retificação não entra.</li>
         <li>Eventos empilhados: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê.</li>
@@ -4400,19 +4402,47 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     $("xmlResumo").textContent = xmlRes.conjuntos.length ? `${xmlRes.conjuntos.length} conjunto${xmlRes.conjuntos.length === 1 ? "" : "s"}` : "Aguardando arquivos";
   }
 
+  // Abre os .zip (inclusive zip dentro de zip e pastas internas) e devolve a lista de XMLs a ler
+  async function xmlExpandir(lista, log){
+    const itens = [];
+    const abrir = async (zip, origem) => {
+      for (const e of Object.values(zip.files)){
+        if (e.dir || /(^|\/)(__MACOSX\/|\._)/.test(e.name)) continue;
+        const nome = `${origem} › ${e.name}`;
+        if (/\.xml$/i.test(e.name)) itens.push({ nome, ler: () => e.async("string") });
+        else if (/\.zip$/i.test(e.name)){
+          try { await abrir(await JSZip.loadAsync(await e.async("arraybuffer")), nome); }
+          catch(err){ log(`Não consegui abrir ${nome}: ${err.message}`, "log-erro"); }
+        }
+      }
+    };
+    for (const f of lista){
+      if (/\.xml$/i.test(f.name)) itens.push({ nome: f.webkitRelativePath || f.name, ler: () => f.text() });
+      else if (/\.zip$/i.test(f.name)){
+        if (!window.JSZip){ log("A biblioteca de ZIP não carregou. Confira a internet e recarregue a página.", "log-erro"); continue; }
+        log(`Descompactando ${f.name}…`);
+        try { await abrir(await JSZip.loadAsync(f), f.name); }
+        catch(err){ log(`Não consegui abrir ${f.name}: ${err.message}`, "log-erro"); }
+        await pausa();
+      }
+    }
+    return itens;
+  }
+
   async function lerXmls(lista){
     if (xmlLendo) return;
-    const arquivos = lista.filter(f => /\.xml$/i.test(f.name));
-    if (!arquivos.length){ toast("Nenhum arquivo .xml encontrado."); return; }
+    if (!lista.some(f => /\.(xml|zip)$/i.test(f.name))){ toast("Nenhum arquivo .xml ou .zip encontrado."); return; }
     xmlLendo = true;
     $("statusXml").textContent = "Lendo"; $("statusXml").className = "badge run";
+    const arquivos = await xmlExpandir(lista, logXml);
+    if (!arquivos.length){ logXml("Nenhum XML encontrado nos arquivos enviados.", "log-erro"); toast("Nenhum XML encontrado."); xmlLendo = false; $("statusXml").textContent = "Aguardando"; $("statusXml").className = "badge"; return; }
     logXml(`Lendo ${xmlN(arquivos.length)} XML(s)…`);
     progXml.iniciar(arquivos.length);
     const antes = xmlEstado.descartados;
     for (const [k, f] of arquivos.entries()){
-      progXml.arquivo(k, f.name);
-      try { xmlEstado.arquivos++; xProcessarTexto(await f.text(), xmlEstado); }
-      catch(e){ xmlEstado.invalidos++; logXml(`Erro em ${f.name}: ${e.message}`, "log-erro"); }
+      progXml.arquivo(k, f.nome.split(" › ").pop());
+      try { xmlEstado.arquivos++; xProcessarTexto(await f.ler(), xmlEstado); }
+      catch(e){ xmlEstado.invalidos++; logXml(`Erro em ${f.nome}: ${e.message}`, "log-erro"); }
       if (k % 20 === 19) await pausa();
     }
     xmlRes = xMontar(xmlEstado);
