@@ -836,6 +836,11 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
           <span class="t"><small>Eventos empilhados</small><b id="chipEvtNome">—</b></span>
           <span class="tr">trocar</span>
         </label>
+        <label class="chip-arq" id="chipMais" for="rubEvtMais" tabindex="0" title="Adicionar outro parquet aos eventos já carregados">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="t"><small>Mais eventos</small><b>Adicionar parquet</b></span>
+          <span class="tr">adicionar</span>
+        </label>
         <label class="chip-arq" id="chipEmp" for="rubEmp" tabindex="0" title="Enviar ou trocar a planilha de empresas">
           <span class="ico" id="chipEmpIco"></span>
           <span class="t"><small>Empresas</small><b id="chipEmpNome">escolher planilha</b></span>
@@ -856,7 +861,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <label class="drop" id="rubDropEvt" tabindex="0" for="rubEvt">
           <span class="slot-tag">Obrigatório</span>
           <p class="big">Eventos empilhados</p>
-          <p>Arquivo .parquet (ou .xlsx) com as rubricas de todos os trabalhadores.</p>
+          <p>Arquivo .parquet (ou .xlsx) com as rubricas de todos os trabalhadores. Pode escolher vários de uma vez.</p>
           <span class="pick">Escolher eventos</span>
           <div class="slot-file" id="rubEvtNome"></div>
         </label>
@@ -872,7 +877,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <div class="prog-top"><span class="prog-pct" id="rprogPct">0%</span><span class="prog-txt" id="rprogTxt">Preparando…</span></div>
         <div class="prog-track"><div class="prog-fill" id="rprogFill"></div><div class="prog-shine" id="rprogShine"></div></div>
       </div>
-      <input type="file" id="rubEvt" accept=".parquet,.xlsx,.xls">
+      <input type="file" id="rubEvt" accept=".parquet,.xlsx,.xls" multiple>
+      <input type="file" id="rubEvtMais" accept=".parquet,.xlsx,.xls" multiple>
       <input type="file" id="rubEmp" accept=".xlsx,.xls,.csv">
     </div>
 
@@ -2424,11 +2430,13 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const pctPatronal = (subst, ano) => subst === 1 ? (PATRONAL_SUBST[ano] || 0) : 20;
   const anPct = ge => (ge === 2 || ge === 6) ? 12 : (ge === 3 || ge === 7) ? 9 : (ge === 4 || ge === 8) ? 6 : 0;
 
-  async function lerEventos(file, aoProgredir){
+  async function lerEventos(arquivos, aoProgredir){
+    arquivos = [].concat(arquivos);
     const C = {};
     const regs = new Map(), grupos = new Map();
     const info = { oe: new Map(), provisoes: 0, lidas: 0, invalidas: 0, foraTipo: 0, foraInc: 0, foraJanela: 0, zeradas: 0, usadas: 0, corte: corteRub(), faltando: [] };
     const corte = info.corte;
+    for (const [fi, file] of arquivos.entries()){
     await procTab(file, cols => {
       C.per = locColEstEso(cols, ["Período","Periodo","Período Apuração","Periodo Apuracao"]) || locColEso(cols, ["PERIODO","COMPETENCIA"]);
       C.tipo = locColEstEso(cols, ["Tipo Rubrica"]) || locColEso(cols, ["TIPO RUBRICA","TP RUBR"]);
@@ -2502,7 +2510,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         if (ex) ex.valor += valor;
         else regs.set(rk, { per, raiz, ins, cod, gkey, rat: t.rat, fap: t.fap, subst, oe, fpas, codTerc, grau, valor });
       }
-    }, aoProgredir);
+    }, (frac, feito, tt) => { if (aoProgredir) aoProgredir((fi + frac) / arquivos.length, feito, tt); });
+    }
 
     // Ponto sugerido de cada rubrica
     for (const g of grupos.values()){
@@ -2566,26 +2575,45 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     });
   }
 
-  async function carregarEventos(file){
+  const nomeArqs = a => a.length === 1 ? a[0].name : `${a.length} arquivos`;
+  // Troca os eventos (adicionar = false) ou acrescenta mais arquivos aos já carregados (adicionar = true)
+  async function carregarEventos(arg, lista, adicionar){
     if (rub.lendo) return;
-    if (!/\.(parquet|xlsx|xls)$/i.test(file.name)){ toast("Os eventos empilhados precisam estar em .parquet ou .xlsx."); return; }
+    let novos = (lista && lista.length ? [...lista] : [arg]).filter(Boolean);
+    const ruins = novos.filter(f => !/\.(parquet|xlsx|xls)$/i.test(f.name));
+    if (ruins.length){ toast("Os eventos empilhados precisam estar em .parquet ou .xlsx."); novos = novos.filter(f => !ruins.includes(f)); }
+    if (!novos.length) return;
+    const mesmo = (a, b) => a.name === b.name && a.size === b.size;
+    let todos = novos;
+    if (adicionar && rub.arquivos.length){
+      const repetidos = novos.filter(f => rub.arquivos.some(x => mesmo(x, f)));
+      if (repetidos.length) toast(`${repetidos.length} arquivo${repetidos.length === 1 ? "" : "s"} já carregado${repetidos.length === 1 ? "" : "s"}: ignorado${repetidos.length === 1 ? "" : "s"}.`);
+      novos = novos.filter(f => !rub.arquivos.some(x => mesmo(x, f)));
+      if (!novos.length) return;
+      todos = [...rub.arquivos, ...novos];
+    } else todos = novos.filter((f, i) => novos.findIndex(x => mesmo(x, f)) === i);
     rub.lendo = true;
-    $("rubEvtNome").textContent = file.name;
+    const anteriores = rub.arquivos;
+    $("rubEvtNome").textContent = nomeArqs(todos);
     $("rubDropEvt").classList.add("feito");
     progRub.iniciar(1);
-    progRub.arquivo(0, file.name);
+    progRub.arquivo(0, nomeArqs(todos));
     try {
-      rub.sessao = {}; rub.lixo = {};
-      const d = await lerEventos(file, (frac, feito, tt) => { progRub.parte(0, frac, file.name, `${feito.toLocaleString("pt-BR")} de ${tt.toLocaleString("pt-BR")} linhas`); chipLendo(frac); });
-      rub.filtros = {}; rub.dados = d; rub.arquivo = file; rub.editados = new Set(); rub.sel.clear(); rub.filtro = [...d.grupos.values()].some(ehPendente) ? "rev" : "op"; rub.limite = 400;
+      if (!adicionar){ rub.sessao = {}; rub.lixo = {}; }
+      const d = await lerEventos(todos, (frac, feito, tt) => { progRub.parte(0, frac, nomeArqs(todos), `${feito.toLocaleString("pt-BR")} de ${tt.toLocaleString("pt-BR")} linhas`); chipLendo(frac); });
+      rub.filtros = {}; rub.dados = d; rub.arquivos = todos; rub.arquivo = todos[0];
+      if (!adicionar) rub.editados = new Set();
+      rub.sel.clear(); rub.filtro = [...d.grupos.values()].some(ehPendente) ? "rev" : "op"; rub.limite = 400;
       progRub.fim(1);
       const nPend = [...d.info.oe.values()].filter(o => o.origem === "pendente").length;
       if (!d.grupos.size) toast("Nenhuma rubrica passou pelos filtros. Confira o arquivo.");
+      else if (adicionar) toast(`${novos.length} arquivo${novos.length === 1 ? "" : "s"} adicionado${novos.length === 1 ? "" : "s"}: ${todos.length} no total.`);
       else if (nPend) toast(`${nPend} combinaç${nPend === 1 ? "ão" : "ões"} de OE sem alíquota: preencha em “Outras entidades”, mais abaixo.`);
     } catch(e){
       progRub.fim(1);
-      $("rubDropEvt").classList.remove("feito");
-      $("rubEvtNome").textContent = "";
+      rub.arquivos = anteriores;
+      if (!anteriores.length){ $("rubDropEvt").classList.remove("feito"); $("rubEvtNome").textContent = ""; }
+      else $("rubEvtNome").textContent = nomeArqs(anteriores);
       toast("Não foi possível ler os eventos. " + (e && e.message ? e.message : ""));
     }
     rub.lendo = false;
@@ -2611,10 +2639,11 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     dropEl.addEventListener("pointermove", e => { const r = dropEl.getBoundingClientRect(); dropEl.style.setProperty("--mx", (e.clientX - r.left) + "px"); dropEl.style.setProperty("--my", (e.clientY - r.top) + "px"); });
     ["dragenter","dragover"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); rubStub.classList.add("over"); }));
     ["dragleave","drop"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); rubStub.classList.remove("over"); }));
-    dropEl.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) fn(f); });
-    inputEl.addEventListener("change", () => { const f = inputEl.files[0]; inputEl.value = ""; if (f) fn(f); });
+    dropEl.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) fn(f, [...e.dataTransfer.files]); });
+    inputEl.addEventListener("change", () => { const l = [...inputEl.files], f = l[0]; inputEl.value = ""; if (f) fn(f, l); });
   }
-  ligarSlot($("rubDropEvt"), $("rubEvt"), carregarEventos);
+  ligarSlot($("rubDropEvt"), $("rubEvt"), (f, l) => carregarEventos(f, l, false));
+  $("rubEvtMais").addEventListener("change", e => { const l = [...e.target.files]; e.target.value = ""; if (l.length) carregarEventos(l[0], l, true); });
   ligarSlot($("rubDropEmp"), $("rubEmp"), carregarEmpresas);
 
   // Arquivos ao lado do título (depois de carregar): chips com nome e "trocar"
@@ -2622,8 +2651,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const IC_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   const IC_LENDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>';
   function atualizarChipsArq(){
-    const nome = rub.arquivo ? rub.arquivo.name : (rub.dados ? "eventos carregados" : "—");
-    $("chipEvtNome").textContent = nome; $("chipEvtNome").title = nome;
+    const nome = rub.arquivos.length ? nomeArqs(rub.arquivos) : (rub.dados ? "eventos carregados" : "—");
+    $("chipEvtNome").textContent = nome; $("chipEvtNome").title = rub.arquivos.length ? rub.arquivos.map(f => f.name).join("\n") : nome;
     $("chipEvt").classList.remove("lendo"); $("chipEvtIco").innerHTML = IC_CHECK;
     const tem = !!rub.arqEmp;
     const txt = tem ? rub.arqEmp + (rub.nEmp ? ` · ${rub.nEmp} empresa${rub.nEmp === 1 ? "" : "s"}` : "") : "escolher planilha";
@@ -2643,13 +2672,20 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     el.classList.add("anim"); el.classList.toggle("recolhido", on);
     clearTimeout(arqAnimTimer); arqAnimTimer = setTimeout(() => el.classList.remove("anim"), 750);
   }
-  [["chipEvt", "rubEvt", carregarEventos], ["chipEmp", "rubEmp", carregarEmpresas]].forEach(([id, inputId, fn]) => {
+  [["chipEvt", "rubEvt", (f, l) => carregarEventos(f, l, false)], ["chipEmp", "rubEmp", carregarEmpresas]].forEach(([id, inputId, fn]) => {
     const el = $(id);
     el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $(inputId).click(); } });
     ["dragenter", "dragover"].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); el.classList.add("over"); }));
     ["dragleave", "drop"].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); el.classList.remove("over"); }));
-    el.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) fn(f); });
+    el.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) fn(f, [...e.dataTransfer.files]); });
   });
+  (() => {
+    const el = $("chipMais");
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("rubEvtMais").click(); } });
+    ["dragenter", "dragover"].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); el.classList.add("over"); }));
+    ["dragleave", "drop"].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); el.classList.remove("over"); }));
+    el.addEventListener("drop", e => { const l = [...e.dataTransfer.files]; if (l.length) carregarEventos(l[0], l, true); });
+  })();
 
   function gruposVisiveis(excluir){
     if (!rub.dados) return [];
@@ -2692,7 +2728,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const larg = id => Math.max(colDef(id).min, +lay.w[id] || colDef(id).w);
   const colsVis = () => COLS.filter(c => lay.vis.includes(c.id));
   const salvarLayout = () => gravarMem("rubricas-layout", lay);
-  rub.sort = { id: "valor", dir: -1 }; rub.maxRefl = 0; rub.ordem = []; rub.ultimo = -1; rub.editados = new Set(); rub.arquivo = null; rub.sessao = {}; rub.filtros = {}; rub.lixo = {};
+  rub.sort = { id: "valor", dir: -1 }; rub.maxRefl = 0; rub.ordem = []; rub.ultimo = -1; rub.editados = new Set(); rub.arquivo = null; rub.arquivos = []; rub.sessao = {}; rub.filtros = {}; rub.lixo = {};
 
   function origemTxt(g){
     if (g.lixo) return "Lixeira";
@@ -3149,10 +3185,10 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     rub.lendo = true;
     let falhou = false, relido = false;
     try {
-      if (rub.arquivo){
-        const nome = rub.arquivo.name;
+      if (rub.arquivos.length){
+        const nome = nomeArqs(rub.arquivos);
         progRub.iniciar(1); progRub.arquivo(0, nome);
-        const d = await lerEventos(rub.arquivo, (frac, feito, tt) => {
+        const d = await lerEventos(rub.arquivos, (frac, feito, tt) => {
           progRub.parte(0, frac, nome, `${feito.toLocaleString("pt-BR")} de ${tt.toLocaleString("pt-BR")} linhas`);
           txtEl.textContent = `Recalculando ${Math.round(frac * 100)}%`;
         });
