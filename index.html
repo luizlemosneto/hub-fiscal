@@ -883,7 +883,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <ol>
         <li>Entram só proventos (tipo 1) com incidência 11 ou 12 e descontos (tipo 2) com incidência 00, 31 ou 32, dos últimos 5 anos. Só entram as linhas com “Linha Válida Auditoria” igual a “SIM”.</li>
         <li>As rubricas repetidas são juntadas por descrição, tipo, código e natureza: com código diferente, nunca soma. O ponto sugerido vem da natureza da rubrica na tabela de temas (coluna de provento ou de desconto). Proventos com incidência 12 vão para “RAT Sem Exposição ao Risco Laboral”.</li>
-        <li>Regras pelo nome da rubrica valem sobre a natureza. Provisão nunca entra: é retirada na leitura. Nos descontos: INSS, IRRF/IR, vale transporte (VT, transporte), vale alimentação/refeição (VR, VA, cesta básica) e plano médico/odonto/coparticipação/saúde vão para o ponto de cada um. DSR (em qualquer parte do nome), descanso, repouso e ausência (ou ausência justificada) vão para RAT Sem Exposição ao Risco Laboral, em proventos e em descontos. Nos proventos, licença e 13º também vão para o RAT; transporte e alimentação vão para Auxílio Vale Transporte e Auxílio Alimentação; bônus, prêmio e gratificação vão para Prêmios e Bonificações. Provento com “férias” e tudo que for incidência 12 vão direto para RAT Sem Exposição ao Risco Laboral, na frente das demais regras. Hora extra noturna e prêmio/gratificação de função nunca entram nas outras incidências.</li>
+        <li>Desconto só aceita tema com “Desconto” no nome: DSR em desconto não vai para RAT e multa de trânsito não é vale transporte. Regras pelo nome da rubrica valem sobre a natureza. Provisão nunca entra: é retirada na leitura. Nos descontos: INSS, IRRF/IR, vale transporte (VT, transporte), vale alimentação/refeição (VR, VA, cesta básica) e plano médico/odonto/coparticipação/saúde vão para o ponto de cada um. DSR (em qualquer parte do nome), descanso, repouso e ausência (ou ausência justificada) vão para RAT Sem Exposição ao Risco Laboral, em proventos e em descontos. Nos proventos, licença e 13º também vão para o RAT; transporte e alimentação vão para Auxílio Vale Transporte e Auxílio Alimentação; bônus, prêmio e gratificação vão para Prêmios e Bonificações. Provento com “férias” e tudo que for incidência 12 vão direto para RAT Sem Exposição ao Risco Laboral, na frente das demais regras. Hora extra noturna e prêmio/gratificação de função nunca entram nas outras incidências.</li>
         <li>A aba Revisão reúne tudo que está como Não oportunidade. Para aproveitar uma rubrica, escolha um ponto e ela vai para Com ponto. Para descartar, use o lixinho: ela vai para as abas Não oportunidade e Lixeira (onde dá para Retomar). A aba Não oportunidade começa zerada e só recebe o que você joga fora.</li>
         <li>Seus ajustes valem durante a sessão e no Recalcular. Para reaproveitá-los nos próximos arquivos, ligue “Lembrar meus ajustes” em Personalizar. “Voltar às sugestões” desfaz tudo.</li>
         <li>Reflexos: patronal 20% (quando a substituição da contribuição patronal é 1: 5% em 2025, 10% em 2026, 15% em 2027 e 0% nos demais anos), GILRAT (RAT × FAP) e outras entidades, tudo sobre o valor da rubrica. No ponto “RAT Sem Exposição ao Risco Laboral”, o reflexo é sempre só o do RAT ajustado (GILRAT).</li>
@@ -2267,7 +2267,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     const dsr = /DSR/.test(j) || /DESCANSO|REPOUSO/.test(e);      // DSR em qualquer parte (inclusive grudado: DSRHE, REFLDSR)
     const ausencia = /AUSENC|\bAUS\b/.test(e);                      // ausência, ausência justificada, AUS.
     const premiacao = /BONUS|BONIFIC|PREMIO|PREMIAC|GRATIF|\bGRAT\b|\bPREM\b/.test(e);
-    const transporte = /\bV ?T\b|\bTRANS(?!F)/.test(e);
+    const transporte = /\bV ?T\b|\bTRANS(?!F|IT)/.test(e) && !/MULTA|INFRACAO/.test(e);
     const alimentacao = (/\bV ?R\b|\bV ?A\b|ALIMENTAC|REFEIC|\bALIM\b|\bREF\b|\bCES\w* ?BAS/.test(e)) && !/ALIMENTICI|PENSAO/.test(e);
     // 0) incidência 12 e férias (proventos): vão direto para RAT, na frente de todas as outras regras
     if (g.tp === "P" && g.inc12) return null;      // fica o RAT sugerido pela incidência 12
@@ -2283,7 +2283,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       if (transporte) return { ponto: PT_VT, motivo: "regra do nome: vale transporte" };
       if (alimentacao) return { ponto: PT_VR, motivo: "regra do nome: vale alimentação/refeição/cesta básica" };
       if (/ODONTO|\bMEDIC|\bMED\b|COPART|COOPART|CO PART|SAUDE|UNIMED|AMIL|HAPVIDA|SULAMERICA/.test(e)) return { ponto: PT_MEDICA, motivo: "regra do nome: assistência médica/odontológica" };
-      if (dsr || ausencia) return { ponto: RAT_PNT, motivo: "regra do nome: DSR/ausência vai para RAT" };
     } else {
       // 3) DSR, descanso, repouso, licença e 13º: sempre RAT Sem Exposição
       if (/\bD ?S ?R\b|DESCANSO|REPOUSO|\bLIC\b|LICENCA|(^|\D)13(\D|$)|DECIMO ?TERC/.test(e)) return { ponto: RAT_PNT, motivo: "regra do nome: DSR/descanso/repouso/licença/13º vai para RAT" };
@@ -2306,18 +2305,22 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     }
   } catch(e){}
 
+  // Desconto só aceita tema com "Desconto" no nome (nunca RAT, Auxílio etc.)
+  const temaDeDesconto = t => /DESCONTO/.test(normTxt(t));
+  const pontoValido = (tp, p) => ehNaoOp(p) || tp !== "D" || temaDeDesconto(p);
   const TEMAS = { P: new Set([RAT_PNT]), D: new Set() };
-  Object.values(NATUREZAS).forEach(n => { if (!ehNaoOp(n[1])) TEMAS.P.add(n[1]); if (!ehNaoOp(n[2])) TEMAS.D.add(n[2]); });
-  Object.values(memPontos).forEach(v => { if (v && v.p && !ehNaoOp(v.p)) TEMAS[v.tp === "D" ? "D" : "P"].add(canonPonto(v.p)); });
+  Object.values(NATUREZAS).forEach(n => { if (!ehNaoOp(n[1])) TEMAS.P.add(n[1]); if (!ehNaoOp(n[2]) && temaDeDesconto(n[2])) TEMAS.D.add(n[2]); });
+  Object.values(memPontos).forEach(v => { if (v && v.p && !ehNaoOp(v.p) && pontoValido(v.tp === "D" ? "D" : "P", v.p)) TEMAS[v.tp === "D" ? "D" : "P"].add(canonPonto(v.p)); });
   // Temas criados por você: valem em qualquer arquivo e guardam o risco escolhido
   let temasUser = lerMem("rubricas-temas");
   if (!Array.isArray(temasUser)) temasUser = [];
   temasUser = temasUser.filter(t => t && t.nome && /^(P|D|PD)$/.test(t.tp));
-  temasUser.forEach(t => { if (t.tp.includes("P")) TEMAS.P.add(t.nome); if (t.tp.includes("D")) TEMAS.D.add(t.nome); });
+  temasUser.forEach(t => { if (t.tp.includes("P")) TEMAS.P.add(t.nome); if (t.tp.includes("D") && temaDeDesconto(t.nome)) TEMAS.D.add(t.nome); });
   function adicionarTema(nome, tp, risco){
     nome = canonPonto(String(nome || "").trim().replace(/\s+/g, " "));
     if (!nome) return { erro: "Digite o nome do tema." };
     if (ehNaoOp(nome)) return { erro: "“Não Oportunidade” não é um tema: use o lixinho." };
+    if (tp.includes("D") && !temaDeDesconto(nome)) return { erro: "Tema de desconto precisa ter “Desconto” no nome." };
     const k = normTxt(nome);
     const existente = [...TEMAS.P, ...TEMAS.D].find(t => normTxt(t) === k);
     const usar = existente || nome;
@@ -2509,12 +2512,13 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       if (g.inc12){ g.sug = RAT_PNT; g.origem = "incidência 12"; }
       else if (N){ g.sug = (g.tp === "P" ? N[1] : N[2]) || NAO_OP; g.origem = `natureza ${g.nat}`; }
       else { g.sug = NAO_OP; g.origem = g.nat ? `natureza ${g.nat} sem tema` : "sem natureza"; }
+      if (!pontoValido(g.tp, g.sug)) { g.sug = NAO_OP; g.origem = "desconto só aceita tema com “Desconto” no nome"; }
       const rg = regraNome(g, g.sug);
       if (rg){ g.sug = rg.ponto; g.origem = rg.motivo; g.regra = true; }
       if (!(rg && rg.exclui) && feriasSemPonto(g, g.sug)){ g.sug = RAT_PNT; g.origem = "regra do nome: férias sem ponto vai para RAT"; g.regra = true; }
       const ms = rub.sessao[g.key], mm = lay.lembrar ? memPontos[g.key] : null;
-      if (ms && ms.p){ g.ponto = canonPonto(ms.p); g.origemAtual = "você"; }
-      else if (mm && mm.p){ g.ponto = canonPonto(mm.p); g.origemAtual = "sua revisão anterior"; }
+      if (ms && ms.p && pontoValido(g.tp, ms.p)){ g.ponto = canonPonto(ms.p); g.origemAtual = "você"; }
+      else if (mm && mm.p && pontoValido(g.tp, mm.p)){ g.ponto = canonPonto(mm.p); g.origemAtual = "sua revisão anterior"; }
       else { g.ponto = g.sug; g.origemAtual = g.origem; }
       g.lixo = !!rub.lixo[g.key];
       if (g.lixo) g.ponto = NAO_OP;
@@ -2908,6 +2912,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
   function definirPonto(g, valor, manterLixo){
     const p = canonPonto((valor || "").trim()) || NAO_OP;
+    if (!pontoValido(g.tp, p)){ toast("Desconto só aceita tema com “Desconto” no nome."); return false; }
     g.ponto = p;
     if (!manterLixo && g.lixo && !ehNaoOp(p)){ delete rub.lixo[g.key]; g.lixo = false; }
     g.origemAtual = "você"; rub.editados.add(g.key);
