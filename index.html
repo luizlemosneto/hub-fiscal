@@ -3839,6 +3839,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       const d = new Date((Number(limpo) - 25569) * 86400 * 1000); return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
     }
     limpo = limpo.replace(/[^0-9\/]/g, '');
+    if (/^\d{4}$/.test(limpo)) return `13/${limpo}`;
     const p = limpo.split('/');
     if (p.length === 2) return p[0].length === 4 ? `${p[1].padStart(2, '0')}/${p[0]}` : `${p[0].padStart(2, '0')}/${p[1]}`;
     return limpo;
@@ -3854,12 +3855,14 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   }
 
   function chaveCompDctf(c){ const [m, y] = String(c).split('/').map(Number); return (y || 0) * 100 + (m || 0); }
+  function empSaldoDctf(v){ return String(v || '').trim().toUpperCase() || '-'; }
+  function cnpjSaldoDctf(v){ return String(v || '').replace(/\D/g, '') || '-'; }
   function linhasSaldoDctf(){
-    return Array.from(dctfRegs.values()).sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR') || a.cnpj.localeCompare(b.cnpj) || chaveCompDctf(a.comp) - chaveCompDctf(b.comp));
+    return Array.from(dctfRegs.values()).filter(l => Math.abs(l.darf + l.retencao) >= 0.005).sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR') || a.cnpj.localeCompare(b.cnpj) || chaveCompDctf(a.comp) - chaveCompDctf(b.comp));
   }
   function renderTabelaSaldo(){
     const ls = linhasSaldoDctf();
-    $('tabelaCorpoSaldo').innerHTML = ls.length ? ls.map(l => `<tr><td>${esc(removerCaps(l.empresa))}</td><td>${esc(removerCaps(l.cnpj))}</td><td>${esc(removerCaps(l.comp))}</td><td class="num">${utilFormataMoeda(l.darf)}</td><td class="num">${utilFormataMoeda(l.retencao)}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">Carregue os PDFs para ver o saldo por competência.</td></tr>';
+    $('tabelaCorpoSaldo').innerHTML = ls.length ? ls.map(l => `<tr><td>${esc(empSaldoDctf(l.empresa))}</td><td>${esc(cnpjSaldoDctf(l.cnpj))}</td><td>${esc(removerCaps(l.comp))}</td><td class="num">${utilFormataMoeda(l.darf)}</td><td class="num">${utilFormataMoeda(l.retencao)}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">Carregue os PDFs para ver o saldo por competência.</td></tr>';
     $('resumoTabelaSaldo').innerText = ls.length ? `${ls.length} linhas` : 'Aguardando processamento';
   }
   async function hashArquivoDctf(buffer){
@@ -4015,7 +4018,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
     if (modoSaldoDisponivel) {
       const data = [["Empresa", "CNPJ", "Competência", "Saldo Excedente", "Retenção Excedente"].map(removerCaps)];
-      linhasSaldoDctf().forEach(l => data.push([removerCaps(l.empresa), removerCaps(l.cnpj), removerCaps(l.comp), l.darf, l.retencao]));
+      linhasSaldoDctf().forEach(l => data.push([empSaldoDctf(l.empresa), cnpjSaldoDctf(l.cnpj), removerCaps(l.comp), l.darf, l.retencao]));
       const ws = XLSX.utils.aoa_to_sheet(data); formataAbaExcelLimpissima(ws);
       XLSX.utils.book_append_sheet(wb, ws, removerCaps("Saldo Disponível"));
       XLSX.writeFile(wb, "Hub fiscal & Tributário - Saldo Disponível.xlsx");
