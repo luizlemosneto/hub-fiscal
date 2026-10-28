@@ -430,7 +430,6 @@ table.rt{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%
 .pick-row .pick:hover{transform:translateY(-1px);box-shadow:0 14px 28px -12px var(--glow)}
 .pick-row .pick.sec{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .pick-row .pick.sec:hover{box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
-.xml-tipos{margin:14px 2px 0;color:var(--muted);font-size:.86rem;font-variant-numeric:tabular-nums}
 .xml-aviso{margin:10px 0 0;padding:10px 14px;border-radius:12px;font-size:.86rem;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
 .xml-tab td{vertical-align:middle}
 .xml-tab .sub-t{font-size:.8rem;color:var(--muted);margin-top:2px;font-weight:400}
@@ -1249,8 +1248,9 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <ol>
         <li>Arquivos .zip são abertos automaticamente, inclusive zip dentro de zip e pastas internas; só os .xml são lidos.</li>
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
-        <li>Duplicados saem pelo Id do evento. Nos S-1200 vale o mais recente de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o mais recente de cada competência; nos S-5001, o mais recente de cada CPF e competência. Quem foi substituído por retificação não entra.</li>
-        <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê.</li>
+        <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
+        <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
+        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -1262,7 +1262,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <div class="kpi"><small>Duplicados ou retificados removidos</small><b id="xmlKDup">0</b></div>
       <div class="kpi"><small>Arquivos inválidos</small><b id="xmlKInv">0</b></div>
     </div>
-    <p class="xml-tipos" id="xmlTipos"></p>
     <p class="xml-aviso" id="xmlAvisos" hidden></p>
 
     <section>
@@ -4220,25 +4219,46 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
   /* ---------- XML eSocial: leitura de eventos (S-1010, S-1200, S-5011, S-5001 e outros) ---------- */
   const XML_EVT = {
-    evtRemun: ["S-1200", "Remuneração do trabalhador"], evtTabRubrica: ["S-1010", "Tabela de rubricas"], evtBasesTrab: ["S-5001", "Bases por trabalhador"],
-    evtCS: ["S-5011", "Contribuições sociais consolidadas"], evtTabLotacao: ["S-1020", "Tabela de lotações"], evtInfoEmpregador: ["S-1000", "Informações do empregador"],
-    evtRemunRPPS: ["S-1202", "Remuneração RPPS"], evtPgtos: ["S-1210", "Pagamentos"], evtIrrfBenef: ["S-5002", "IRRF por beneficiário"], evtFGTS: ["S-5003", "FGTS"],
-    evtTotConting: ["S-5013", "Totalização de contingência"], evtExclusao: ["S-3000", "Exclusão de eventos"], evtAdmissao: ["S-2200", "Admissão"], evtDeslig: ["S-2299", "Desligamento"]
+    evtInfoEmpregador: ["S-1000", "Informações do empregador"], evtTabEstab: ["S-1005", "Tabela de estabelecimentos"], evtTabRubrica: ["S-1010", "Tabela de rubricas"],
+    evtTabLotacao: ["S-1020", "Tabela de lotações"], evtTabCargo: ["S-1030", "Tabela de cargos"], evtTabHorTur: ["S-1050", "Tabela de horários e turnos"],
+    evtRemun: ["S-1200", "Remuneração do trabalhador"], evtRemunRPPS: ["S-1202", "Remuneração RPPS"], evtPgtos: ["S-1210", "Pagamentos"],
+    evtReabreEvPer: ["S-1298", "Reabertura dos eventos periódicos"], evtFechaEvPer: ["S-1299", "Fechamento dos eventos periódicos"],
+    evtAdmPrelim: ["S-2190", "Admissão preliminar"], evtAdmissao: ["S-2200", "Admissão"], evtAltCadastral: ["S-2205", "Alteração cadastral"], evtAltContratual: ["S-2206", "Alteração contratual"],
+    evtCAT: ["S-2210", "CAT"], evtMonit: ["S-2220", "Monitoramento da saúde"], evtAfastTemp: ["S-2230", "Afastamento temporário"], evtExpRisco: ["S-2240", "Exposição a agentes nocivos"],
+    evtAvPrevio: ["S-2250", "Aviso prévio"], evtReintegr: ["S-2298", "Reintegração"], evtDeslig: ["S-2299", "Desligamento"], evtTSVInicio: ["S-2300", "TSV início"],
+    evtTSVAltContr: ["S-2306", "TSV alteração contratual"], evtTSVTermino: ["S-2399", "TSV término"], evtExclusao: ["S-3000", "Exclusão de eventos"],
+    evtProcTrab: ["S-2500", "Processo trabalhista"], evtBasesTrab: ["S-5001", "Bases por trabalhador"], evtIrrfBenef: ["S-5002", "IRRF por beneficiário"],
+    evtBasesFGTS: ["S-5003", "Bases do FGTS"], evtCS: ["S-5011", "Contribuições sociais consolidadas"], evtIrrf: ["S-5012", "IRRF consolidado"], evtFGTS: ["S-5013", "FGTS consolidado"]
   };
   const XML_TP_RUBR = { "1": "Vencimento", "2": "Desconto", "3": "Informativa", "4": "Informativa dedutora" };
+  // Incidência da rubrica (CP) que entra na remuneração do cruzamento: a mesma regra dos proventos do módulo Rubricas
+  const XML_INC_BASE = new Set(["11", "12", "14", "15"]);
+  const XML_TOLERANCIA = 1;
   const xFilhos = el => Array.from(el.children || []);
   const xDir = (el, nome) => (el && xFilhos(el).find(c => c.localName === nome)) || null;
   const xTxt = (el, caminho) => { let a = el; for (const n of caminho.split("/")){ a = xDir(a, n); if (!a) return ""; } return (a.textContent || "").trim(); };
   const xDesc = (el, nomes, saida = []) => { for (const c of xFilhos(el)){ if (nomes.includes(c.localName)) saida.push(c); else xDesc(c, nomes, saida); } return saida; };
+  const xDescRe = (el, re, saida = []) => { for (const c of xFilhos(el)){ if (re.test(c.localName)) saida.push(c); else xDescRe(c, re, saida); } return saida; };
+  const xAcha = (el, nome) => { const r = xDesc(el, [nome]); return r.length ? (r[0].textContent || "").trim() : ""; };
   const xEventos = (el, saida = []) => { for (const c of xFilhos(el)){ if (/^evt[A-Z]/.test(c.localName)) saida.push(c); else xEventos(c, saida); } return saida; };
   const xNum = s => { const n = parseFloat(String(s ?? "").replace(",", ".")); return isNaN(n) ? 0 : n; };
   const xDig = s => String(s ?? "").replace(/\D/g, "");
-  // O Id do evento carrega a data de geração (posições 18 a 31): vale o mais recente
-  const xRank = id => id.length >= 37 ? id.slice(18) : id;
-  const xPer = (per, fallback) => per || fallback || "";
+  const xMoeda = n => Math.round(n * 100) / 100;
+  // Recibo e data de recepção: vêm do retorno do portal que envolve o evento (quando o XML é o retorno), senão do Id
+  function xEnvelope(ev, doc, unico){
+    const achar = no => { const nr = xDesc(no, ["nrRecibo"]).find(n => !n.parentNode || n.parentNode.localName !== "ideEvento"); const dh = xDesc(no, ["dhRecepcao", "dhProcessamento"])[0]; return { recibo: nr ? (nr.textContent || "").trim() : "", dh: dh ? xDig(dh.textContent).slice(0, 14) : "" }; };
+    for (let a = ev.parentNode; a && a.nodeType === 1; a = a.parentNode){
+      for (const c of xFilhos(a)){ if (c !== ev && ["recibo", "retornoEvento", "retornoProcessamento", "processamento"].includes(c.localName)){ const r = achar(c); if (r.recibo || r.dh) return r; } }
+    }
+    if (unico){ const r = achar(doc.documentElement); if (r.recibo || r.dh) return r; }
+    return { recibo: "", dh: "" };
+  }
+  // Vale o mais recente: data de recepção do portal e, sem ela, a data de geração que vai no Id do evento (posições 18 a 31)
+  const xRank = (id, dh) => dh || (id.length >= 37 ? id.slice(18, 32) : id);
 
   function xNovoEstado(){
-    return { lidos: new Map(), ids: new Set(), descartados: 0, rubricas: [], remun: new Map(), cs: new Map(), outros: new Map(), invalidos: 0, arquivos: 0 };
+    return { lidos: new Map(), ids: new Set(), descartados: 0, rubricas: [], remun: new Map(), cs: new Map(), outros: new Map(), invalidos: 0, arquivos: 0,
+      fech: new Map(), reabre: new Map(), trab: new Map(), emps: new Map(), retificados: new Set(), porRecibo: 0 };
   }
 
   // Achata um evento qualquer: cada ramo repetido vira uma linha, herdando os campos dos níveis acima
@@ -4265,11 +4285,14 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     mapa.set(chave, { rank, ...dados });
   }
 
-  function xProcessarEvento(ev, estado){
+  function xProcessarEvento(ev, estado, ctx){
     const nome = ev.localName, id = ev.getAttribute("Id") || "";
     estado.lidos.set(nome, (estado.lidos.get(nome) || 0) + 1);
     if (id){ if (estado.ids.has(id)){ estado.descartados++; return; } estado.ids.add(id); }
-    const rank = xRank(id), per = xTxt(ev, "ideEvento/perApur"), nrEmp = xDig(xTxt(ev, "ideEmpregador/nrInsc"));
+    const env = xEnvelope(ev, ctx.doc, ctx.unico), rank = xRank(id, env.dh), recibo = env.recibo;
+    const per = xTxt(ev, "ideEvento/perApur"), nrEmp = xDig(xTxt(ev, "ideEmpregador/nrInsc")), indAp = xTxt(ev, "ideEvento/indApuracao");
+    const nrRetif = xTxt(ev, "ideEvento/nrRecibo");
+    if (xTxt(ev, "ideEvento/indRetif") === "2" && nrRetif) estado.retificados.add(nrRetif);
 
     if (nome === "evtTabRubrica"){
       for (const b of xDesc(ev, ["inclusao", "alteracao"])){
@@ -4282,7 +4305,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     }
 
     if (nome === "evtRemun"){
-      const cpf = xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indAp = xTxt(ev, "ideEvento/indApuracao"), indRetif = xTxt(ev, "ideEvento/indRetif");
+      const cpf = xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indRetif = xTxt(ev, "ideEvento/indRetif");
       const linhas = [];
       for (const dm of xDesc(ev, ["dmDev"])){
         const cat = xTxt(dm, "codCateg");
@@ -4293,28 +4316,51 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
             linhas.push({ per: perRef || per, cat, estTp, estNr, lot, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
         }
       }
-      xGuardarMaisRecente(estado.remun, [nome, nrEmp, cpf, indAp, per].join("|"), rank, { id, indRetif, indAp, nrEmp, cpf, linhas }, estado);
+      xGuardarMaisRecente(estado.remun, [nome, nrEmp, cpf, indAp, per].join("|"), rank, { id, recibo, indRetif, indAp, perEv: per, nrEmp, cpf, linhas }, estado);
       return;
     }
 
     if (nome === "evtCS"){
       const subst = xTxt(ev, "infoCS/infoContrib/infoPJ/indSubstPatr"), linhas = [];
+      let baseTotal = 0;
       for (const est of xDesc(ev, ["ideEstab"])){
         const estNr = xDig(xTxt(est, "nrInsc")), rat = xNum(xTxt(est, "infoEstab/aliqRat")), fap = xNum(xTxt(est, "infoEstab/fap")), ratAj = xNum(xTxt(est, "infoEstab/aliqRatAjust"));
         const lots = xDesc(est, ["ideLotacao"]);
-        if (!lots.length) linhas.push({ per, nrEmp, estNr, lot: "", rat, fap, ratAj, fpas: "", terc: "", susp: "", subst });
-        for (const l of lots) linhas.push({ per, nrEmp, estNr, lot: xTxt(l, "codLotacao"), rat, fap, ratAj, fpas: xTxt(l, "fpas"), terc: xTxt(l, "codTercs"), susp: xTxt(l, "codTercsSusp"), subst });
+        if (!lots.length) linhas.push({ per, nrEmp, estNr, lot: "", rat, fap, ratAj, fpas: "", terc: "", susp: "", subst, bases: {}, base: 0 });
+        for (const l of lots){
+          const bases = {}; let base = 0;
+          for (const b of xDescRe(l, /^vrBcCp\d+$/)){ const v = xNum(b.textContent); bases[b.localName] = (bases[b.localName] || 0) + v; base += v; }
+          baseTotal += base;
+          linhas.push({ per, nrEmp, estNr, lot: xTxt(l, "codLotacao"), rat, fap, ratAj, fpas: xTxt(l, "fpas"), terc: xTxt(l, "codTercs"), susp: xTxt(l, "codTercsSusp"), subst, bases, base });
+        }
       }
-      xGuardarMaisRecente(estado.cs, [nome, nrEmp, per].join("|"), rank, { id, linhas }, estado);
+      xGuardarMaisRecente(estado.cs, [nome, nrEmp, indAp, per].join("|"), rank, { id, recibo, indAp, per, nrEmp, baseTotal, linhas }, estado);
       return;
+    }
+
+    // Eventos que também alimentam o cruzamento (e continuam saindo como tabela achatada)
+    if (nome === "evtFechaEvPer" || nome === "evtReabreEvPer"){
+      xGuardarMaisRecente(nome === "evtFechaEvPer" ? estado.fech : estado.reabre, [nrEmp, per].join("|"), rank, { id, recibo }, estado);
+    } else if (nome === "evtInfoEmpregador"){
+      const rz = xAcha(ev, "nmRazao"); if (rz && nrEmp) estado.emps.set(nrEmp.slice(0, 8), rz);
+    } else if (nome === "evtAdmissao" || nome === "evtTSVInicio" || nome === "evtDeslig" || nome === "evtTSVTermino"){
+      const cpf = xDig(xAcha(ev, "cpfTrab"));
+      if (cpf){
+        const t = estado.trab.get(cpf) || { nome: "", adm: "", deslig: "" };
+        const nm = xAcha(ev, "nmTrab"); if (nm) t.nome = nm;
+        const adm = xAcha(ev, "dtAdm") || xAcha(ev, "dtInicio"), des = xAcha(ev, "dtDeslig") || xAcha(ev, "dtTerm");
+        if (adm && (!t.adm || adm < t.adm)) t.adm = adm;
+        if (des && des > t.deslig) t.deslig = des;
+        estado.trab.set(cpf, t);
+      }
     }
 
     // Demais eventos: tabela achatada. S-5001 vale o mais recente de cada CPF e competência; os outros só perdem repetições exatas
     const linhas = []; xAchatar(ev, { "Id do evento": id }, linhas);
     if (!estado.outros.has(nome)) estado.outros.set(nome, new Map());
     const mapa = estado.outros.get(nome);
-    const chave = nome === "evtBasesTrab" ? [nome, nrEmp, xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), xTxt(ev, "ideEvento/indApuracao"), per].join("|") : (id || nome + "|" + mapa.size);
-    xGuardarMaisRecente(mapa, chave, rank, { id, linhas }, estado);
+    const chave = nome === "evtBasesTrab" ? [nome, nrEmp, xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indAp, per].join("|") : (id || nome + "|" + mapa.size);
+    xGuardarMaisRecente(mapa, chave, rank, { id, recibo, linhas }, estado);
   }
 
   // Lê um arquivo XML (pode ter vários eventos, como no lote do portal)
@@ -4323,19 +4369,27 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     if (!doc.documentElement || doc.getElementsByTagName("parsererror").length){ estado.invalidos++; return 0; }
     const evs = xEventos(doc.documentElement); if (/^evt[A-Z]/.test(doc.documentElement.localName)) evs.unshift(doc.documentElement);
     if (!evs.length){ estado.invalidos++; return 0; }
-    evs.forEach(ev => xProcessarEvento(ev, estado));
+    const ctx = { doc, unico: evs.length === 1 };
+    evs.forEach(ev => xProcessarEvento(ev, estado, ctx));
     return evs.length;
   }
 
   const XML_COL_RUBRICAS = ["Período", "Tipo Rubrica", "Incidência Previdência Social", "Natureza Rubrica", "Descrição Rubrica", "Código Rubrica", "Tabela de Rubricas", "Vlr Total Rubrica", "Linha Válida Auditoria",
-    "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Indicador Apuração", "Indicador Retificação", "Id Evento",
-    "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal"];
+    "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Data Admissão", "Data Desligamento", "Indicador Apuração", "Indicador Retificação", "Id Evento", "Recibo",
+    "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Período Fechado (S-1299)"];
   const XML_NUM = new Set(["Vlr Total Rubrica", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento"]);
   const xEhValor = nome => /^(valor|vr[A-Z]|aliq|fap|fator|qtd|perc)/i.test(nome.split(".").pop());
+  const xTp = r => r.tp ? `${r.tp} - ${XML_TP_RUBR[r.tp] || ""}`.replace(/ - $/, "") : "";
+  const xPerOrd = p => (p.length === 4 ? p + "-13" : p);
 
   // Monta as tabelas finais a partir do que foi lido
   function xMontar(estado){
     const conjuntos = [];
+    // Quem foi retificado por um recibo mais novo não vale, mesmo que a data de geração empate ou venha trocada
+    const vivo = e => !(e.recibo && estado.retificados.has(e.recibo));
+    const remuns = [...estado.remun.values()].filter(vivo), css = [...estado.cs.values()].filter(vivo);
+    estado.porRecibo = (estado.remun.size - remuns.length) + (estado.cs.size - css.length);
+
     const porCod = new Map(), porCodTab = new Map();
     const unicas = new Map(); estado.rubricas.forEach(r => { const k = [r.cod, r.tab, r.ini].join("|"), ex = unicas.get(k); if (!ex || ex.rank <= r.rank) unicas.set(k, r); });
     [...unicas.values()].sort((a, b) => a.ini.localeCompare(b.ini)).forEach(r => {
@@ -4349,7 +4403,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       return v || lista[0];
     };
     const csChave = new Map();
-    [...estado.cs.values()].forEach(c => c.linhas.forEach(l => {
+    css.forEach(c => c.linhas.forEach(l => {
       const k1 = [l.estNr, l.per, l.lot].join("|"), k2 = [l.estNr, l.per].join("|");
       if (!csChave.has(k1)) csChave.set(k1, l); if (!csChave.has(k2)) csChave.set(k2, l);
     }));
@@ -4358,31 +4412,67 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       for (const p of ps){ const r = csChave.get([estNr, p, lot].join("|")) || csChave.get([estNr, p].join("|")); if (r) return r; }
       return null;
     };
+    // S-1299 fechou a competência (e o S-1298 só a reabre se for mais novo)
+    const fechamento = (nrEmp, per) => {
+      const f = estado.fech.get(nrEmp.slice(0, 8) + "|" + per) || estado.fech.get(nrEmp + "|" + per), r = estado.reabre.get(nrEmp.slice(0, 8) + "|" + per) || estado.reabre.get(nrEmp + "|" + per);
+      if (!f && !r) return "Sem S-1299";
+      if (r && (!f || r.rank > f.rank)) return "Reaberto (S-1298)";
+      return "Fechado";
+    };
+    const fechPer = (nrEmp, per) => { const k = nrEmp + "|" + per; if (!estado._fc) estado._fc = new Map(); if (!estado._fc.has(k)) estado._fc.set(k, fechamento(nrEmp, per)); return estado._fc.get(k); };
 
-    // 1) Cruzamento de eventos (S-1200 + tabela de rubricas + alíquotas do S-5011)
+    // 1) Cruzamento de eventos: S-1200 + S-1010 + S-5011 + S-1299 + S-2200/S-2299
     const faltam = new Set(); let semCS = 0; const emp = [];
-    [...estado.remun.values()].forEach(e => e.linhas.forEach(l => {
-      const r = rubDe(l.cod, l.tab, l.per); if (!r) faltam.add(l.cod + "|" + l.tab);
-      const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
-      emp.push([l.per, r ? `${r.tp} - ${XML_TP_RUBR[r.tp] || ""}`.replace(/ - $/, "") : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "SIM" : "NÃO",
-        e.nrEmp, l.estNr, l.lot, l.cat, e.cpf, e.indAp, e.indRetif, e.id,
-        c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : ""]);
-    }));
-    if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com tabela de rubricas (S-1010) e alíquotas (S-5011)", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
+    const somaRem = new Map();   // empregador|apuração|competência -> remuneração do S-1200
+    remuns.forEach(e => {
+      const chaveRem = [e.nrEmp, e.indAp, e.perEv].join("|");
+      if (!somaRem.has(chaveRem)) somaRem.set(chaveRem, { rem: 0, semTab: 0, trabs: new Set() });
+      const acc = somaRem.get(chaveRem); acc.trabs.add(e.cpf);
+      const t = estado.trab.get(e.cpf) || {};
+      e.linhas.forEach(l => {
+        const r = rubDe(l.cod, l.tab, l.per); if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
+        else if (r.tp === "1" && XML_INC_BASE.has(r.incCP)) acc.rem += l.val;
+        const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
+        emp.push([l.per, r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "SIM" : "NÃO",
+          e.nrEmp, l.estNr, l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
+          c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
+      });
+    });
+    if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
 
-    // 2) Tabela de rubricas
+    // 2) Conferência: remuneração do S-1200 x base do S-5011 (válidos = recibo mais recente)
+    const somaBase = new Map();
+    css.forEach(c => { const k = [c.nrEmp, c.indAp, c.per].join("|"); somaBase.set(k, (somaBase.get(k) || 0) + c.baseTotal); });
+    const conf = []; let divergencias = 0;
+    [...new Set([...somaRem.keys(), ...somaBase.keys()])].forEach(k => {
+      const [nrEmp, indAp, per] = k.split("|"), a = somaRem.get(k), b = somaBase.get(k);
+      const rem = a ? xMoeda(a.rem) : null, base = b !== undefined ? xMoeda(b) : null;
+      let sit, dif = null;
+      if (rem === null) sit = "Só no S-5011"; else if (base === null) sit = "Sem S-5011";
+      else { dif = xMoeda(rem - base); sit = Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"; }
+      if (sit !== "Confere") divergencias++;
+      conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
+        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : ""]);
+    });
+    conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
+    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência S-1200 × S-5011", sub: "Remuneração do cruzamento contra a base do S-5011, por competência", cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010"],
+      rows: conf, num: new Set(["Remuneração S-1200", "Base S-5011", "Diferença", "Valor sem S-1010"]), arquivo: "Conferencia S-1200 x S-5011" });
+
+    // 3) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
-      .map(r => [r.cod, r.tab, r.ini, r.fim, r.desc, r.nat, r.tp ? `${r.tp} - ${XML_TP_RUBR[r.tp] || ""}`.replace(/ - $/, "") : "", r.incCP, r.incIRRF, r.incFGTS, r.id]);
+      .map(r => [r.cod, r.tab, r.ini, r.fim, r.desc, r.nat, xTp(r), r.incCP, r.incIRRF, r.incFGTS, r.id]);
     if (tr.length) conjuntos.push({ id: "s1010", titulo: "S-1010 · Tabela de rubricas", sub: "Uma linha por rubrica e validade", cols: ["Código Rubrica", "Tabela de Rubricas", "Início Validade", "Fim Validade", "Descrição Rubrica", "Natureza Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Incidência IRRF", "Incidência FGTS", "Id Evento"], rows: tr, num: new Set(), arquivo: "S-1010 Tabela de rubricas" });
 
-    // 3) S-5011
-    const cs = []; [...estado.cs.values()].forEach(c => c.linhas.forEach(l => cs.push([l.per, l.nrEmp, l.estNr, l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, c.id])));
-    cs.sort((a, b) => a[0].localeCompare(b[0]) || a[2].localeCompare(b[2]));
-    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Id Evento"], rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento"]), arquivo: "S-5011 Aliquotas" });
+    // 4) S-5011 (com as bases por tipo, para você conferir)
+    const nomesBase = [...new Set(css.flatMap(c => c.linhas.flatMap(l => Object.keys(l.bases))))].sort();
+    const cs = []; css.forEach(c => c.linhas.forEach(l => cs.push([l.per, l.nrEmp, l.estNr, l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recibo || ""])));
+    cs.sort((a, b) => xPerOrd(a[0]).localeCompare(xPerOrd(b[0])) || a[2].localeCompare(b[2]));
+    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
+      rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Base CP Total", ...nomesBase]), arquivo: "S-5011 Aliquotas e bases" });
 
-    // 4) Demais eventos
+    // 5) Demais eventos
     for (const [nome, mapa] of estado.outros){
-      const linhas = []; mapa.forEach(m => m.linhas.forEach(l => linhas.push(l)));
+      const linhas = []; mapa.forEach(m => { if (vivo(m)) m.linhas.forEach(l => linhas.push(l)); });
       if (!linhas.length) continue;
       const cols = []; const vistos = new Set(); linhas.forEach(l => { for (const k in l) if (!vistos.has(k)){ vistos.add(k); cols.push(k); } });
       const num = new Set(cols.filter(xEhValor));
@@ -4390,22 +4480,21 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       const [cod, desc] = XML_EVT[nome] || [nome, nome];
       conjuntos.push({ id: nome, titulo: `${cod} · ${desc}`, sub: "Tabela achatada do evento", cols, rows, num, arquivo: `${cod} ${desc}` });
     }
-    return { conjuntos, faltam: faltam.size, semCS };
+    return { conjuntos, faltam: faltam.size, semCS, divergencias, comparadas: conf.length };
   }
 
   /* ---------- XML eSocial: tela, exportação em planilha ou Parquet ---------- */
   const xmlStub = $("xmlStub"), progXml = criarProgresso("xml", xmlStub);
-  let xmlEstado = xNovoEstado(), xmlRes = { conjuntos: [], faltam: 0, semCS: 0 }, xmlLendo = false;
+  let xmlEstado = xNovoEstado(), xmlRes = { conjuntos: [], faltam: 0, semCS: 0, divergencias: 0, comparadas: 0 }, xmlLendo = false;
   const logXml = (m, t) => logTerminal(m, t || "log-info", "consoleLogXml");
   const xmlN = n => n.toLocaleString("pt-BR");
 
   function renderXml(){
     const evs = [...xmlEstado.lidos.values()].reduce((a, b) => a + b, 0);
     $("xmlKArq").textContent = xmlN(xmlEstado.arquivos); $("xmlKEv").textContent = xmlN(evs);
-    $("xmlKDup").textContent = xmlN(xmlEstado.descartados); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
-    const tipos = [...xmlEstado.lidos.entries()].sort((a, b) => b[1] - a[1]).map(([n, q]) => `${(XML_EVT[n] || [n])[0]}: ${xmlN(q)}`).join(" · ");
-    $("xmlTipos").textContent = tipos || "Nenhum evento lido ainda.";
+    $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
+    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração do S-1200 e a base do S-5011 (veja “Conferência S-1200 × S-5011”)`);
     if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “NÃO” em Linha Válida Auditoria; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
@@ -4452,7 +4541,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     if (!arquivos.length){ logXml("Nenhum XML encontrado nos arquivos enviados.", "log-erro"); toast("Nenhum XML encontrado."); xmlLendo = false; $("statusXml").textContent = "Aguardando"; $("statusXml").className = "badge"; return; }
     logXml(`Lendo ${xmlN(arquivos.length)} XML(s)…`);
     progXml.iniciar(arquivos.length);
-    const antes = xmlEstado.descartados;
+    const antes = xmlEstado.descartados + xmlEstado.porRecibo;
     for (const [k, f] of arquivos.entries()){
       progXml.arquivo(k, f.nome.split(" › ").pop());
       try { xmlEstado.arquivos++; xProcessarTexto(await f.ler(), xmlEstado); }
@@ -4463,7 +4552,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     progXml.fim(arquivos.length);
     $("xmlStatus").textContent = `${xmlN(xmlEstado.arquivos)} arquivo${xmlEstado.arquivos === 1 ? "" : "s"} lido${xmlEstado.arquivos === 1 ? "" : "s"}`;
     $("dropXml").classList.add("feito");
-    const dup = xmlEstado.descartados - antes;
+    const dup = xmlEstado.descartados + xmlEstado.porRecibo - antes;
     logXml(`Leitura concluída. ${dup ? xmlN(dup) + " evento(s) duplicado(s) ou substituído(s) por retificação removido(s)." : "Nenhuma duplicidade."}`, "log-sucesso");
     $("statusXml").textContent = "Pronto"; $("statusXml").className = "badge ok";
     xmlLendo = false;
@@ -4473,7 +4562,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   $("xmlArqs").addEventListener("change", e => { const fs = Array.from(e.target.files || []); e.target.value = ""; if (fs.length) lerXmls(fs); });
   $("xmlLimpar").addEventListener("click", () => {
     if (xmlLendo) return;
-    xmlEstado = xNovoEstado(); xmlRes = { conjuntos: [], faltam: 0, semCS: 0 };
+    xmlEstado = xNovoEstado(); xmlRes = { conjuntos: [], faltam: 0, semCS: 0, divergencias: 0, comparadas: 0 };
     $("xmlStatus").textContent = ""; $("dropXml").classList.remove("feito");
     $("statusXml").textContent = "Aguardando"; $("statusXml").className = "badge";
     logXml("Leitura limpa."); renderXml();
