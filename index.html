@@ -3839,6 +3839,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       const d = new Date((Number(limpo) - 25569) * 86400 * 1000); return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
     }
     limpo = limpo.replace(/[^0-9\/]/g, '');
+    if (/^\d{4}$/.test(limpo)) return `13/${limpo}`;
     const p = limpo.split('/');
     if (p.length === 2) return p[0].length === 4 ? `${p[1].padStart(2, '0')}/${p[0]}` : `${p[0].padStart(2, '0')}/${p[1]}`;
     return limpo;
@@ -3855,7 +3856,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
   function chaveCompDctf(c){ const [m, y] = String(c).split('/').map(Number); return (y || 0) * 100 + (m || 0); }
   function linhasSaldoDctf(){
-    return Array.from(dctfRegs.values()).sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR') || a.cnpj.localeCompare(b.cnpj) || chaveCompDctf(a.comp) - chaveCompDctf(b.comp));
+    return Array.from(dctfRegs.values()).filter(l => Math.abs(l.darf + l.retencao) >= 0.005).sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR') || a.cnpj.localeCompare(b.cnpj) || chaveCompDctf(a.comp) - chaveCompDctf(b.comp));
   }
   function renderTabelaSaldo(){
     const ls = linhasSaldoDctf();
