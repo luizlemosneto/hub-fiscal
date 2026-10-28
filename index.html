@@ -829,7 +829,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <span class="novo">Novo</span>
         <span class="sigla">XML</span>
         <h2>Leitura de XML do eSocial</h2>
-        <p>Lê os XMLs de qualquer evento (S-1010, S-1200, S-5011, S-5001…), inclusive dentro de ZIP, tira duplicados e retificados e exporta em planilha ou Parquet, com os eventos empilhados prontos para o módulo Rubricas.</p>
+        <p>Lê os XMLs de qualquer evento (S-1010, S-1200, S-5011, S-5001…), inclusive dentro de ZIP, tira duplicados e retificados e exporta em planilha ou Parquet, com o cruzamento de eventos pronto para o módulo Rubricas.</p>
         <div class="passos"><span>Qualquer evento</span><span>Abre ZIP</span><span>Sem duplicados</span><span>Planilha ou Parquet</span><span>Pronto para Rubricas</span></div>
         <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
       </a>
@@ -838,8 +838,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <a class="mod hero-card" href="#rubricas" data-go="rubricas">
         <span class="sigla">Rubricas</span>
         <h2>Mapeamento de rubricas</h2>
-        <p>Lê os eventos empilhados, junta as rubricas repetidas e sugere o ponto de cada uma pela natureza. Você confere, ajusta e baixa a planilha com patronal, GILRAT e outras entidades calculados.</p>
-        <div class="passos"><span>Eventos empilhados</span><span>Empresas</span><span>Revisão</span><span>Planilha de oportunidades</span></div>
+        <p>Lê o cruzamento de eventos, junta as rubricas repetidas e sugere o ponto de cada uma pela natureza. Você confere, ajusta e baixa a planilha com patronal, GILRAT e outras entidades calculados.</p>
+        <div class="passos"><span>Cruzamento de eventos</span><span>Empresas</span><span>Revisão</span><span>Planilha de oportunidades</span></div>
         <span class="abrir">Abrir módulo <span aria-hidden="true">›</span></span>
       </a>
       <a class="mod" href="#darf" data-go="darf">
@@ -890,12 +890,12 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     <div class="mod-head" id="rubTopo">
       <div class="mh-txt">
         <h1>Rubricas</h1>
-        <p class="lede">Envie os eventos empilhados e a lista de empresas. As rubricas são agrupadas, recebem um ponto sugerido e você só confere antes de gerar a planilha de oportunidades.</p>
+        <p class="lede">Envie o cruzamento de eventos e a lista de empresas. As rubricas são agrupadas, recebem um ponto sugerido e você só confere antes de gerar a planilha de oportunidades.</p>
       </div>
       <div class="arq-chips" id="arqChips" aria-label="Arquivos carregados">
-        <label class="chip-arq" id="chipEvt" for="rubEvt" tabindex="0" title="Trocar os eventos empilhados">
+        <label class="chip-arq" id="chipEvt" for="rubEvt" tabindex="0" title="Trocar o cruzamento de eventos">
           <span class="ico" id="chipEvtIco"></span>
-          <span class="t"><small>Eventos empilhados</small><b id="chipEvtNome">—</b></span>
+          <span class="t"><small>Cruzamento de eventos</small><b id="chipEvtNome">—</b></span>
           <span class="tr">trocar</span>
         </label>
         <label class="chip-arq" id="chipMais" for="rubEvtMais" tabindex="0" title="Adicionar outro parquet aos eventos já carregados">
@@ -922,7 +922,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <div class="slots">
         <label class="drop" id="rubDropEvt" tabindex="0" for="rubEvt">
           <span class="slot-tag">Obrigatório</span>
-          <p class="big">Eventos empilhados</p>
+          <p class="big">Cruzamento de eventos</p>
           <p>Arquivo .parquet (ou .xlsx) com as rubricas de todos os trabalhadores. Pode escolher vários de uma vez.</p>
           <span class="pick">Escolher eventos</span>
           <div class="slot-file" id="rubEvtNome"></div>
@@ -1250,7 +1250,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <li>Arquivos .zip são abertos automaticamente, inclusive zip dentro de zip e pastas internas; só os .xml são lidos.</li>
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Nos S-1200 vale o mais recente de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o mais recente de cada competência; nos S-5001, o mais recente de cada CPF e competência. Quem foi substituído por retificação não entra.</li>
-        <li>Eventos empilhados: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê.</li>
+        <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -2715,7 +2715,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     if (rub.lendo) return;
     let novos = (lista && lista.length ? [...lista] : [arg]).filter(Boolean);
     const ruins = novos.filter(f => !/\.(parquet|xlsx|xls)$/i.test(f.name));
-    if (ruins.length){ toast("Os eventos empilhados precisam estar em .parquet ou .xlsx."); novos = novos.filter(f => !ruins.includes(f)); }
+    if (ruins.length){ toast("O arquivo de cruzamento de eventos precisa estar em .parquet ou .xlsx."); novos = novos.filter(f => !ruins.includes(f)); }
     if (!novos.length) return;
     const mesmo = (a, b) => a.name === b.name && a.size === b.size;
     let todos = novos;
@@ -3313,7 +3313,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   // Recalcular: relê os eventos com as regras atuais e refaz tudo, mantendo os pontos ajustados
   async function recalcular(){
     if (rub.lendo) return;
-    if (!rub.dados){ toast("Envie os eventos empilhados para poder recalcular."); return; }
+    if (!rub.dados){ toast("Envie o cruzamento de eventos para poder recalcular."); return; }
     const btn = $("rubRecalc"), txtEl = $("rubRecalcTxt");
     btn.classList.add("carregando"); btn.disabled = true; txtEl.textContent = "Recalculando…";
     rub.lendo = true;
@@ -4359,7 +4359,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       return null;
     };
 
-    // 1) Eventos empilhados (S-1200 + tabela de rubricas + alíquotas do S-5011)
+    // 1) Cruzamento de eventos (S-1200 + tabela de rubricas + alíquotas do S-5011)
     const faltam = new Set(); let semCS = 0; const emp = [];
     [...estado.remun.values()].forEach(e => e.linhas.forEach(l => {
       const r = rubDe(l.cod, l.tab, l.per); if (!r) faltam.add(l.cod + "|" + l.tab);
@@ -4368,7 +4368,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         e.nrEmp, l.estNr, l.lot, l.cat, e.cpf, e.indAp, e.indRetif, e.id,
         c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : ""]);
     }));
-    if (emp.length) conjuntos.push({ id: "empilhados", titulo: "Eventos empilhados (para o módulo Rubricas)", sub: "S-1200 com tabela de rubricas (S-1010) e alíquotas (S-5011)", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Eventos empilhados" });
+    if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com tabela de rubricas (S-1010) e alíquotas (S-5011)", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
 
     // 2) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
