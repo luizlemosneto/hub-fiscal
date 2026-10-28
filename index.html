@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Extrator Fiscal</title>
+<title>Hub Fiscal & Previdenciário</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Inter:wght@200;300&display=swap" rel="stylesheet">
@@ -408,6 +408,17 @@ table.rt{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%
 
 .tbtn.carregando svg{animation:spin .9s linear infinite}
 .tbtn:disabled{opacity:.65;cursor:wait}
+/* ===== Marca e botão "Voltar ao menu" ===== */
+.brand{background:linear-gradient(100deg,var(--ink) 0%,var(--ink) 55%,var(--accent) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:1.12rem;letter-spacing:-.02em;white-space:nowrap}
+.brand:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:8px}
+.ghost-btn.back{display:inline-flex;align-items:center;gap:8px;padding:8px 16px 8px 12px;font-weight:600;color:var(--ink);
+  background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 8px 20px -14px var(--glow);transition:color .25s,border-color .25s,background .25s,box-shadow .3s,transform .3s var(--ease)}
+.ghost-btn.back svg{width:16px;height:16px;flex:none;transition:transform .3s var(--ease)}
+.ghost-btn.back:hover{color:var(--accent-ink);border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 12px 26px -12px var(--glow);transform:translateX(-3px)}
+.ghost-btn.back:hover svg{transform:translateX(-3px)}
+.ghost-btn.back:active{transform:translateX(-3px) scale(.96)}
+@media (max-width:560px){.brand{font-size:.95rem}.ghost-btn.back{padding:8px 12px 8px 10px;font-size:.84rem}.topnav{gap:10px}}
 /* ===== Transições e movimento ===== */
 .wrap{transition:max-width .5s var(--ease)}
 .brandwrap{display:inline-flex;align-items:center}
@@ -758,20 +769,20 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 <div class="wrap">
   <nav class="topnav">
     <div class="brandwrap" id="brandwrap">
-      <button class="seta" id="backArrow" type="button" aria-label="Voltar aos módulos" aria-hidden="true" tabindex="-1">
+      <button class="seta" id="backArrow" type="button" aria-label="Voltar ao menu" aria-hidden="true" tabindex="-1">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
       </button>
-      <a class="brand" href="#" id="brand">Extrator Fiscal</a>
+      <a class="brand" href="#" id="brand">Hub Fiscal & Previdenciário</a>
     </div>
     <div class="nav-right">
-      <button class="ghost-btn back" id="backBtn" type="button" hidden>Voltar aos módulos</button>
+      <button class="ghost-btn back" id="backBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5"/><path d="M11 18l-6-6 6-6"/></svg><span>Voltar ao menu</span></button>
       <button class="ghost-btn" id="themeBtn" type="button">Tema escuro</button>
     </div>
   </nav>
 
   <!-- Página inicial -->
   <main id="viewHome">
-    <h1>Extrator Fiscal</h1>
+    <h1>Hub Fiscal & Previdenciário</h1>
     <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
     <div class="mods">
       <a class="mod hero-card" href="#rubricas" data-go="rubricas">
@@ -887,7 +898,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     <details class="how">
       <summary>Como o mapeamento funciona</summary>
       <ol>
-        <li>Entram só proventos (tipo 1) com incidência 11 ou 12 e descontos (tipo 2) com incidência 00, 31 ou 32, dos últimos 5 anos. Só entram as linhas com “Linha Válida Auditoria” igual a “SIM”.</li>
+        <li>Entram só proventos (tipo 1) com incidência 11, 12, 14 ou 15 e descontos (tipo 2) com incidência 00, 31 ou 32, dos últimos 5 anos. Só entram as linhas com “Linha Válida Auditoria” igual a “SIM”.</li>
         <li>As rubricas repetidas são juntadas por descrição, tipo, código e natureza: com código diferente, nunca soma. O ponto sugerido vem da natureza da rubrica na tabela de temas (coluna de provento ou de desconto). Proventos com incidência 12 vão para “RAT Sem Exposição ao Risco Laboral”.</li>
         <li>Desconto só aceita tema com “Desconto” no nome: DSR em desconto não vai para RAT e multa de trânsito não é vale transporte. Regras pelo nome da rubrica valem sobre a natureza. Provisão nunca entra: é retirada na leitura. Nos descontos: INSS, IRRF/IR, vale transporte (VT, transporte), vale alimentação/refeição (VR, VA, cesta básica) e plano médico/odonto/coparticipação/saúde vão para o ponto de cada um. DSR (em qualquer parte do nome), descanso, repouso e ausência (ou ausência justificada) vão para RAT Sem Exposição ao Risco Laboral, em proventos e em descontos. Nos proventos, licença e 13º também vão para o RAT; transporte e alimentação vão para Auxílio Vale Transporte e Auxílio Alimentação; bônus, prêmio e gratificação vão para Prêmios e Bonificações. Provento com “férias” e tudo que for incidência 12 vão direto para RAT Sem Exposição ao Risco Laboral, na frente das demais regras. Hora extra noturna e prêmio/gratificação de função nunca entram nas outras incidências.</li>
         <li>A aba Revisão reúne tudo que está como Não oportunidade. Para aproveitar uma rubrica, escolha um ponto e ela vai para Com ponto. Para descartar, use o lixinho: ela vai para as abas Não oportunidade e Lixeira (onde dá para Retomar). A aba Não oportunidade começa zerada e só recebe o que você joga fora.</li>
@@ -1884,9 +1895,9 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         $("dropPick").textContent = m.pick;
         input.setAttribute("accept", m.aceita);
         $("howList").innerHTML = m.como.map(t => `<li>${esc(t)}</li>`).join("");
-        document.title = `${m.titulo} · Extrator Fiscal`;
+        document.title = `${m.titulo} · Hub Fiscal & Previdenciário`;
       } else {
-        document.title = v === "rubricas" ? "Rubricas · Extrator Fiscal" : VISTAS_HUB[v] ? `${VISTAS_HUB[v].titulo} · Extrator Fiscal` : "Extrator Fiscal";
+        document.title = v === "rubricas" ? "Rubricas · Hub Fiscal & Previdenciário" : VISTAS_HUB[v] ? `${VISTAS_HUB[v].titulo} · Hub Fiscal & Previdenciário` : "Hub Fiscal & Previdenciário";
       }
       if (typeof sairFoco === "function") sairFoco();
       document.querySelector(".wrap").classList.toggle("wide", v === "rubricas");
@@ -2470,7 +2481,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         const tp = tipoTxt.startsWith("1") ? "P" : tipoTxt.startsWith("2") ? "D" : "";
         if (!tp){ info.foraTipo++; continue; }
         const inc = digitos2(r[C.inc]);
-        if (tp === "P" ? !(inc === "11" || inc === "12") : !(inc === "00" || inc === "31" || inc === "32")){ info.foraInc++; continue; }
+        if (tp === "P" ? !(inc === "11" || inc === "12" || inc === "14" || inc === "15") : !(inc === "00" || inc === "31" || inc === "32")){ info.foraInc++; continue; }
         const { mes, ano } = mesAnoRub(r[C.per]);
         if (!dentroRub(ano, mes, corte)){ info.foraJanela++; continue; }
         const valor = convRub(r[C.val]);
