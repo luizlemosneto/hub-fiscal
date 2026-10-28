@@ -1194,7 +1194,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <li>De cada PDF saem o nome do contribuinte, o CNPJ e o período de apuração. O saldo do DARF é o terceiro valor depois de “Pagamento (DARF pago)” e a retenção é o terceiro valor depois de “Retenção”. PDFs da mesma competência são somados.</li>
         <li>Da planilha base (aba “Totalizadores” ou a primeira) saem as colunas “Competência” e “Crédito na competência”, somadas por competência.</li>
         <li>Diferença = crédito da planilha − (DARF + retenção). Acima de R$ 1,00 é Divergência; até R$ 1,00 é Retificações. Competências de um lado só aparecem como “Somente na planilha base” ou “Somente na DCTFWeb”.</li>
-        <li>No modo saldo disponível, DARF e retenção de todos os PDFs são somados e a planilha sai com as abas Retenção Disponível e Saldo Disponível por empresa.</li>
+        <li>No modo saldo disponível, DARF e retenção de todos os PDFs são somados e PDFs duplicados (mesmo arquivo, ou mesmo CNPJ, competência e valores) são ignorados, e a planilha sai com as colunas Empresa, CNPJ, Competência, Saldo Excedente e Retenção Excedente.</li>
       </ol>
     </details>
 
@@ -1209,6 +1209,19 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       <div class="kpi"><small>Total saldo disponível</small><b id="saldoMagicoDarf">R$ 0,00</b></div>
       <div class="kpi"><small>Total retenção disponível</small><b id="saldoMagicoRetencao">R$ 0,00</b></div>
     </div>
+
+    <section id="tabelaSaldoGeral" hidden>
+      <div class="sec-head">
+        <h2 class="sec">Saldo disponível por competência</h2>
+        <span class="hint" id="resumoTabelaSaldo">Aguardando processamento</span>
+      </div>
+      <div class="tablebox">
+        <table id="tabelaSaldoDctf">
+          <thead><tr><th>Empresa</th><th>CNPJ</th><th>Competência</th><th class="num">Saldo excedente</th><th class="num">Retenção excedente</th></tr></thead>
+          <tbody id="tabelaCorpoSaldo"><tr><td colspan="5" class="empty">Carregue os PDFs para ver o saldo por competência.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 
     <section id="tabelaConfrontoGeral">
       <div class="sec-head">
@@ -3785,6 +3798,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   /* ---------- DCTFWeb: confronto e saldo disponível ---------- */
   let dctfMap = new Map(); let planMapDctf = new Map(); let confrontosDctf = [];
   let modoSaldoDisponivel = false;
+  let dctfRegs = new Map(); let dctfVistos = new Set();
   const dctfStub = $("dctfStub"), progDctf = criarProgresso("dctf", dctfStub);
   function statusDctf(txt, cls){ const el = $("statusGeralDctf"); el.innerText = txt; el.className = "badge" + (cls ? " " + cls : ""); }
 
@@ -3794,6 +3808,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     $("dctfSlots").classList.toggle("um", modoSaldoDisponivel);
     $("telemetriaDctfGeral").hidden = modoSaldoDisponivel;
     $("tabelaConfrontoGeral").hidden = modoSaldoDisponivel;
+    $("tabelaSaldoGeral").hidden = !modoSaldoDisponivel;
     $("painelMagicoSaldos").hidden = !modoSaldoDisponivel;
     if (modoSaldoDisponivel) {
       $("btnExportarDctf").innerText = "Exportar saldo disponível";
@@ -3834,7 +3849,22 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     dctfMap.forEach(v => { tD += v.darf; tR += v.retencao; });
     $('saldoMagicoDarf').innerText = "R$ " + utilFormataMoeda(tD);
     $('saldoMagicoRetencao').innerText = "R$ " + utilFormataMoeda(tR);
+    renderTabelaSaldo();
     if (triggerRain && (tD > 0 || tR > 0)) iniciarChuvaDeCifraos();
+  }
+
+  function chaveCompDctf(c){ const [m, y] = String(c).split('/').map(Number); return (y || 0) * 100 + (m || 0); }
+  function linhasSaldoDctf(){
+    return Array.from(dctfRegs.values()).sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR') || a.cnpj.localeCompare(b.cnpj) || chaveCompDctf(a.comp) - chaveCompDctf(b.comp));
+  }
+  function renderTabelaSaldo(){
+    const ls = linhasSaldoDctf();
+    $('tabelaCorpoSaldo').innerHTML = ls.length ? ls.map(l => `<tr><td>${esc(removerCaps(l.empresa))}</td><td>${esc(removerCaps(l.cnpj))}</td><td>${esc(removerCaps(l.comp))}</td><td class="num">${utilFormataMoeda(l.darf)}</td><td class="num">${utilFormataMoeda(l.retencao)}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">Carregue os PDFs para ver o saldo por competência.</td></tr>';
+    $('resumoTabelaSaldo').innerText = ls.length ? `${ls.length} linhas` : 'Aguardando processamento';
+  }
+  async function hashArquivoDctf(buffer){
+    try { const h = new Uint8Array(await crypto.subtle.digest('SHA-256', buffer)); return Array.from(h, b => b.toString(16).padStart(2, '0')).join(''); }
+    catch (e) { return null; }
   }
 
   async function lerPdfsDctf(lista) {
@@ -3843,13 +3873,19 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     $('statusPdfsDctf').innerText = `${arquivos.length} PDF(s) lidos.`;
     statusDctf('Processando PDFs', 'run');
     logTerminal(`Extraindo ${arquivos.length} PDF(s)...`, 'log-info', 'consoleLogDctf');
-    dctfMap.clear();
+    dctfMap.clear(); dctfRegs.clear(); dctfVistos.clear();
+    let duplicados = 0;
     progDctf.iniciar(arquivos.length);
 
     for (const [k, arquivo] of arquivos.entries()) {
       progDctf.arquivo(k, arquivo.name);
       try {
         const buffer = await arquivo.arrayBuffer();
+        const hash = await hashArquivoDctf(buffer);
+        if (hash) {
+          if (dctfVistos.has(hash)) { duplicados++; logTerminal(`PDF duplicado ignorado: ${arquivo.name}`, 'log-info', 'consoleLogDctf'); continue; }
+          dctfVistos.add(hash);
+        }
         const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
         let tk = [];
         for (let p = 1; p <= pdf.numPages; p++) tk = tk.concat((await (await pdf.getPage(p)).getTextContent()).items.map(i => i.str.trim()).filter(Boolean));
@@ -3868,6 +3904,12 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
           }
         }
         if (p) {
+          const ass = [c, p, sD.toFixed(2), sR.toFixed(2)].join('|');
+          if (dctfVistos.has(ass)) { duplicados++; logTerminal(`PDF duplicado ignorado (mesmo CNPJ, competência e valores): ${arquivo.name}`, 'log-info', 'consoleLogDctf'); continue; }
+          dctfVistos.add(ass);
+          const rk = c + '|' + p;
+          if (dctfRegs.has(rk)) { const r = dctfRegs.get(rk); r.darf += sD; r.retencao += sR; r.empresa = e || r.empresa; }
+          else dctfRegs.set(rk, { empresa: e, cnpj: c, comp: p, darf: sD, retencao: sR });
           if (dctfMap.has(p)) { const a=dctfMap.get(p); dctfMap.set(p, {cnpj: c||a.cnpj, empresa: e||a.empresa, darf: a.darf+sD, retencao: a.retencao+sR}); }
           else dctfMap.set(p, {cnpj: c, empresa: e, darf: sD, retencao: sR});
         }
@@ -3876,6 +3918,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     progDctf.fim(arquivos.length);
     $('dropPdfsDctf').classList.add('feito');
     $('indicadorPDFs').innerText = dctfMap.size;
+    if (duplicados) logTerminal(`${duplicados} PDF(s) duplicado(s) removido(s).`, 'log-sucesso', 'consoleLogDctf');
     logTerminal(`PDFs lidos. ${dctfMap.size} competências mapeadas.`, 'log-sucesso', 'consoleLogDctf');
 
     if (modoSaldoDisponivel) {
@@ -3971,28 +4014,10 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     const wb = XLSX.utils.book_new();
 
     if (modoSaldoDisponivel) {
-      const empMap = new Map();
-      dctfMap.forEach(v => {
-         const key = v.cnpj + "|" + v.empresa;
-         if (!empMap.has(key)) empMap.set(key, { darf: 0, retencao: 0 });
-         empMap.get(key).darf += v.darf;
-         empMap.get(key).retencao += v.retencao;
-      });
-
-      const retData = [["Nome da Empresa", "Cnpj", "Saldo"].map(removerCaps)];
-      const darfData = [["Nome da Empresa", "Cnpj", "Saldo"].map(removerCaps)];
-
-      empMap.forEach((v, k) => {
-         const [cnpj, emp] = k.split("|");
-         retData.push([removerCaps(emp), removerCaps(cnpj), v.retencao]);
-         darfData.push([removerCaps(emp), removerCaps(cnpj), v.darf]);
-      });
-
-      const wsRet = XLSX.utils.aoa_to_sheet(retData); formataAbaExcelLimpissima(wsRet);
-      const wsDarf = XLSX.utils.aoa_to_sheet(darfData); formataAbaExcelLimpissima(wsDarf);
-
-      XLSX.utils.book_append_sheet(wb, wsRet, removerCaps("Retenção Disponível"));
-      XLSX.utils.book_append_sheet(wb, wsDarf, removerCaps("Saldo Disponível"));
+      const data = [["Empresa", "CNPJ", "Competência", "Saldo Excedente", "Retenção Excedente"].map(removerCaps)];
+      linhasSaldoDctf().forEach(l => data.push([removerCaps(l.empresa), removerCaps(l.cnpj), removerCaps(l.comp), l.darf, l.retencao]));
+      const ws = XLSX.utils.aoa_to_sheet(data); formataAbaExcelLimpissima(ws);
+      XLSX.utils.book_append_sheet(wb, ws, removerCaps("Saldo Disponível"));
       XLSX.writeFile(wb, "Hub fiscal & Tributário - Saldo Disponível.xlsx");
       logTerminal("Relatório de Saldos Magnéticos exportado com sucesso.", "log-sucesso", "consoleLogDctf");
       toast("Planilha gerada: Hub fiscal & Tributário - Saldo Disponível.xlsx");
