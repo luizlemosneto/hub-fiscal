@@ -422,19 +422,6 @@ table.rt{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%
 /* ===== Transições e movimento ===== */
 .wrap{transition:max-width .5s var(--ease)}
 .brandwrap{display:inline-flex;align-items:center}
-.seta{flex:none;width:0;height:34px;margin-right:0;padding:0;border:0;border-radius:50%;overflow:hidden;display:grid;place-items:center;cursor:pointer;
-  background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);opacity:0;transform:translateX(-16px) scale(.5) rotate(-40deg);
-  transition:width .5s var(--ease),margin-right .5s var(--ease),opacity .3s,transform .6s cubic-bezier(.34,1.56,.64,1),color .2s,background .25s,box-shadow .25s}
-.brandwrap.com-seta .seta{width:34px;margin-right:12px;opacity:1;transform:none}
-.seta svg{width:17px;height:17px;transition:transform .35s var(--ease)}
-.seta:hover{color:var(--accent-ink);background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:inset 0 0 0 1px transparent,0 10px 22px -10px var(--glow)}
-.seta:hover svg{transform:translateX(-3px)}
-.brandwrap.com-seta .seta:active{transform:scale(.88)}
-.seta:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.seta.ping{animation:ping .9s var(--ease) .35s 1}
-.seta.vai svg{animation:dispara .22s cubic-bezier(.4,0,1,1) forwards}
-@keyframes ping{0%{box-shadow:inset 0 0 0 1px var(--line),0 0 0 0 color-mix(in srgb,var(--accent) 50%,transparent)}100%{box-shadow:inset 0 0 0 1px var(--line),0 0 0 14px transparent}}
-@keyframes dispara{to{transform:translateX(-20px);opacity:0}}
 
 .brand i{animation:pulaLogo 5s ease-in-out infinite;transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .3s}
 .brand:hover i{transform:rotate(16deg) scale(1.14);box-shadow:0 12px 24px -8px var(--glow)}
@@ -769,9 +756,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 <div class="wrap">
   <nav class="topnav">
     <div class="brandwrap" id="brandwrap">
-      <button class="seta" id="backArrow" type="button" aria-label="Voltar ao menu" aria-hidden="true" tabindex="-1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
-      </button>
       <a class="brand" href="#" id="brand">Hub Fiscal & Previdenciário</a>
     </div>
     <div class="nav-right">
@@ -1859,14 +1843,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   let destino = "home", navToken = 0;
   const elDaVista = v => v === "home" ? viewHome : v === "rubricas" ? viewRub : VISTAS_HUB[v] ? VISTAS_HUB[v].el : viewMod;
 
-  // Seta ao lado da marca: abre (largura, giro e brilho) quando se está dentro de um módulo
-  function atualizarSeta(){
-    const mostrar = vista !== "home", seta = $("backArrow");
-    $("brandwrap").classList.toggle("com-seta", mostrar);
-    seta.tabIndex = mostrar ? 0 : -1; seta.setAttribute("aria-hidden", mostrar ? "false" : "true");
-    if (mostrar){ seta.classList.remove("ping"); void seta.offsetWidth; seta.classList.add("ping"); }
-  }
-
   function irPara(v, empurrar, direto){
     if (!["home","rubricas","darf","perdcomp","base"].includes(v) && !VISTAS_HUB[v]) v = "home";
     const de = vista, atual = elDaVista(de), indo = v !== "home", token = ++navToken;
@@ -1901,7 +1877,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       }
       if (typeof sairFoco === "function") sairFoco();
       document.querySelector(".wrap").classList.toggle("wide", v === "rubricas");
-      atualizarSeta();
       window.scrollTo({ top: 0 });
       render();
       if (v === "rubricas" && typeof renderRub === "function") renderRub();
@@ -1925,12 +1900,6 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   }));
   $("brand").addEventListener("click", e => { e.preventDefault(); irPara("home", true); });
   $("backBtn").addEventListener("click", () => irPara("home", true));
-  $("backArrow").addEventListener("click", () => {
-    const seta = $("backArrow");
-    if (reduzMov){ irPara("home", true); return; }
-    seta.classList.add("vai");
-    setTimeout(() => { seta.classList.remove("vai"); irPara("home", true); }, 190);
-  });
 
   // Luz que segue o mouse (cards e área de envio)
   document.querySelectorAll(".mod").forEach(el => {
