@@ -151,6 +151,23 @@ h2.sec{font-family:var(--display);font-weight:700;font-size:1.45rem;letter-spaci
 .sec-head .hint{color:var(--muted);font-size:.9rem}
 #viewXml .sec-head .hint{margin-left:auto}
 #xmlExportarTudo{padding:7px 16px;font-size:.85rem}
+#viewXml .sec-head{align-items:center;gap:10px 12px}
+.btn-vai{position:relative;display:inline-flex;align-items:center;gap:9px;border:0;border-radius:999px;padding:9px 20px 9px 22px;cursor:pointer;overflow:hidden;isolation:isolate;
+  font:600 .92rem var(--body);color:#1C1C1E;background:linear-gradient(120deg,#FF9F0A,#FFC15A 55%,#FF9F0A);background-size:200% 100%;
+  box-shadow:0 8px 22px -8px rgba(255,159,10,.75),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .25s var(--ease),box-shadow .25s,background-position .6s var(--ease)}
+.btn-vai::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%);transform:translateX(-120%);animation:vai-brilho 3.4s ease-in-out 1s infinite}
+@keyframes vai-brilho{40%,100%{transform:translateX(120%)}}
+.btn-vai svg{width:20px;height:20px;transition:transform .3s var(--ease)}
+.btn-vai:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 14px 28px -10px rgba(255,159,10,.9),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn-vai:hover svg{transform:translateX(5px)}
+.btn-vai:active{transform:translateY(0) scale(.97)}
+.btn-vai:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.btn-vai:disabled{opacity:.6;cursor:progress}
+/* A transição: a tela se desfaz em grãos e a próxima se refaz (filtro de ruído com deslocamento animado) */
+.dissolve-onda{position:fixed;z-index:95;pointer-events:none;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,159,10,.55),rgba(255,159,10,.18) 45%,transparent 70%);animation:dissolve-onda 1.1s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes dissolve-onda{from{transform:scale(.2);opacity:1}to{transform:scale(70);opacity:0}}
+@media (prefers-reduced-motion: reduce){.btn-vai::before{animation:none}}
 .files{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;border:1px solid var(--line)}
 .file{position:relative;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto auto;gap:14px 18px;align-items:end;padding:18px 20px;border-top:1px solid var(--line);transition:background .2s}
 .file:first-child{border-top:0}
@@ -1631,7 +1648,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="sec-head">
         <h2 class="sec">O que dá para exportar</h2>
         <span class="hint" id="xmlResumo">Aguardando arquivos</span>
-        <button class="btn primary" type="button" id="xmlExportarTudo" hidden>Exportar todos (ZIP)</button>
+        <button class="btn ghost" type="button" id="xmlExportarTudo" hidden>Exportar todos (ZIP)</button>
+        <button class="btn-vai" type="button" id="xmlParaRubricas" hidden><span>Seguir para Rubricas</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="tablebox">
         <table class="xml-tab">
@@ -2149,6 +2167,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
 
   async function procTab(file, fnSel, fnProc, aoProgredir){
+    if (file.__ds){   // conjunto entregue direto da memória (cruzamento do módulo XML): sem arquivo no meio
+      const ds = file.__ds, colsReq = fnSel(ds.cols), idx = colsReq.map(c => ds.cols.indexOf(c)), tt = ds.rows.length, FATIA = 50000;
+      for (let i = 0; i < tt; i += FATIA){
+        const fim = Math.min(i + FATIA, tt);
+        fnProc(ds.rows.slice(i, fim).map(r => Object.fromEntries(colsReq.map((c, j) => [c, r[idx[j]]]))));
+        if (aoProgredir) aoProgredir(fim / tt, fim, tt);
+        await pausa();
+      }
+      return tt;
+    }
     if (/\.parquet$/i.test(file.name)){
       const motor = await garantirMotorParquet();
       const ab = await file.arrayBuffer();
@@ -5376,6 +5404,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       `<tr><td><b>${esc(c.titulo)}</b><div class="sub-t">${esc(c.sub)}</div></td><td class="num">${xmlN(c.rows.length)}</td><td class="num">${xmlN(c.cols.length)}</td><td class="xml-acao"><button type="button" class="btn primary" data-i="${i}">Exportar</button></td></tr>`).join("")
       : '<tr><td colspan="4" class="empty">Envie os XMLs para ver o que dá para exportar.</td></tr>';
     $("xmlExportarTudo").hidden = !xmlRes.conjuntos.length;
+    $("xmlParaRubricas").hidden = !xmlRes.conjuntos.some(c => c.id === "cruzamento");
     $("xmlResumo").textContent = xmlRes.conjuntos.length ? `${xmlRes.conjuntos.length} conjunto${xmlRes.conjuntos.length === 1 ? "" : "s"}` : "Aguardando arquivos";
   }
 
@@ -5564,6 +5593,46 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     finally { xmlExportandoTudo = false; btn.disabled = false; btn.textContent = txt0; }
   }
   $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
+
+  /* ---------- Do cruzamento direto para as Rubricas, com a tela se desfazendo ---------- */
+  function filtroDissolve(){
+    if (document.getElementById("dissolveF")) return;
+    document.body.insertAdjacentHTML("beforeend", '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="dissolveF" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".014 .022" numOctaves="2" seed="7" result="r"/><feDisplacementMap id="dissolveMap" in="SourceGraphic" in2="r" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
+  }
+  // anima o deslocamento (0 = inteiro, grande = em grãos) junto com a opacidade
+  function desfazer(el, de, ate, ms, opac, easing){
+    return new Promise(fim => {
+      const mapa = document.getElementById("dissolveMap"), t0 = performance.now();
+      el.style.filter = "url(#dissolveF)"; el.style.willChange = "filter, opacity";
+      const passo = agora => {
+        const f = Math.min(1, (agora - t0) / ms), e = easing(f);
+        mapa.setAttribute("scale", (de + (ate - de) * e).toFixed(1)); el.style.opacity = (opac[0] + (opac[1] - opac[0]) * e).toFixed(3);
+        if (f < 1) requestAnimationFrame(passo); else fim();
+      };
+      requestAnimationFrame(passo);
+    });
+  }
+  let xmlIndo = false;
+  async function seguirParaRubricas(){
+    const ds = xmlRes.conjuntos.find(c => c.id === "cruzamento"); if (!ds || xmlIndo || xmlLendo) return;
+    if (rub.lendo){ toast("As Rubricas ainda estão lendo um arquivo. Aguarde um instante."); return; }
+    xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
+    const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
+    const tela = elDaVista(vista), r = btn.getBoundingClientRect();
+    try {
+      if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
+      filtroDissolve();
+      const onda = document.createElement("div"); onda.className = "dissolve-onda"; onda.style.left = (r.left + r.width / 2) + "px"; onda.style.top = (r.top + r.height / 2) + "px"; document.body.appendChild(onda); setTimeout(() => onda.remove(), 1200);
+      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a tela se desfaz
+      await desfazer(tela, 0, 380, 780, [1, 0], f => f * f * (3 - 2 * f));
+      irPara("rubricas", true, true);
+      tela.style.filter = tela.style.opacity = tela.style.willChange = "";
+      const nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
+      await desfazer(nova, 380, 0, 900, [0, 1], f => 1 - Math.pow(1 - f, 3));
+      nova.style.filter = nova.style.opacity = nova.style.willChange = "";
+    } finally { xmlIndo = false; btn.disabled = false; }
+  }
+  $("xmlParaRubricas").addEventListener("click", seguirParaRubricas);
   $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i]); });
   renderXml();
 
