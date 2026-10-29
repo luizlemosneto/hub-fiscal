@@ -1604,7 +1604,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
         <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 não pode ser classificada e fica como “Corrompido” em Validade do evento (desconsiderada pelo módulo Rubricas); as demais ficam “Válido”. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
-        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 13 ou 14 na tabela S-1010, categorias que não começam com 1 são ignoradas por completo, no S-1200 e no S-5011) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
+        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 e das verbas rescisórias (S-2299 e S-2399) com incidência 11, 12, 13 ou 14 na tabela S-1010, categorias que não começam com 1 são ignoradas por completo, no S-1200 e no S-5011) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -4925,7 +4925,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
   function xNovoEstado(){
     return { lidos: new Map(), ids: new Set(), descartados: 0, rubricas: [], remun: new Map(), cs: new Map(), outros: new Map(), invalidos: 0, arquivos: 0,
-      fech: new Map(), reabre: new Map(), trab: new Map(), emps: new Map(), retificados: new Set(), porRecibo: 0 };
+      fech: new Map(), reabre: new Map(), trab: new Map(), emps: new Map(), retificados: new Set(), porRecibo: 0, resc: new Map() };
   }
 
   // Achata um evento qualquer: cada ramo repetido vira uma linha, herdando os campos dos níveis acima
@@ -5010,6 +5010,23 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       return;
     }
 
+    // S-2299 e S-2399: as verbas rescisórias também entram na base do S-5011, então vão para o confronto (e o evento segue para a tabela achatada)
+    if (nome === "evtDeslig" || nome === "evtTSVTermino"){
+      const cpf = xDig(xAcha(ev, "cpfTrab")), cat = xAcha(ev, "codCateg"), dt = xAcha(ev, "dtDeslig") || xAcha(ev, "dtTerm"), mat = xAcha(ev, "matricula");
+      const linhas = [];
+      if (!cat || cat.startsWith("1")) for (const dm of xDesc(ev, ["dmDev"])){
+        const ind = xTxt(dm, "indPerApur") === "2" ? "2" : "1";
+        for (const el of xDesc(dm, ["ideEstabLot"])){
+          let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
+          const estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
+          const perApur = ind === "2" ? dt.slice(0, 4) : dt.slice(0, 7);
+          for (const v of xDesc(el, ["detVerbas", "itensRemun"]))
+            linhas.push({ per: perRef || perApur, perApur, ind, estNr, lot, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
+        }
+      }
+      if (linhas.length) xGuardarMaisRecente(estado.resc, [nome, nrEmp, cpf, mat, dt].join("|"), rank, { id, recibo, nome, cpf, dt, cat, nrEmp, linhas }, estado);
+    }
+
     // Eventos que também alimentam o cruzamento (e continuam saindo como tabela achatada)
     if (nome === "evtFechaEvPer" || nome === "evtReabreEvPer"){
       xGuardarMaisRecente(nome === "evtFechaEvPer" ? estado.fech : estado.reabre, [nrEmp, per].join("|"), rank, { id, recibo }, estado);
@@ -5059,7 +5076,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const conjuntos = [];
     // Quem foi retificado por um recibo mais novo não vale, mesmo que a data de geração empate ou venha trocada
     const vivo = e => !(e.recibo && estado.retificados.has(e.recibo));
-    const remuns = [...estado.remun.values()].filter(vivo), css = [...estado.cs.values()].filter(vivo);
+    const remuns = [...estado.remun.values()].filter(vivo), css = [...estado.cs.values()].filter(vivo), rescs = [...estado.resc.values()].filter(vivo);
     estado.porRecibo = (estado.remun.size - remuns.length) + (estado.cs.size - css.length);
 
     const porCod = new Map(), porCodTab = new Map();
@@ -5135,25 +5152,45 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       cols: ["Período", "Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Indicador Apuração", "Indicador Retificação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo", "Período Fechado (S-1299)"],
       rows: s1200, num: new Set(["Vlr Rubrica"]), arquivo: "S-1200 Remuneracao" });
 
-    // 2) Conferência: remuneração do S-1200 x base do S-5011 (válidos = recibo mais recente)
+    // 1c) As verbas rescisórias (S-2299 e S-2399), na mesma lógica da tabela do S-1200
+    const s2299 = [], somaResc = new Map();
+    rescs.forEach(e => {
+      const t = estado.trab.get(e.cpf) || {};
+      e.linhas.forEach(l => {
+        const chave = [e.nrEmp, l.ind, l.perApur].join("|");
+        if (!somaResc.has(chave)) somaResc.set(chave, { rem: 0, fora: new Map() });
+        const acc = somaResc.get(chave), r = rubDe(l.cod, l.tab, l.per);
+        const entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
+        if (entra === "Sim") acc.rem += l.val;
+        else if (entra === "Não"){ const k = `Rescisão · ${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
+        s2299.push([xCompOut(l.perApur), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, e.cpf, t.nome || "", e.nome === "evtDeslig" ? "S-2299" : "S-2399", e.dt, l.ind, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
+      });
+    });
+    s2299.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[5].localeCompare(y[5]));
+    if (s2299.length) conjuntos.push({ id: "s2299", titulo: "S-2299 e S-2399 · Verbas rescisórias", sub: "Uma linha por rubrica, só o mais recente de cada desligamento. A Conferência soma daqui as linhas com “Entra na base” = Sim",
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "CPF Trabalhador", "Nome Trabalhador", "Evento", "Data Desligamento", "Indicador Apuração", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
+      rows: s2299, num: new Set(["Vlr Rubrica"]), arquivo: "S-2299 e S-2399 Verbas rescisorias" });
+
+    // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
     css.forEach(c => { const k = [c.nrEmp, c.indAp, c.per].join("|"); somaBase.set(k, (somaBase.get(k) || 0) + c.baseTotal); });
     const conf = []; let divergencias = 0;
-    [...new Set([...somaRem.keys(), ...somaBase.keys()])].forEach(k => {
-      const [nrEmp, indAp, per] = k.split("|"), a = somaRem.get(k), b = somaBase.get(k);
-      const rem = a ? xMoeda(a.rem) : null, base = b !== undefined ? xMoeda(b) : null;
+    [...new Set([...somaRem.keys(), ...somaResc.keys(), ...somaBase.keys()])].forEach(k => {
+      const [nrEmp, indAp, per] = k.split("|"), a = somaRem.get(k), rs = somaResc.get(k), b = somaBase.get(k);
+      const rem = a ? xMoeda(a.rem) : (rs ? 0 : null), resc = rs ? xMoeda(rs.rem) : 0, tot = rem === null ? null : xMoeda(rem + resc), base = b !== undefined ? xMoeda(b) : null;
       let sit, dif = null;
-      if (rem === null) sit = "Só no S-5011"; else if (base === null) sit = "Sem S-5011";
-      else { dif = xMoeda(rem - base); sit = Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"; }
+      if (tot === null) sit = "Só no S-5011"; else if (base === null) sit = "Sem S-5011";
+      else { dif = xMoeda(tot - base); sit = Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"; }
       if (sit !== "Confere") divergencias++;
-      conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
-        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : "",
-        a ? xMoeda(a.total) : "", a && a.fora.size ? [...a.fora].map(([k, v]) => `${k}: ${xMoeda(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`).join(" | ") : ""]);
+      const fora = new Map([...(a ? a.fora : []), ...(rs ? rs.fora : [])]);
+      conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, resc, tot === null ? "" : tot, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
+        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : "", a ? xMoeda(a.total) : "", fora.size ? [...fora].map(([k, v]) => `${k}: ${xMoeda(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`).join(" | ") : ""]);
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
     conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
-    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência S-1200 × S-5011", sub: "Soma da tabela S-1200 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011", cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
-      rows: conf, num: new Set(["Remuneração S-1200", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 x S-5011" });
+    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299/S-2399) × S-5011", sub: "Soma das tabelas S-1200 e de verbas rescisórias (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
+      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299/S-2399)", "Total S-1200 + rescisórias", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
+      rows: conf, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299/S-2399)", "Total S-1200 + rescisórias", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
 
     // 3) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
@@ -5192,7 +5229,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("xmlKArq").textContent = xmlN(xmlEstado.arquivos); $("xmlKEv").textContent = xmlN(evs);
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
-    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração do S-1200 e a base do S-5011 (veja “Conferência S-1200 × S-5011”)`);
+    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299/S-2399) × S-5011”)`);
     if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
