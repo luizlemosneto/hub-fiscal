@@ -3266,7 +3266,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const subst = C.subst ? (parseInt(String(r[C.subst] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
         const oe = convRub(C.oe ? r[C.oe] : 0);
         const codTerc = C.codTerc ? Math.max(0, (parseInt(r[C.codTerc], 10) || 0) - (C.codSusp ? (parseInt(r[C.codSusp], 10) || 0) : 0)) : 0;
-        const grau0 = C.grau ? (parseInt(String(r[C.grau] ?? "").trim(), 10) || 0) : 0, grau = grau0 === 1 ? 0 : grau0;   // grau 1 = 0%: fica no agrupamento total; só 2, 3 e 4 têm linha própria
+        const grau = C.grau ? (parseInt(String(r[C.grau] ?? "").trim(), 10) || 0) : 0;   // o agrupamento é por grau de exposição (1, 2, 3 e 4 têm linha própria), nunca por CPF
         const lot = C.lot ? String(r[C.lot] ?? "").trim().replace(/\.0$/, "") : "";
         const fpas = C.fpas ? (parseInt(String(r[C.fpas] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
         const kOE = fpas + "|" + codTerc + "|" + oe;
@@ -5251,6 +5251,31 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (confLot.length) conjuntos.push({ id: "conferenciaLot", titulo: "Conferência por estabelecimento e lotação", sub: "S-1200 + S-2299 contra o S-5011, em cada estabelecimento e lotação (para achar onde a diferença está)",
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Número Inscrição Estabelecimento", "Código Lotação", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação"],
       rows: confLot, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença"]), arquivo: "Conferencia por estabelecimento e lotacao" });
+
+    // 2c) Cruzamento do S-5011: as bases segregadas por competência, estabelecimento, código de outras entidades, substituição patronal, grau de exposição, FAP e RAT, apontando divergências de códigos entre as lotações
+    const BASE_GRAU = { vrBcCp00: "1", vrBcCp15: "2", vrBcCp20: "3", vrBcCp25: "4" };
+    const attrs = l => [l.fpas, l.terc, l.susp, l.subst, l.fap, l.rat, l.ratAj].join("|");
+    const porEst = new Map();   // apuração|competência|estabelecimento -> o que há de diferente entre as lotações
+    css.forEach(c => c.linhas.forEach(l => { const k = [l.nrEmp, c.indAp, l.per, l.estNr].join("|"); if (!porEst.has(k)) porEst.set(k, { combos: new Set(), f: { FPAS: new Set(), "Código OE": new Set(), "Código OE suspenso": new Set(), "Substituição patronal": new Set(), FAP: new Set(), RAT: new Set(), "RAT ajustado": new Set() } });
+      const e = porEst.get(k); e.combos.add(attrs(l)); e.f.FPAS.add(l.fpas); e.f["Código OE"].add(l.terc); e.f["Código OE suspenso"].add(l.susp); e.f["Substituição patronal"].add(l.subst); e.f.FAP.add(l.fap); e.f.RAT.add(l.rat); e.f["RAT ajustado"].add(l.ratAj); }));
+    const seg = new Map();
+    css.forEach(c => c.linhas.forEach(l => {
+      const campos = Object.keys(l.bases).length ? Object.keys(l.bases) : ["vrBcCp00"];
+      campos.forEach(campo => {
+        const k = [l.nrEmp, c.indAp, l.per, l.estNr, attrs(l), campo].join("|");
+        if (!seg.has(k)) seg.set(k, { c, l, campo, base: 0, lots: new Set() });
+        const g = seg.get(k); g.base += l.bases[campo] || 0; if (l.lot !== "" && l.lot !== undefined) g.lots.add(l.lot);
+      });
+    }));
+    const cruz5011 = [...seg.values()].map(g => {
+      const l = g.l, e = porEst.get([l.nrEmp, g.c.indAp, l.per, l.estNr].join("|")), dif = Object.entries(e.f).filter(([, v]) => v.size > 1).map(([n]) => n);
+      return [xCompOut(l.per), g.c.indAp === "2" ? "13º salário" : "Mensal", xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.fpas, l.terc, l.susp, l.subst, BASE_GRAU[g.campo] || "", g.campo, l.fap, l.rat, l.ratAj, xMoeda(g.base),
+        [...g.lots].sort().join(", "), e.combos.size, dif.length ? "Sim" : "Não", dif.join(", "), g.c.id, g.c.recBase || g.c.recibo || ""];
+    });
+    cruz5011.sort((x, y) => xPerOrd(x[0].split("/").reverse().join("-")).localeCompare(xPerOrd(y[0].split("/").reverse().join("-"))) || x[4].localeCompare(y[4]) || String(x[5]).localeCompare(String(y[5])) || String(x[6]).localeCompare(String(y[6])) || String(x[9]).localeCompare(String(y[9])));
+    if (cruz5011.length) conjuntos.push({ id: "s5011cruz", titulo: "S-5011 · Cruzamento de bases por estabelecimento", sub: "Bases segregadas por competência, estabelecimento, código de outras entidades, substituição patronal, grau de exposição, FAP e RAT, com as divergências de códigos entre lotações",
+      cols: ["Período", "Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "FPAS", "Código OE", "Código OE Suspenso", "Substituição Patronal", "Grau Exposição", "Campo da Base", "FAP", "RAT", "RAT Ajustado", "Base CP", "Lotações", "Combinações no estabelecimento", "Divergência de códigos", "Campos divergentes", "Id Evento", "Recibo"],
+      rows: cruz5011, num: new Set(["FAP", "RAT", "RAT Ajustado", "Base CP"]), arquivo: "S-5011 Cruzamento de bases por estabelecimento" });
 
     // 3) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
