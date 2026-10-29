@@ -791,6 +791,22 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   background:var(--surface);border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:0 24px 50px -28px var(--glow)}
 .rodar-txt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.88rem;color:var(--muted);min-width:0}
 .rodar .btn.primary{padding:12px 22px;font-size:.95rem}
+/* Barra do módulo XML: o estado à esquerda e as ações lado a lado à direita, sem quebrar em linhas soltas */
+.rodar.xml-barra{flex-wrap:wrap;gap:12px 24px;padding:12px 14px 12px 22px}
+.xml-estado{display:flex;align-items:center;gap:14px;flex:1 1 280px;min-width:0}
+.xml-guard{display:flex;flex-direction:column;gap:1px;line-height:1.25;min-width:0}
+.xml-guard[hidden]{display:none}
+.xml-guard b{font-size:.92rem;font-weight:600;color:var(--ink)}
+.xml-guard small{font-size:.8rem;color:var(--muted)}
+.xml-acoes{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.rodar.xml-barra .xml-acoes .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;padding:10px 16px;font-size:.88rem;line-height:1}
+.rodar.xml-barra .xml-acoes .btn[hidden]{display:none}
+.rodar.xml-barra .xml-acoes .btn.primary{padding:11px 20px}
+.xml-acoes .btn svg{width:16px;height:16px;flex:none}
+.xml-acoes .btn.primary:hover svg{transform:rotate(-90deg)}
+.xml-acoes .btn svg{transition:transform .35s var(--ease)}
+.xml-acoes .perigo:hover{color:var(--danger,#E4776A);border-color:color-mix(in srgb,var(--danger,#E4776A) 55%,var(--line))}
+@media (max-width:720px){.rodar.xml-barra{padding:14px}.xml-acoes{width:100%}.rodar.xml-barra .xml-acoes .btn{flex:1 1 0;padding:11px 10px}.rodar.xml-barra .xml-acoes .btn.primary{flex:1.4 1 0}}
 
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
 .kpis.dois{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1659,11 +1675,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       </div>
     </section>
 
-    <div class="rodar">
-      <span class="rodar-txt"><span class="badge" id="statusXml">Aguardando</span><span id="xmlGuardados" hidden></span></span>
-      <button class="btn primary" type="button" id="xmlReprocessar" hidden>Reprocessar arquivos guardados</button>
-      <button class="btn ghost" type="button" id="xmlEsquecer" hidden>Esquecer arquivos guardados</button>
-      <button class="btn ghost" type="button" id="xmlLimpar" hidden>Limpar leitura</button>
+    <div class="rodar xml-barra">
+      <div class="xml-estado">
+        <span class="badge" id="statusXml">Aguardando</span>
+        <div class="xml-guard" id="xmlGuardados" hidden></div>
+      </div>
+      <div class="xml-acoes">
+        <button class="btn primary" type="button" id="xmlReprocessar" hidden title="Lê de novo os arquivos guardados com a versão atual do site"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Reprocessar</button>
+        <button class="btn ghost" type="button" id="xmlLimpar" hidden title="Limpa o que foi lido; os arquivos guardados continuam"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 12h8l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0"/><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Limpar leitura</button>
+        <button class="btn ghost perigo" type="button" id="xmlEsquecer" hidden title="Apaga os arquivos guardados neste navegador"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 12h8l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Esquecer arquivos</button>
+      </div>
     </div>
 
     <div class="painel hub">
@@ -5477,7 +5498,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     try {
       const fs = await xmlBanco.todos(), mb = fs.reduce((t, f) => t + f.size, 0) / 1048576;
       $("xmlGuardados").hidden = !fs.length; $("xmlReprocessar").hidden = !fs.length; $("xmlEsquecer").hidden = !fs.length;
-      $("xmlGuardados").textContent = fs.length ? `${xmlN(fs.length)} arquivo${fs.length === 1 ? "" : "s"} guardado${fs.length === 1 ? "" : "s"} neste navegador (${mb.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB)` : "";
+      const tam = mb >= 1024 ? (mb / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " GB" : mb.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " MB";
+      $("xmlGuardados").innerHTML = fs.length ? `<b>${xmlN(fs.length)} arquivo${fs.length === 1 ? "" : "s"} guardado${fs.length === 1 ? "" : "s"}</b><small>${tam} neste navegador</small>` : "";
     } catch(e){ $("xmlGuardados").hidden = true; $("xmlReprocessar").hidden = true; $("xmlEsquecer").hidden = true; }
   }
   async function lerXmls(lista, guardar = true){
