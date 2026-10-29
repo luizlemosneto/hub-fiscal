@@ -948,7 +948,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     <details class="how">
       <summary>Como o mapeamento funciona</summary>
       <ol>
-        <li>Entram só proventos (tipo 1) com incidência 11, 12, 14 ou 15 e descontos (tipo 2) com incidência 00, 31 ou 32, dos últimos 5 anos. Só entram as linhas com “Linha Válida Auditoria” igual a “SIM”.</li>
+        <li>Entram só proventos (tipo 1) com incidência 11, 12, 14 ou 15 e descontos (tipo 2) com incidência 00, 31 ou 32, dos últimos 5 anos. Só entram as linhas com “Validade do evento” igual a “Válido”; as “Corrompido” são desconsideradas.</li>
         <li>As rubricas repetidas são juntadas por descrição, tipo, código e natureza: com código diferente, nunca soma. O ponto sugerido vem da natureza da rubrica na tabela de temas (coluna de provento ou de desconto). Proventos com incidência 12 vão para “RAT Sem Exposição ao Risco Laboral”.</li>
         <li>Desconto só aceita tema com “Desconto” no nome: DSR em desconto não vai para RAT e multa de trânsito não é vale transporte. Regras pelo nome da rubrica valem sobre a natureza. Provisão nunca entra: é retirada na leitura. Nos descontos: INSS, IRRF/IR, vale transporte (VT, transporte), vale alimentação/refeição (VR, VA, cesta básica) e plano médico/odonto/coparticipação/saúde vão para o ponto de cada um. DSR (em qualquer parte do nome), descanso, repouso e ausência (ou ausência justificada) vão para RAT Sem Exposição ao Risco Laboral, em proventos e em descontos. Nos proventos, licença e 13º também vão para o RAT; transporte e alimentação vão para Auxílio Vale Transporte e Auxílio Alimentação; bônus, prêmio e gratificação vão para Prêmios e Bonificações. Provento com “férias” e tudo que for incidência 12 vão direto para RAT Sem Exposição ao Risco Laboral, na frente das demais regras. Hora extra noturna e prêmio/gratificação de função nunca entram nas outras incidências.</li>
         <li>A aba Revisão reúne tudo que está como Não oportunidade. Para aproveitar uma rubrica, escolha um ponto e ela vai para Com ponto. Para descartar, use o lixinho: ela vai para as abas Não oportunidade e Lixeira (onde dá para Retomar). A aba Não oportunidade começa zerada e só recebe o que você joga fora.</li>
@@ -1249,7 +1249,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         <li>Arquivos .zip são abertos automaticamente, inclusive zip dentro de zip e pastas internas; só os .xml são lidos.</li>
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
-        <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 fica como “NÃO” em Linha Válida Auditoria. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
+        <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 não pode ser classificada e fica como “Corrompido” em Validade do evento (desconsiderada pelo módulo Rubricas); as demais ficam “Válido”. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
         <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
@@ -1454,7 +1454,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     <details class="how">
       <summary>Como o diagnóstico funciona</summary>
       <ol>
-        <li>Da base principal entram só os últimos 5 anos. Saem as incidências 21, 22 e 51, as rubricas informativas, as linhas com “Linha Válida Auditoria” diferente de SIM e as categorias que não começam com 1.</li>
+        <li>Da base principal entram só os últimos 5 anos. Saem as incidências 21, 22 e 51, as rubricas informativas, as linhas com “Validade do evento” diferente de Válido (corrompidas) e as categorias que não começam com 1.</li>
         <li>A oportunidade vem da natureza da rubrica (tabela Studio ou a sua): desconto quando a incidência é 00, 31 ou 32, provento nos demais casos. Vencimento com incidência 12 vira “RAT Sem Exposição ao Risco Laboral”. Prêmios ligados a função saem.</li>
         <li>Encargo = valor da rubrica × (patronal + outras entidades + RAT ajustado). No RAT sem exposição, só o RAT ajustado.</li>
         <li>Com o S-5011: recibo mais recente de cada competência e base somada sem repetição. Outras entidades = (base − 20 salários mínimos) × menor alíquota de terceiros da base (ou 2,7%). Nos estudos de CBO, a base com RAT 2% ou 3% × 1%.</li>
@@ -2578,7 +2578,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       C.desc = locColEstEso(cols, ["Descrição Rubrica"]) || locColEso(cols, ["DESCRICAO RUBRICA","DESC RUBRICA","NOME RUBRICA"]);
       C.cod = locColEstEso(cols, ["Código Rubrica","Código da Rubrica","Cód. Rubrica","Cód Rubrica","Cod. Rubrica","Cod Rubrica","Código Rubr"]) || locColEso(cols, ["CODIGO RUBRICA","CODIGO DA RUBRICA","COD RUBRICA","COD. RUBRICA","COD RUBR","CODIGO RUBR"], ["TABELA","INCIDENCIA","NATUREZA"]);
       C.val = locColEstEso(cols, ["Vlr Total Rubrica","Valor Rubrica"]) || locColEso(cols, ["VLR TOTAL RUBRICA","VALOR TOTAL RUBRICA","VALOR RUBRICA","VLR RUBRICA"]);
-      C.valida = locColEso(cols, ["LINHA VALIDA AUDITORIA"]);
+      C.valida = locColEso(cols, ["VALIDADE DO EVENTO", "LINHA VALIDA AUDITORIA"]);
       C.rat = locColEstEso(cols, ["Alíquota RAT Estabelecimento","Aliquota RAT","Alíquota RAT","RAT"]) || locColEso(cols, ["ALIQUOTA RAT"], ["AJUSTADO"]);
       C.fap = locColEstEso(cols, ["FAP Estabelecimento","FAP"]) || locColEso(cols, ["FAP"], ["RAT"]);
       C.ratAj = locColEstEso(cols, ["RAT Ajustado Estabelecimento","RAT Ajustado"]) || locColEso(cols, ["RAT AJUSTADO","GILRAT"]);
@@ -2590,14 +2590,14 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       C.grau = locColEso(cols, ["GRAU EXPOSICAO","GRAU DE EXPOSICAO"], ["ALIQUOTA"]);
       C.insEst = locColEstEso(cols, ["Número Inscrição Estabelecimento","Número Inscrição Lotação","CNPJ Estabelecimento","CNPJ/CNO"]) || locColEso(cols, ["INSCRICAO ESTABELECIMENTO","INSCRICAO LOTACAO","CNPJ ESTABELECIMENTO","INSC ESTAB"]);
       C.insEmp = locColEstEso(cols, ["Número Inscrição","Numero Inscricao","CNPJ","CNPJ Empregador","CNPJ Matriz","Nr Inscrição"]) || locColEso(cols, ["INSCRICAO EMPREGADOR","CNPJ EMPREGADOR","CNPJ MATRIZ","CNPJ RAIZ"]);
-      const obrig = { per: "período", tipo: "Tipo Rubrica", inc: "Incidência Previdência Social", desc: "Descrição Rubrica", val: "Vlr Total Rubrica", valida: "Linha Válida Auditoria", cod: "Código da Rubrica" };
+      const obrig = { per: "período", tipo: "Tipo Rubrica", inc: "Incidência Previdência Social", desc: "Descrição Rubrica", val: "Vlr Total Rubrica", valida: "Validade do evento", cod: "Código da Rubrica" };
       info.faltando = Object.entries(obrig).filter(([k]) => !C[k]).map(([, v]) => v);
       if (info.faltando.length) throw new Error("Colunas não encontradas: " + info.faltando.join(", ") + ".");
       return [...new Set(Object.values(C).filter(Boolean))];
     }, rows => {
       for (const r of rows){
         info.lidas++;
-        if (normTxt(r[C.valida]) !== "SIM"){ info.invalidas++; continue; }
+        if (!["VALIDO", "SIM"].includes(normTxt(r[C.valida]))){ info.invalidas++; continue; }
         if (C.desc && /provis|\bprov\b/i.test(String(r[C.desc] ?? ""))){ info.provisoes++; continue; }
         const tipoTxt = String(r[C.tipo] ?? "").trim();
         const tp = tipoTxt.startsWith("1") ? "P" : tipoTxt.startsWith("2") ? "D" : "";
@@ -3069,7 +3069,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     const i = rub.dados.info;
     const gs = rub.dados.grupos.size;
     const fora = [`${i.foraTipo.toLocaleString("pt-BR")} por tipo`, `${i.foraInc.toLocaleString("pt-BR")} por incidência`, `${i.foraJanela.toLocaleString("pt-BR")} fora dos 5 anos`];
-    if (i.invalidas) fora.push(`${i.invalidas.toLocaleString("pt-BR")} sem “SIM” na auditoria`);
+    if (i.invalidas) fora.push(`${i.invalidas.toLocaleString("pt-BR")} corrompidos`);
     if (i.provisoes) fora.push(`${i.provisoes.toLocaleString("pt-BR")} provisões`);
     if (i.zeradas) fora.push(`${i.zeradas.toLocaleString("pt-BR")} com valor zero`);
     const dicas = "Passe o mouse na rubrica, no reflexo e na origem para ver os detalhes.\nClique no título da coluna para ordenar e arraste a borda dele para mudar a largura.\nEnter no ponto pula para a próxima rubrica.\nShift + clique seleciona um intervalo de linhas.";
@@ -4374,7 +4374,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     return evs.length;
   }
 
-  const XML_COL_RUBRICAS = ["Período", "Tipo Rubrica", "Incidência Previdência Social", "Natureza Rubrica", "Descrição Rubrica", "Código Rubrica", "Tabela de Rubricas", "Vlr Total Rubrica", "Linha Válida Auditoria",
+  const XML_COL_RUBRICAS = ["Período", "Tipo Rubrica", "Incidência Previdência Social", "Natureza Rubrica", "Descrição Rubrica", "Código Rubrica", "Tabela de Rubricas", "Vlr Total Rubrica", "Validade do evento",
     "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Data Admissão", "Data Desligamento", "Indicador Apuração", "Indicador Retificação", "Id Evento", "Recibo",
     "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Período Fechado (S-1299)"];
   const XML_NUM = new Set(["Vlr Total Rubrica", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento"]);
@@ -4433,7 +4433,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         const r = rubDe(l.cod, l.tab, l.per); if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
         else if (r.tp === "1" && XML_INC_BASE.has(r.incCP)) acc.rem += l.val;
         const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
-        emp.push([l.per, r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "SIM" : "NÃO",
+        emp.push([l.per, r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
           e.nrEmp, l.estNr, l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
           c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
       });
@@ -4495,7 +4495,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
     if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração do S-1200 e a base do S-5011 (veja “Conferência S-1200 × S-5011”)`);
-    if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “NÃO” em Linha Válida Auditoria; envie o S-1010 para classificar)`);
+    if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
     $("xmlLimpar").hidden = !xmlEstado.arquivos;
@@ -5394,7 +5394,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       let rFil = rMn.filter(r => {
         const i = String(r['Incidência Previdência Social'] || r['Incidencia Previdencia Social'] || '').trim(); if (i.startsWith('21') || i.startsWith('22') || i.startsWith('51')) return false;
         const t = String(r['Tipo Rubrica'] || '').trim().toUpperCase(); if (t.includes('INFORMATIVA')) return false;
-        const a = String(r['Linha Válida Auditoria'] || r['Linha Valida Auditoria'] || '').trim().toUpperCase(); if (a && a !== 'SIM') return false;
+        const a = String(r['Validade do evento'] || r['Linha Válida Auditoria'] || r['Linha Valida Auditoria'] || '').trim().toUpperCase(); if (a && a !== 'SIM' && a !== 'VÁLIDO' && a !== 'VALIDO') return false;
         const c = String(r['Categoria Trabalhador'] || '').trim(); if (c && !c.startsWith('1')) return false;
         const { mes, ano } = parseMesAnoDiag(r['Período'] || r['Periodo'] || r['Período Apuração'] || r['Periodo Apuracao']); return compDentro5Anos(ano, mes, cQt);
       }); rMn = null;
@@ -5423,7 +5423,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         if (cSet.size) { cn5011 = Array.from(cSet).join(' | '); $('lblCnaeEmpresaDiag').innerText = `CNAE: ${cn5011}`; $('lblCnaeEmpresaDiag').hidden = false; }
 
         const rPM = {}; rw5.forEach(r => {
-          const a = String(r['Linha Válida Auditoria'] || r['Linha Valida Auditoria'] || '').trim().toUpperCase(); if (a && a !== 'SIM') return;
+          const a = String(r['Validade do evento'] || r['Linha Válida Auditoria'] || r['Linha Valida Auditoria'] || '').trim().toUpperCase(); if (a && a !== 'SIM' && a !== 'VÁLIDO' && a !== 'VALIDO') return;
           const { mes, ano } = parseMesAnoDiag(r['Período Apuração'] || r['Periodo Apuracao'] || r['Período'] || r['Periodo']); if (!compDentro5Anos(ano, mes, cQt)) return;
           const rcb = String(obChaveFlx(r, ['Número Recibo Arquivo Base', 'Numero Recibo Arquivo Base', 'Nº Recibo Arquivo Base', 'Nr Recibo Arquivo Base', 'Número Recibo', 'Numero Recibo']) || '').trim(); if (!rcb) return;
           const cM = `${ano}_${mes}`; if (!rPM[cM]) rPM[cM] = {}; if (!rPM[cM][rcb]) rPM[cM][rcb] = []; rPM[cM][rcb].push(r);
