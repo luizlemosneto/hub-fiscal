@@ -5780,27 +5780,42 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
 
   /* ---------- Do cruzamento direto para as Rubricas, com a tela virando papel amassado ---------- */
-  // ruído deforma a folha e o mesmo ruído vira relevo iluminado (os vincos do papel)
-  function filtroAmassa(){
-    if (document.getElementById("amassaF")) return;
-    document.body.insertAdjacentHTML("beforeend", '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="amassaF" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".011 .015" numOctaves="3" seed="4" result="r"/><feDisplacementMap id="amassaMap" in="SourceGraphic" in2="r" scale="0" xChannelSelector="R" yChannelSelector="G" result="d"/><feDiffuseLighting id="amassaLuz" in="r" surfaceScale="0" diffuseConstant="1.15" lighting-color="#fff" result="l"><feDistantLight azimuth="225" elevation="52"/></feDiffuseLighting><feComposite in="d" in2="l" operator="arithmetic" k1="1.2" k2="0" k3="0" k4="0"/></filter></svg>');
-  }
-  // p: 0 = folha lisa, 1 = bolinha de papel. A bolinha encolhe, gira e some.
-  function amassar(el, de, ate, ms, easing){
+  // A tela é cortada em facetas angulosas (como as faces de uma folha amassada). Cada uma ganha sombra de dobra
+  // e vai para o centro girando em 3D, até virar uma bolinha. `entra` roda o filme ao contrário (a bolinha abre).
+  function folhaAmassada(el, entra){
     return new Promise(fim => {
-      const mapa = document.getElementById("amassaMap"), luz = document.getElementById("amassaLuz"), t0 = performance.now();
-      const r = el.getBoundingClientRect(), oy = Math.max(0, Math.min(r.height, innerHeight * .42 - r.top));
-      el.style.transformOrigin = `50% ${oy}px`; el.style.filter = "url(#amassaF)"; el.style.willChange = "filter, transform, opacity";
-      const quadro = p => {
-        mapa.setAttribute("scale", (p * 300).toFixed(1)); luz.setAttribute("surfaceScale", (p * 7).toFixed(2));
-        el.style.transform = `scale(${(1 - p * .9).toFixed(3)}) rotate(${(p * 14).toFixed(2)}deg)`;
-        el.style.opacity = (p < .75 ? 1 : 1 - (p - .75) / .25).toFixed(3);
-      };
-      const passo = agora => {
-        const f = Math.min(1, (agora - t0) / ms); quadro(de + (ate - de) * easing(f));
-        if (f < 1) requestAnimationFrame(passo); else fim();
-      };
-      requestAnimationFrame(passo);
+      const W = innerWidth, H = innerHeight, r = el.getBoundingClientRect(), rnd = (a, b) => a + Math.random() * (b - a);
+      const COL = 4, LIN = 3, pts = [];
+      for (let j = 0; j <= LIN; j++){ pts[j] = []; for (let i = 0; i <= COL; i++){
+        const x = i * W / COL, y = j * H / LIN, borda = i === 0 || j === 0 || i === COL || j === LIN;
+        pts[j][i] = [x + (borda && (i === 0 || i === COL) ? 0 : borda ? rnd(-.12, .12) * W / COL : rnd(-.32, .32) * W / COL), y + (borda && (j === 0 || j === LIN) ? 0 : borda ? rnd(-.12, .12) * H / LIN : rnd(-.32, .32) * H / LIN)];
+      } }
+      const cena = document.createElement("div");
+      cena.style.cssText = "position:fixed;inset:0;z-index:95;pointer-events:none;overflow:hidden;perspective:1100px";
+      const cx = W / 2, cy = H * .45, anims = [];
+      for (let j = 0; j < LIN; j++) for (let i = 0; i < COL; i++){
+        const q = [pts[j][i], pts[j][i + 1], pts[j + 1][i + 1], pts[j + 1][i]];
+        const fx = q.reduce((s, p) => s + p[0], 0) / 4, fy = q.reduce((s, p) => s + p[1], 0) / 4;
+        const f = document.createElement("div");
+        f.style.cssText = `position:absolute;inset:0;transform-origin:${fx}px ${fy}px;clip-path:polygon(${q.map(p => p[0].toFixed(1) + "px " + p[1].toFixed(1) + "px").join(",")});backface-visibility:hidden`;
+        const papel = document.createElement("div"); papel.style.cssText = "position:absolute;inset:0;background:var(--bg);overflow:hidden";
+        const c = el.cloneNode(true); c.removeAttribute("hidden"); c.classList.remove("page-in", "entra-dir", "entra-esq", "sai-esq", "sai-dir");
+        c.querySelectorAll("[id]").forEach(n => n.removeAttribute("id")); c.removeAttribute("id");
+        c.style.cssText = `position:absolute;left:${r.left}px;top:${r.top}px;width:${r.width}px;margin:0;animation:none;visibility:visible`;
+        papel.appendChild(c);
+        const claro = Math.random() < .5, ang = rnd(0, 360).toFixed(0), forca = rnd(.25, .5).toFixed(2);
+        const sombra = document.createElement("div");
+        sombra.style.cssText = `position:absolute;inset:0;opacity:0;background:linear-gradient(${ang}deg,rgba(255,255,255,${claro ? forca : forca * .3}),rgba(0,0,0,${claro ? forca * .35 : forca}))`;
+        f.append(papel, sombra); cena.appendChild(f);
+        const fim3 = `translate(${((cx - fx) * .88 + rnd(-24, 24)).toFixed(0)}px,${((cy - fy) * .88 + rnd(-24, 24)).toFixed(0)}px) rotateX(${rnd(-70, 70).toFixed(0)}deg) rotateY(${rnd(-70, 70).toFixed(0)}deg) rotate(${rnd(-80, 80).toFixed(0)}deg) scale(${rnd(.1, .2).toFixed(2)})`;
+        const meio = `translate(${((cx - fx) * .06).toFixed(0)}px,${((cy - fy) * .06).toFixed(0)}px) rotateX(${rnd(-14, 14).toFixed(0)}deg) rotateY(${rnd(-14, 14).toFixed(0)}deg) rotate(${rnd(-4, 4).toFixed(1)}deg) scale(.96)`;
+        const dur = 1000, opts = { duration: dur, fill: "both", easing: "cubic-bezier(.5,0,.7,.4)", direction: entra ? "reverse" : "normal" };
+        anims.push(f.animate([{ transform: "none", filter: "brightness(1)" }, { transform: meio, filter: `brightness(${claro ? 1.08 : .88})`, offset: .38 }, { transform: fim3, filter: "brightness(.72)" }], opts));
+        anims.push(sombra.animate([{ opacity: 0 }, { opacity: 1, offset: .38 }, { opacity: 1 }], opts));
+      }
+      cena.animate([{ opacity: 1 }, { opacity: 1, offset: .82 }, { opacity: 0 }], { duration: 1000, fill: "both", direction: entra ? "reverse" : "normal" });
+      document.body.appendChild(cena); el.style.visibility = "hidden";
+      Promise.all(anims.map(a => a.finished)).then(() => { cena.remove(); if (entra) el.style.visibility = ""; fim(); });
     });
   }
   let xmlIndo = false;
@@ -5810,17 +5825,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
     const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
     xmlEstado.emps.forEach((nome, raiz) => { if (nome && !rub.empresas.has(raiz)) rub.empresas.set(raiz, nome); });   // o nome da empresa (S-1000) segue junto
-    const tela = elDaVista(vista), limpa = el => { el.style.filter = el.style.opacity = el.style.transform = el.style.transformOrigin = el.style.willChange = ""; };
+    const tela = elDaVista(vista), limpa = el => { el.style.filter = el.style.opacity = el.style.transform = el.style.transformOrigin = el.style.willChange = el.style.visibility = ""; };
     let nova = null;
     try {
       if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
-      filtroAmassa();
       carregarEventos(arq, [arq], false);   // já vai lendo enquanto a folha amassa
-      await amassar(tela, 0, 1, 820, f => f * f * (3 - 2 * f));
+      await folhaAmassada(tela, false);
       irPara("rubricas", true, true);
       limpa(tela);
       nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
-      await amassar(nova, 1, 0, 900, f => 1 - Math.pow(1 - f, 3));   // a bolinha abre e alisa
+      await folhaAmassada(nova, true);   // a bolinha abre e alisa
     } finally {
       limpa(tela); if (nova) limpa(nova); xmlIndo = false; btn.disabled = false; }
   }
