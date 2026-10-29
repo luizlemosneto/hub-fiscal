@@ -3229,6 +3229,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       C.codSusp = locColEso(cols, ["TERCEIROS SUSPENSO"]);
       C.fpas = locColEstEso(cols, ["FPAS"]) || locColEso(cols, ["FPAS"]);
       C.grau = locColEso(cols, ["GRAU EXPOSICAO","GRAU DE EXPOSICAO"], ["ALIQUOTA"]);
+      C.lot = locColEstEso(cols, ["Código Lotação"]) || locColEso(cols, ["CODIGO LOTACAO"], ["TRIBUTARIA","INSCRICAO","TIPO"]);
       C.cat = locColEstEso(cols, ["Código Categoria","Categoria Trabalhador","Categoria"]) || locColEso(cols, ["CATEGORIA"]);
       C.insEst = locColEstEso(cols, ["Número Inscrição Estabelecimento","Número Inscrição Lotação","CNPJ Estabelecimento","CNPJ/CNO"]) || locColEso(cols, ["INSCRICAO ESTABELECIMENTO","INSCRICAO LOTACAO","CNPJ ESTABELECIMENTO","INSC ESTAB"]);
       C.insEmp = locColEstEso(cols, ["Número Inscrição","Numero Inscricao","CNPJ","CNPJ Empregador","CNPJ Matriz","Nr Inscrição"]) || locColEso(cols, ["INSCRICAO EMPREGADOR","CNPJ EMPREGADOR","CNPJ MATRIZ","CNPJ RAIZ"]);
@@ -3265,7 +3266,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const subst = C.subst ? (parseInt(String(r[C.subst] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
         const oe = convRub(C.oe ? r[C.oe] : 0);
         const codTerc = C.codTerc ? Math.max(0, (parseInt(r[C.codTerc], 10) || 0) - (C.codSusp ? (parseInt(r[C.codSusp], 10) || 0) : 0)) : 0;
-        const grau = C.grau ? (parseInt(String(r[C.grau] ?? "").trim(), 10) || 0) : 0;
+        const grau0 = C.grau ? (parseInt(String(r[C.grau] ?? "").trim(), 10) || 0) : 0, grau = grau0 === 1 ? 0 : grau0;   // grau 1 = 0%: fica no agrupamento total; só 2, 3 e 4 têm linha própria
+        const lot = C.lot ? String(r[C.lot] ?? "").trim().replace(/\.0$/, "") : "";
         const fpas = C.fpas ? (parseInt(String(r[C.fpas] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
         const kOE = fpas + "|" + codTerc + "|" + oe;
         let sp = info.oe.get(kOE);
@@ -3275,16 +3277,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
         const gkey = normTxt(desc) + "|" + tp + "|" + (inc12 ? "12" : "") + "|" + cod + "|" + nat;
         let g = grupos.get(gkey);
-        if (!g){ g = { key: gkey, tp, desc, inc12, codigos: new Set(), nats: new Map(), incs: new Set(), valor: 0, n: 0, rPatr: 0, rGil: 0, rOE: 0 }; grupos.set(gkey, g); }
+        if (!g){ g = { key: gkey, tp, desc, inc12, codigos: new Set(), nats: new Map(), incs: new Set(), valor: 0, n: 0, rPatr: 0, rGil: 0, rOE: 0, rAN: 0 }; grupos.set(gkey, g); }
         if (cod) g.codigos.add(cod);
         if (nat) g.nats.set(nat, (g.nats.get(nat) || 0) + 1);
         g.incs.add(inc); g.valor += valor; g.n++;
-        g.rPatr += valor * pctPatronal(subst, ano) / 100; g.rGil += valor * t.gil / 100; g.rOE += valor * (sp.sisS + sp.paraf) / 100;
+        g.rPatr += valor * pctPatronal(subst, ano) / 100; g.rGil += valor * t.gil / 100; g.rOE += valor * (sp.sisS + sp.paraf) / 100; g.rAN += valor * anPct(grau) / 100;
 
-        const rk = [per, raiz, ins, cod, gkey, t.rat, t.fap.toFixed(6), subst, oe, fpas, codTerc, grau].join("|");
+        const rk = [per, raiz, ins, lot, cod, gkey, t.rat, t.fap.toFixed(6), subst, oe, fpas, codTerc, grau].join("|");
         const ex = regs.get(rk);
         if (ex) ex.valor += valor;
-        else regs.set(rk, { per, raiz, ins, cod, gkey, rat: t.rat, fap: t.fap, subst, oe, fpas, codTerc, grau, valor });
+        else regs.set(rk, { per, raiz, ins, lot, cod, gkey, rat: t.rat, fap: t.fap, subst, oe, fpas, codTerc, grau, valor });
       }
     }, (frac, feito, tt) => { if (aoProgredir) aoProgredir((fi + frac) / arquivos.length, feito, tt); });
     }
@@ -3341,7 +3343,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const rubStub = $("rubStub");
   const progRub = criarProgresso("r", rubStub);
   const riscoDe = p => memRiscos[normTxt(p)] || riscoPadrao(p);
-  const reflexoGrupo = g => ehNaoOp(g.ponto) ? 0 : ehPnt(g.ponto) ? g.rGil : g.rPatr + g.rGil + g.rOE;
+  const reflexoGrupo = g => ehNaoOp(g.ponto) ? 0 : ehPnt(g.ponto) ? g.rGil : g.rPatr + g.rGil + g.rOE + g.rAN;
   const nomeEmpresa = raiz => rub.empresas.get(raiz) || "";
 
   function passos(){
@@ -3562,7 +3564,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (t === "refl"){
       if (ehNaoOp(g.ponto)) return `<div class="tt">Sem reflexo</div>Esta rubrica está como não oportunidade.`;
       const pnt = ehPnt(g.ponto);
-      return `<div class="tt">Reflexo estimado</div><dl>${pnt ? "" : kv("Patronal", brl.format(g.rPatr))}${kv("GILRAT", brl.format(g.rGil))}${pnt ? "" : kv("Outras entidades", brl.format(g.rOE))}${kv("Total", brl.format(reflexoGrupo(g)))}</dl>`;
+      return `<div class="tt">Reflexo estimado</div><dl>${pnt ? "" : kv("Patronal", brl.format(g.rPatr))}${kv("GILRAT", brl.format(g.rGil))}${pnt ? "" : kv("Outras entidades", brl.format(g.rOE))}${pnt || !g.rAN ? "" : kv("Agentes nocivos", brl.format(g.rAN))}${kv("Total", brl.format(reflexoGrupo(g)))}</dl>`;
     }
     if (t === "origem"){
       if (g.lixo) return `<div class="tt">Na lixeira</div><dl>${kv("Estava em", (rub.lixo[g.key] && rub.lixo[g.key].antes) || g.sug)}</dl><div class="tdica">Use Retomar para voltar.</div>`;
@@ -4317,27 +4319,27 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (!out.length){ toast("Nenhuma rubrica com ponto para gerar a planilha."); return; }
     out.sort((a, b) => (ordemPeriodo(a.per) - ordemPeriodo(b.per)) || a.empresa.localeCompare(b.empresa, "pt-BR") || a.g.ponto.localeCompare(b.g.ponto, "pt-BR") || a.g.desc.localeCompare(b.g.desc, "pt-BR"));
 
-    const cab = ["Período de Apuração","Empresa","CNPJ Matriz","CNPJ ou CNO","Ponto","Descrição","Código da Rubrica","Provento ou Desconto","Risco","Valor Indevidamente Tributado","*FAP","% RAT","% Patronal","% Sistema S","% Parafiscais","% Agentes Nocivos","Reflexo Patronal","Reflexo GILRAT","Reflexo Sistema S","Reflexo Parafiscais","Reflexo Total"];
+    const cab = ["Período de Apuração","Empresa","CNPJ Matriz","CNPJ ou CNO","Código Lotação","Ponto","Descrição","Código da Rubrica","Provento ou Desconto","Risco","Valor Indevidamente Tributado","*FAP","% RAT","% Patronal","% Sistema S","% Parafiscais","% Agentes Nocivos","Reflexo Patronal","Reflexo GILRAT","Reflexo Sistema S","Reflexo Parafiscais","Reflexo Agentes Nocivos","Reflexo Total"];
     const linhas = out.map((x, i) => {
       const n = i + 2, v = x.r.valor;
-      const rp = v * x.patr / 100, rg = v * x.r.fap * x.r.rat / 100, rs = v * x.sisS / 100, rf = v * x.paraf / 100;
-      return [dataCel(x.per), txt(x.empresa), txt(x.matriz), txt(x.r.ins || "-"), txt(x.g.ponto), txt(x.g.desc), txt(x.r.cod || "-"), txt(x.g.tp === "P" ? "Provento" : "Desconto"), txt(riscoDe(x.g.ponto)),
+      const rp = v * x.patr / 100, rg = v * x.r.fap * x.r.rat / 100, rs = v * x.sisS / 100, rf = v * x.paraf / 100, ra = v * x.an / 100;
+      return [dataCel(x.per), txt(x.empresa), txt(x.matriz), txt(x.r.ins || "-"), txt(x.r.lot || "-"), txt(x.g.ponto), txt(x.g.desc), txt(x.r.cod || "-"), txt(x.g.tp === "P" ? "Provento" : "Desconto"), txt(riscoDe(x.g.ponto)),
         num(v, "#,##0.00"), { t: "n", v: x.r.fap, s: { numFmt: "0.0000", alignment: { horizontal: "right" } } }, pctCel(x.r.rat / 100), pctCel(x.patr / 100), pctCel(x.sisS / 100), pctCel(x.paraf / 100), pctCel(x.an / 100),
-        fCel(`J${n}*M${n}`, rp), fCel(`J${n}*K${n}*L${n}`, rg), fCel(`J${n}*N${n}`, rs), fCel(`J${n}*O${n}`, rf), fCel(`SUM(Q${n}:T${n})`, rp + rg + rs + rf)];
+        fCel(`K${n}*N${n}`, rp), fCel(`K${n}*L${n}*M${n}`, rg), fCel(`K${n}*O${n}`, rs), fCel(`K${n}*P${n}`, rf), fCel(`K${n}*Q${n}`, ra), fCel(`SUM(R${n}:V${n})`, rp + rg + rs + rf + ra)];
     });
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, abaDeCelulas(cab, [14,30,17,17,30,34,12,12,13,16,8,8,10,10,10,10,15,15,15,15,15], linhas), "Oportunidades");
+    XLSX.utils.book_append_sheet(wb, abaDeCelulas(cab, [14,30,17,17,12,30,34,12,12,13,16,8,8,10,10,10,10,15,15,15,15,15,15], linhas), "Oportunidades");
 
     // Resumo por ponto
     const res = new Map();
     for (const x of out){
       const k = normTxt(x.g.ponto) + "|" + x.g.tp;
-      if (!res.has(k)) res.set(k, { ponto: x.g.ponto, tp: x.g.tp, v: 0, rp: 0, rg: 0, rs: 0, rf: 0 });
+      if (!res.has(k)) res.set(k, { ponto: x.g.ponto, tp: x.g.tp, v: 0, rp: 0, rg: 0, rs: 0, rf: 0, ra: 0 });
       const o = res.get(k), v = x.r.valor;
-      o.v += v; o.rp += v * x.patr / 100; o.rg += v * x.r.fap * x.r.rat / 100; o.rs += v * x.sisS / 100; o.rf += v * x.paraf / 100;
+      o.v += v; o.rp += v * x.patr / 100; o.rg += v * x.r.fap * x.r.rat / 100; o.rs += v * x.sisS / 100; o.rf += v * x.paraf / 100; o.ra += v * x.an / 100;
     }
-    const resL = [...res.values()].sort((a, b) => (b.rp + b.rg + b.rs + b.rf) - (a.rp + a.rg + a.rs + a.rf)).map(o => [txt(o.ponto), txt(o.tp === "P" ? "Provento" : "Desconto"), txt(riscoDe(o.ponto)), num(o.v, "#,##0.00"), num(o.rp, "#,##0.00"), num(o.rg, "#,##0.00"), num(o.rs, "#,##0.00"), num(o.rf, "#,##0.00"), num(o.rp + o.rg + o.rs + o.rf, "#,##0.00")]);
-    XLSX.utils.book_append_sheet(wb, abaDeCelulas(["Ponto","Provento ou Desconto","Risco","Valor Indevidamente Tributado","Reflexo Patronal","Reflexo GILRAT","Reflexo Sistema S","Reflexo Parafiscais","Reflexo Total"], [34,14,14,18,16,16,16,16,16], resL), "Resumo por Ponto");
+    const resL = [...res.values()].sort((a, b) => (b.rp + b.rg + b.rs + b.rf + b.ra) - (a.rp + a.rg + a.rs + a.rf + a.ra)).map(o => [txt(o.ponto), txt(o.tp === "P" ? "Provento" : "Desconto"), txt(riscoDe(o.ponto)), num(o.v, "#,##0.00"), num(o.rp, "#,##0.00"), num(o.rg, "#,##0.00"), num(o.rs, "#,##0.00"), num(o.rf, "#,##0.00"), num(o.ra, "#,##0.00"), num(o.rp + o.rg + o.rs + o.rf + o.ra, "#,##0.00")]);
+    XLSX.utils.book_append_sheet(wb, abaDeCelulas(["Ponto","Provento ou Desconto","Risco","Valor Indevidamente Tributado","Reflexo Patronal","Reflexo GILRAT","Reflexo Sistema S","Reflexo Parafiscais","Reflexo Agentes Nocivos","Reflexo Total"], [34,14,14,18,16,16,16,16,16,16], resL), "Resumo por Ponto");
 
     // Mapa de rubricas (a revisão)
     const mapaL = [...rub.dados.grupos.values()].sort((a, b) => b.valor - a.valor).map(g => {
@@ -4886,6 +4888,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const XML_TP_RUBR = { "1": "Vencimento", "2": "Desconto", "3": "Informativa", "4": "Informativa dedutora" };
   // Incidência da rubrica (CP) que entra na remuneração do cruzamento: a mesma regra dos proventos do módulo Rubricas
   const XML_INC_BASE = new Set(["11", "12", "13", "14"]);
+  // Agente nocivo (grau de exposição do funcionário): 1 = 0%, 2 = 12%, 3 = 9%, 4 = 6%
+  const XML_AN = { "1": 0, "2": 12, "3": 9, "4": 6 };
+  const xAn = g => g === "" || g === undefined ? "" : (XML_AN[String(g)] ?? 0);
   const XML_TOLERANCIA = 1;
   const xFilhos = el => Array.from(el.children || []);
   const xDir = (el, nome) => (el && xFilhos(el).find(c => c.localName === nome)) || null;
@@ -4980,7 +4985,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estTp = xTxt(el, "tpInsc"), estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
           for (const v of xDesc(el, ["detVerbas", "itensRemun"]))
-            linhas.push({ per: perRef || per, cat, estTp, estNr, lot, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
+            linhas.push({ per: perRef || per, cat, estTp, estNr, lot, grau: xTxt(el, "infoAgNocivo/grauExp"), cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
         }
       }
       xGuardarMaisRecente(estado.remun, [nome, nrEmp, cpf, indAp, per].join("|"), rank, { id, recibo, indRetif, indAp, perEv: per, nrEmp, cpf, linhas }, estado);
@@ -5067,8 +5072,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
   const XML_COL_RUBRICAS = ["Período", "Tipo Rubrica", "Incidência Previdência Social", "Natureza Rubrica", "Descrição Rubrica", "Código Rubrica", "Tabela de Rubricas", "Vlr Total Rubrica", "Validade do evento",
     "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Data Admissão", "Data Desligamento", "Indicador Apuração", "Indicador Retificação", "Id Evento", "Recibo",
-    "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Período Fechado (S-1299)"];
-  const XML_NUM = new Set(["Vlr Total Rubrica", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento"]);
+    "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Período Fechado (S-1299)", "Grau Exposição Agente Nocivo", "Alíquota Agente Nocivo"];
+  const XML_NUM = new Set(["Vlr Total Rubrica", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Alíquota Agente Nocivo"]);
   const xEhValor = nome => /^(valor|vr[A-Z]|aliq|fap|fator|qtd|perc)/i.test(nome.split(".").pop());
   const xTp = r => r.tp ? `${r.tp} - ${XML_TP_RUBR[r.tp] || ""}`.replace(/ - $/, "") : "";
   const xPerOrd = p => (p.length === 4 ? p + "-13" : p);
@@ -5124,7 +5129,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
         emp.push([xCompOut(l.per), r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
           xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
-          c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
+          c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv), l.grau || "", xAn(l.grau)]);
       });
     });
     if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
@@ -5146,14 +5151,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         else if (entra === "Sem S-1010") acc.semTab += l.val;
         else { const k = `${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
         acc.total += l.val;
-        s1200.push([xCompOut(l.per), xCompOut(e.perEv), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", e.indAp, e.indRetif, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || "", fechPer(e.nrEmp, e.perEv)]);
+        s1200.push([xCompOut(l.per), xCompOut(e.perEv), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", e.indAp, e.indRetif, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || "", fechPer(e.nrEmp, e.perEv), l.grau || "", xAn(l.grau)]);
       });
     });
     const ordS = c => xPerOrd(String(c).split("/").reverse().join("-"));
     s1200.sort((x, y) => ordS(x[1]).localeCompare(ordS(y[1])) || ordS(x[0]).localeCompare(ordS(y[0])) || x[7].localeCompare(y[7]) || String(x[11]).localeCompare(String(y[11])));
     if (s1200.length) conjuntos.push({ id: "s1200", titulo: "S-1200 · Remuneração do trabalhador", sub: "Uma linha por rubrica, só o mais recente de cada trabalhador e competência (categorias 1xx). A Conferência soma daqui: linhas com “Entra na base” = Sim",
-      cols: ["Período", "Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Indicador Apuração", "Indicador Retificação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo", "Período Fechado (S-1299)"],
-      rows: s1200, num: new Set(["Vlr Rubrica"]), arquivo: "S-1200 Remuneracao" });
+      cols: ["Período", "Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Indicador Apuração", "Indicador Retificação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo", "Período Fechado (S-1299)", "Grau Exposição Agente Nocivo", "Alíquota Agente Nocivo"],
+      rows: s1200, num: new Set(["Vlr Rubrica", "Alíquota Agente Nocivo"]), arquivo: "S-1200 Remuneracao" });
 
     // 1c) As verbas rescisórias do S-2299, na mesma lógica da tabela do S-1200
     const s2299 = [], somaResc = new Map();
