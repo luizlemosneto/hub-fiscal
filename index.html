@@ -452,7 +452,15 @@ table.rt{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%
 .pick-row .pick:hover{transform:translateY(-1px);box-shadow:0 14px 28px -12px var(--glow)}
 .pick-row .pick.sec{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .pick-row .pick.sec:hover{box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
-.xml-aviso{margin:10px 0 0;padding:10px 14px;border-radius:12px;font-size:.86rem;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+/* Aviso do módulo XML: um fio fininho que desce do resumo até uma pílula cinza, aparecendo em sequência */
+.xml-aviso{position:relative;margin:0;padding-top:20px}
+.xml-aviso[hidden]{display:none}
+.xml-aviso-fio{position:absolute;left:84px;top:-12px;width:1px;height:32px;background:linear-gradient(#E4776A,color-mix(in srgb,#E4776A 35%,transparent));transform-origin:top;animation:aviso-fio .5s var(--ease) both}
+.xml-aviso-txt{display:inline-block;max-width:100%;padding:9px 18px;border-radius:999px;font-size:.84rem;line-height:1.35;color:var(--muted);
+  background:color-mix(in srgb,var(--muted) 13%,transparent);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);animation:aviso-txt .7s var(--ease) .28s both}
+@keyframes aviso-fio{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
+@keyframes aviso-txt{from{opacity:0;transform:translateY(-8px) scale(.97);clip-path:inset(0 100% 0 0 round 999px)}to{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 999px)}}
+@media (prefers-reduced-motion: reduce){.xml-aviso-fio,.xml-aviso-txt{animation:none}}
 .xml-tab td{vertical-align:middle}
 .xml-tab .sub-t{font-size:.8rem;color:var(--muted);margin-top:2px;font-weight:400}
 .xml-tab td.xml-acao{text-align:right;white-space:nowrap}
@@ -805,7 +813,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 .xml-acoes .btn svg{width:16px;height:16px;flex:none}
 .xml-acoes .btn.primary:hover svg{transform:rotate(-90deg)}
 .xml-acoes .btn svg{transition:transform .35s var(--ease)}
-.xml-acoes .perigo:hover{color:var(--danger,#E4776A);border-color:color-mix(in srgb,var(--danger,#E4776A) 55%,var(--line))}
+/* Ações destrutivas (lixeira, esquecer): mesma cor de alerta em qualquer botão */
+.perigo:hover,.perigo.armado{color:var(--danger,#E4776A)!important;border-color:color-mix(in srgb,var(--danger,#E4776A) 55%,var(--line))!important}
 @media (max-width:720px){.rodar.xml-barra{padding:14px}.xml-acoes{width:100%}.rodar.xml-barra .xml-acoes .btn{flex:1 1 0;padding:11px 10px}.rodar.xml-barra .xml-acoes .btn.primary{flex:1.4 1 0}}
 
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
@@ -1088,6 +1097,8 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .mod::before{display:none}
 .mod::after{content:"+";position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
   background:var(--cor);color:var(--cor-ink);font:500 1.3rem/1 var(--body);transition:transform .45s var(--ease),background .35s,color .35s}
+/* O contador de arquivos fica ao lado do "+", alinhado ao centro dele, e nunca por cima */
+.mod .qtd,#viewHome .mod .qtd{top:18px;right:58px;height:30px;display:inline-flex;align-items:center;max-width:calc(100% - 150px);padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.78rem;line-height:1}
 .mod .sigla,#viewHome .mod .sigla{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:600;letter-spacing:-.05em;font-size:clamp(2rem,3.2vw,2.6rem);line-height:1;margin:0 0 auto;transition:color .35s}
 .mod h2,#viewHome .mod h2{font-weight:500;font-size:1.15rem;letter-spacing:-.02em;margin:28px 0 0;transition:color .35s}
 .mod p,#viewHome .mod p{font-size:.86rem;color:var(--muted);margin:0;max-width:46ch;transition:color .35s}
@@ -1150,7 +1161,6 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .btn,.tbtn,.pick{border-radius:999px}
 .prog-fill{background:var(--accent)}
 .topbar i{background:var(--accent);box-shadow:none}
-.xml-aviso{border-radius:var(--r-md)}
 .rodape{text-align:left;font-weight:400;letter-spacing:0}
 
 
@@ -1391,6 +1401,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           <button type="button" class="tbtn compacto" id="rubRecalc" data-tip-txt="Relê os eventos e recalcula tudo (rubricas, reflexos, outras entidades e totais). Os ajustes de ponto desta sessão são mantidos.">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg>
             <span class="tx" id="rubRecalcTxt">Recalcular</span>
+          </button>
+          <button type="button" class="tbtn compacto perigo" id="rubLimpar" data-tip-txt="Limpa tudo: eventos carregados, ajustes, lixeira e empresas. Pede confirmação.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>
+            <span class="tx" id="rubLimparTxt">Limpar tudo</span>
           </button>
           <div class="popwrap">
             <button type="button" class="tbtn compacto" id="rubPers" aria-expanded="false" aria-haspopup="dialog" aria-label="Personalizar a tabela" data-tip-txt="Personalizar a tabela">
@@ -1658,7 +1672,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="kpi"><small>Duplicados ou retificados removidos</small><b id="xmlKDup">0</b></div>
       <div class="kpi"><small>Arquivos inválidos</small><b id="xmlKInv">0</b></div>
     </div>
-    <p class="xml-aviso" id="xmlAvisos" hidden></p>
+    <div class="xml-aviso" id="xmlAvisos" hidden></div>
 
     <section>
       <div class="sec-head">
@@ -2361,6 +2375,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
   /* ================= Definição dos módulos ================= */
   const brl = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  /* Sessão guardada no navegador (IndexedDB): o que você carregou e ajustou volta ao recarregar a página */
+  const kv = (() => {
+    const abrir = () => new Promise((ok, falha) => { const r = indexedDB.open("HubEstadoDB", 1); r.onupgradeneeded = e => e.target.result.createObjectStore("kv"); r.onsuccess = e => ok(e.target.result); r.onerror = e => falha(e.target.error); });
+    const op = (modo, fn) => abrir().then(db => new Promise((ok, falha) => { const tx = db.transaction("kv", modo), st = tx.objectStore("kv"), q = fn(st); tx.oncomplete = () => { db.close(); ok(q && q.result); }; tx.onerror = tx.onabort = () => { db.close(); falha(tx.error); }; }));
+    return { get: k => op("readonly", st => st.get(k)), set: (k, v) => op("readwrite", st => st.put(v, k)), del: k => op("readwrite", st => st.delete(k)) };
+  })();
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const txt = v => ({ t:"s", v:String(v ?? ""), s:{ numFmt:"@" } });
   const num = (v, fmt) => ({ t:"n", v:Number(v) || 0, s:{ alignment:{ horizontal:"right" }, ...(fmt ? { numFmt: fmt } : {}) } });
@@ -2448,7 +2468,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   /* ================= Estado e navegação ================= */
   const estado = { arquivos: [] }; // {id, nome, tamanho, tipo, empresa, cnpj, registros, status, erro, notas, avisos}
   let vista = "home";
-  let seq = 0;
+  let seq = 0, sessaoPronta = false, tSalvarArq = 0;
+  function salvarArquivosAgendado(){
+    if (!sessaoPronta) return;
+    clearTimeout(tSalvarArq);
+    tSalvarArq = setTimeout(() => { kv.set("arquivos", estado.arquivos.filter(a => a.status === "ok").map(({ file, ...r }) => r)).catch(() => {}); }, 600);
+  }
   let ocupado = false;
 
   const $ = id => document.getElementById(id);
@@ -2926,6 +2951,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const n = estado.arquivos.filter(a => a.tipo === t && a.status === "ok").length;
       const el = $("qtd-" + t); el.hidden = !n; el.textContent = `${n} arquivo${n === 1 ? "" : "s"}`;
     });
+    salvarArquivosAgendado();
     if (!MODULOS[vista]) return;
     const mod = MODULOS[vista];
     const arqs = estado.arquivos.filter(a => a.tipo === vista || (!a.tipo && a.modulo === vista));
@@ -3451,7 +3477,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
   const nomeArqs = a => a.length === 1 ? a[0].name : `${a.length} arquivos`;
   // Troca os eventos (adicionar = false) ou acrescenta mais arquivos aos já carregados (adicionar = true)
-  async function carregarEventos(arg, lista, adicionar){
+  async function carregarEventos(arg, lista, adicionar, restaurar){
     if (rub.lendo) return;
     let novos = (lista && lista.length ? [...lista] : [arg]).filter(Boolean);
     const ruins = novos.filter(f => !/\.(parquet|xlsx|xls)$/i.test(f.name));
@@ -3473,10 +3499,11 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     progRub.iniciar(1);
     progRub.arquivo(0, nomeArqs(todos));
     try {
-      if (!adicionar){ rub.sessao = {}; rub.lixo = {}; }
+      if (!adicionar){ rub.sessao = restaurar ? restaurar.sessao : {}; rub.lixo = restaurar ? restaurar.lixo : {}; }
       const d = await lerEventos(todos, (frac, feito, tt) => { progRub.parte(0, frac, nomeArqs(todos), `${feito.toLocaleString("pt-BR")} de ${tt.toLocaleString("pt-BR")} linhas`); chipLendo(frac); });
       rub.filtros = {}; rub.dados = d; rub.arquivos = todos; rub.arquivo = todos[0];
-      if (!adicionar) rub.editados = new Set();
+      if (!adicionar) rub.editados = new Set(restaurar ? restaurar.editados : []);
+      kv.set("rub-fonte", todos.map(f => f.__ds ? { name: f.name, size: f.size, __ds: f.__ds } : f)).catch(() => {});   // a fonte fica guardada para a próxima vez
       rub.sel.clear(); rub.filtro = [...d.grupos.values()].some(ehPendente) ? "rev" : "op"; rub.limite = 400;
       progRub.fim(1);
       const nPend = [...d.info.oe.values()].filter(o => o.origem === "pendente").length;
@@ -3800,7 +3827,20 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("rubEmpresas").innerHTML = [...raizes.keys()].sort().map(rz => `<tr><td>${cnpjMatriz(rz)}</td><td><input class="inp nomeEmp" data-r="${rz}" value="${esc(nomeEmpresa(rz))}" placeholder="Nome da empresa" aria-label="Nome da empresa ${cnpjMatriz(rz)}"></td></tr>`).join("");
   }
 
+  let tSalvarRub = 0;
+  function salvarAjustesRubAgendado(){
+    if (!rub.dados) return;
+    clearTimeout(tSalvarRub);
+    tSalvarRub = setTimeout(() => { kv.set("rub-ajustes", { sessao: rub.sessao, lixo: rub.lixo, editados: [...rub.editados], empresas: [...rub.empresas], arqEmp: rub.arqEmp || "", nEmp: rub.nEmp || 0 }).catch(() => {}); }, 700);
+  }
+  let ultimoSnapRub = "";
+  setInterval(() => {   // vigia os ajustes: qualquer mudança (lixeira, ponto, empresa) é guardada logo em seguida
+    if (!rub.dados || rub.lendo) return;
+    const snap = JSON.stringify([rub.sessao, rub.lixo, [...rub.editados], [...rub.empresas], rub.arqEmp || ""]);
+    if (snap !== ultimoSnapRub){ ultimoSnapRub = snap; salvarAjustesRubAgendado(); }
+  }, 1200);
   function renderRub(){
+    salvarAjustesRubAgendado();
     passos();
     $("rubRev").hidden = !rub.dados;
     $("viewRub").classList.toggle("carregado", !!rub.dados);
@@ -4142,6 +4182,21 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     renderRub();
     toast(`${n.toLocaleString("pt-BR")} rubrica${n === 1 ? "" : "s"} voltaram à sugestão.`);
   }
+  // Limpar tudo (lixeira): zera as Rubricas e o que estava guardado, com um segundo clique de confirmação
+  let limparTimer = 0, limparArmado = false;
+  function desarmarLimpar(){ limparArmado = false; clearTimeout(limparTimer); $("rubLimparTxt").textContent = "Limpar tudo"; $("rubLimpar").classList.remove("armado"); }
+  function limparTudoRub(){
+    if (rub.lendo) return;
+    rub.dados = null; rub.arquivos = []; rub.arquivo = null; rub.sessao = {}; rub.lixo = {}; rub.editados = new Set(); rub.filtros = {}; rub.sel.clear();
+    rub.empresas = new Map(Object.entries(memNomes)); rub.arqEmp = ""; rub.nEmp = 0; rub.limite = 400;
+    $("rubDropEvt").classList.remove("feito"); $("rubEvtNome").textContent = "";
+    kv.del("rub-fonte").catch(() => {}); kv.del("rub-ajustes").catch(() => {});
+    renderRub(); toast("Rubricas limpas: pode começar de novo.");
+  }
+  $("rubLimpar").addEventListener("click", () => {
+    if (!limparArmado){ limparArmado = true; $("rubLimpar").classList.add("armado"); $("rubLimparTxt").textContent = "Clique de novo para limpar tudo"; limparTimer = setTimeout(desarmarLimpar, 4000); return; }
+    desarmarLimpar(); limparTudoRub();
+  });
   $("rubReset").addEventListener("click", () => {
     if (!resetArmado){ resetArmado = true; $("rubReset").classList.add("armado"); $("rubResetTxt").textContent = "Clique de novo para confirmar"; resetTimer = setTimeout(desarmarReset, 4000); return; }
     desarmarReset(); voltarTudo();
@@ -5439,17 +5494,22 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const logXml = (m, t) => logTerminal(m, t || "log-info", "consoleLogXml");
   const xmlN = n => n.toLocaleString("pt-BR");
 
+  let xmlUltimosExtras = "";
   function renderXml(){
     const evs = [...xmlEstado.lidos.values()].reduce((a, b) => a + b, 0);
     $("xmlKArq").textContent = xmlN(xmlEstado.arquivos); $("xmlKEv").textContent = xmlN(evs);
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
-    const avisos = [];
-    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} inválida(s) ou sem S-5011: divergência acima de 5% entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299) × S-5011”)`);
-    if (xmlRes.excluidas) avisos.push(`${xmlN(xmlRes.excluidas)} linha${xmlRes.excluidas === 1 ? "" : "s"} do cruzamento ${xmlRes.excluidas === 1 ? "ficou" : "ficaram"} de fora da análise: a competência + estabelecimento ${xmlRes.excluidas === 1 ? "dela não está" : "delas não estão"} Válido nem Válido com Ressalvas (veja “Cruzamento de eventos · Excluídas”)`);
-    if (xmlRes.semValidacao && xmlRes.conjuntos.some(c => c.id === "cruzamento")) avisos.push("Sem S-5011 nos arquivos, nenhuma competência pôde ser validada: o cruzamento segue completo");
-    if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
-    if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
-    const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
+    const extras = [];
+    if (xmlRes.excluidas) extras.push(`${xmlN(xmlRes.excluidas)} linha${xmlRes.excluidas === 1 ? "" : "s"} do cruzamento ficaram de fora da análise (competência + estabelecimento inválidos): veja “Cruzamento de eventos · Excluídas”`);
+    if (xmlRes.semValidacao && xmlRes.conjuntos.some(c => c.id === "cruzamento")) extras.push("sem S-5011 nos arquivos nenhuma competência pôde ser validada: o cruzamento segue completo");
+    if (xmlRes.faltam) extras.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” e são desconsideradas): envie o S-1010 para classificar`);
+    if (xmlRes.semCS) extras.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
+    const chaveExtras = extras.join("|"); if (chaveExtras !== xmlUltimosExtras){ xmlUltimosExtras = chaveExtras; extras.forEach(t => logXml("Atenção: " + t + ".")); }   // os detalhes ficam no registro
+    const av = $("xmlAvisos"), texto = xmlRes.divergencias ? `${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competências apresentaram inconsistência(s) - valide-a(s) em “Conferência (S-1200 + S-2299) × S-5011”.` : "";
+    if (texto !== av.dataset.t){   // só refaz a animação quando a mensagem muda
+      av.dataset.t = texto; av.hidden = !texto;
+      av.innerHTML = texto ? '<span class="xml-aviso-fio"></span><span class="xml-aviso-txt"></span>' : ""; if (texto) av.querySelector(".xml-aviso-txt").textContent = texto;
+    }
     $("xmlLimpar").hidden = !xmlEstado.arquivos;
     $("xmlCorpo").innerHTML = xmlRes.conjuntos.length ? xmlRes.conjuntos.map((c, i) =>
       `<tr><td><b>${esc(c.titulo)}</b><div class="sub-t">${esc(c.sub)}</div></td><td class="num">${xmlN(c.rows.length)}</td><td class="num">${xmlN(c.cols.length)}</td><td class="xml-acao"><button type="button" class="btn primary" data-i="${i}">Exportar</button></td></tr>`).join("")
@@ -5552,6 +5612,30 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     atualizarGuardados();
   });
   atualizarGuardados();
+
+  /* ---------- Ao abrir: a sessão anterior volta (módulos genéricos e Rubricas) ---------- */
+  async function restaurarSessao(){
+    let voltou = false;
+    try {
+      const arqs = await kv.get("arquivos");
+      if (Array.isArray(arqs) && arqs.length && !estado.arquivos.length){
+        estado.arquivos = arqs.map(a => ({ ...a, file: null })); seq = Math.max(seq, ...arqs.map(a => a.id || 0));
+        arqs.forEach(a => jaMostrados.add(a.id)); voltou = true;
+      }
+    } catch(e){}
+    sessaoPronta = true; render();
+    try {
+      const fonte = await kv.get("rub-fonte");
+      if (Array.isArray(fonte) && fonte.length && !rub.dados && !rub.lendo){
+        const aj = (await kv.get("rub-ajustes")) || {};
+        (aj.empresas || []).forEach(([k, v]) => rub.empresas.set(k, v)); rub.arqEmp = aj.arqEmp || ""; rub.nEmp = aj.nEmp || 0;
+        await carregarEventos(fonte[0], fonte, false, { sessao: aj.sessao || {}, lixo: aj.lixo || {}, editados: aj.editados || [] });
+        voltou = !!rub.dados || voltou;
+      }
+    } catch(e){}
+    if (voltou) toast("Sua sessão anterior foi restaurada.");
+  }
+  restaurarSessao();
   $("xmlArqs").addEventListener("change", e => { const fs = Array.from(e.target.files || []); e.target.value = ""; if (fs.length) lerXmls(fs); });
   $("xmlLimpar").addEventListener("click", () => {
     if (xmlLendo) return;
