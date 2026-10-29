@@ -5112,6 +5112,15 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     });
     if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
 
+    // 1b) O S-1200 em si, uma linha por rubrica de cada trabalhador (válidos = recibo mais recente), para conferir
+    const s1200 = [];
+    remuns.forEach(e => { const t = estado.trab.get(e.cpf) || {}; e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per);
+      s1200.push([xCompOut(l.per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", e.indAp, e.indRetif, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", l.val, e.id, e.recibo || "", fechPer(e.nrEmp, e.perEv)]); }); });
+    s1200.sort((x, y) => xPerOrd(x[0].split("/").reverse().join("-")).localeCompare(xPerOrd(y[0].split("/").reverse().join("-"))) || x[6].localeCompare(y[6]) || String(x[10]).localeCompare(String(y[10])));
+    if (s1200.length) conjuntos.push({ id: "s1200", titulo: "S-1200 · Remuneração do trabalhador", sub: "Uma linha por rubrica, só o mais recente de cada trabalhador e competência (categorias 1xx)",
+      cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Indicador Apuração", "Indicador Retificação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Vlr Rubrica", "Id Evento", "Recibo", "Período Fechado (S-1299)"],
+      rows: s1200, num: new Set(["Vlr Rubrica"]), arquivo: "S-1200 Remuneracao" });
+
     // 2) Conferência: remuneração do S-1200 x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
     css.forEach(c => { const k = [c.nrEmp, c.indAp, c.per].join("|"); somaBase.set(k, (somaBase.get(k) || 0) + c.baseTotal); });
