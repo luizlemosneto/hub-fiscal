@@ -5013,8 +5013,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     // S-2299: as verbas rescisórias também entram na base do S-5011, então vão para o confronto (o S-2399 não entra; o evento segue para a tabela achatada)
     if (nome === "evtDeslig"){
       const cpf = xDig(xAcha(ev, "cpfTrab")), cat = xAcha(ev, "codCateg"), dt = xAcha(ev, "dtDeslig"), mat = xAcha(ev, "matricula");
-      const linhas = [];
-      if (!cat || cat.startsWith("1")) for (const dm of xDesc(ev, ["dmDev"])){
+      const linhas = [], totalXml = xDesc(ev, ["detVerbas", "itensRemun"]).length, catFora = !!cat && !cat.startsWith("1");
+      for (const dm of xDesc(ev, ["dmDev"])){
         const ind = xTxt(dm, "indPerApur") === "2" ? "2" : "1";
         for (const el of xDesc(dm, ["ideEstabLot"])){
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
@@ -5026,7 +5026,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         }
       }
       const extra = { nis: xDig(xAcha(ev, "nisTrab")), mat, mtv: xAcha(ev, "mtvDeslig"), api: xAcha(ev, "indPagtoAPI"), pens: xAcha(ev, "pensAlim"), cump: xAcha(ev, "indCumprParc"), indRetif: xTxt(ev, "ideEvento/indRetif"), nrRetif: nrRetif, dh: env.dh };
-      if (linhas.length) xGuardarMaisRecente(estado.resc, [nome, nrEmp, cpf, mat, dt].join("|"), rank, { id, recibo, nome, cpf, dt, cat, nrEmp, extra, linhas }, estado);
+      if (linhas.length || totalXml) xGuardarMaisRecente(estado.resc, [nome, nrEmp, cpf, mat, dt].join("|"), rank, { id, recibo, nome, cpf, dt, cat, catFora, totalXml, nrEmp, extra, linhas }, estado);
     }
 
     // Eventos que também alimentam o cruzamento (e continuam saindo como tabela achatada)
@@ -5163,7 +5163,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const chave = [e.nrEmp, l.ind, l.perApur].join("|");
         if (!somaResc.has(chave)) somaResc.set(chave, { rem: 0, fora: new Map() });
         const acc = somaResc.get(chave), r = rubDe(l.cod, l.tab, l.per);
-        const entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
+        const entra = e.catFora ? "Categoria fora" : !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
         if (entra === "Sim"){ acc.rem += l.val; lotAcc(e.nrEmp, l.ind, l.perApur, l.estNr, l.lot).resc += l.val; }
         else if (entra === "Não"){ const k = `Rescisão · ${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
         const x = e.extra, dh = x.dh || "", dhOut = dh.length >= 14 ? `${dh.slice(6, 8)}/${dh.slice(4, 6)}/${dh.slice(0, 4)} ${dh.slice(8, 10)}:${dh.slice(10, 12)}:${dh.slice(12, 14)}` : "";
@@ -5182,20 +5182,25 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       e.linhas.forEach(l => {
         const k = l.perApur + "|" + l.ind; if (!grupos.has(k)) grupos.set(k, { per: l.perApur, linhas: 0, entra: 0, outrosV: 0, desc: 0, info: 0, sem: 0 });
         const g = grupos.get(k), r = rubDe(l.cod, l.tab, l.per); g.linhas++;
+        if (e.catFora) return;
         if (!r) g.sem += l.val;
         else if (r.tp === "1"){ if (XML_INC_BASE.has(r.incCP)) g.entra += l.val; else g.outrosV += l.val; }
         else if (r.tp === "2") g.desc += l.val; else g.info += l.val;
       });
+      if (!grupos.size) grupos.set("", { per: (e.dt || "").slice(0, 7), linhas: 0, entra: 0, outrosV: 0, desc: 0, info: 0, sem: 0 });
+      const lidas = e.linhas.length, obs = [];
+      if (e.catFora) obs.push(`categoria ${e.cat} fora da base (não somado)`);
+      if (lidas !== e.totalXml) obs.push(`o XML tem ${e.totalXml} verba(s) e foram lidas ${lidas}`);
       grupos.forEach(g => {
         const venc = g.entra + g.outrosV;
-        resumo.push([xCompOut(g.per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", e.cpf, t.nome || "", e.extra.mat, e.dt, e.extra.mtv, e.extra.indRetif, e.id, e.recibo || "", g.linhas,
-          xMoeda(g.entra), xMoeda(g.outrosV), xMoeda(g.sem), xMoeda(venc), xMoeda(g.desc), xMoeda(g.info), xMoeda(venc - g.desc)]);
+        resumo.push([xCompOut(g.per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", e.cpf, t.nome || "", e.extra.mat, e.dt, e.extra.mtv, e.extra.indRetif, e.id, e.recibo || "", e.totalXml, lidas,
+          xMoeda(g.entra), xMoeda(g.outrosV), xMoeda(g.sem), xMoeda(venc), xMoeda(g.desc), xMoeda(g.info), xMoeda(venc - g.desc), obs.join("; ")]);
       });
     });
-    resumo.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]));
-    if (resumo.length) conjuntos.push({ id: "s2299res", titulo: "S-2299 · Resumo por desligamento", sub: "Uma linha por desligamento: vencimentos que entram na base, outros vencimentos, descontos e líquido, para comparar com o valor do desligamento",
-      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Data Desligamento", "Motivo Desligamento", "Indicador Retificação", "Id Evento", "Recibo", "Linhas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"],
-      rows: resumo, num: new Set(["Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
+    resumo.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]) || String(x[6]).localeCompare(String(y[6])));
+    if (resumo.length) conjuntos.push({ id: "s2299res", titulo: "S-2299 · Resumo por desligamento", sub: "Uma linha por desligamento: vencimentos que entram na base, outros vencimentos, descontos e líquido, e quantas verbas o XML tem contra quantas foram lidas",
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Data Desligamento", "Motivo Desligamento", "Indicador Retificação", "Id Evento", "Recibo", "Verbas no XML", "Verbas lidas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)", "Observação"],
+      rows: resumo, num: new Set(["Verbas no XML", "Verbas lidas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
 
     // 1e) Espelho do desligado no mês: tudo o que ele recebeu na competência do desligamento, S-1200 (o mês) + S-2299 (as verbas), linha a linha
     const desl = new Map(), espelho = [], espSoma = new Map();
@@ -5207,7 +5212,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     };
     remuns.forEach(e => { const k = [e.cpf, e.nrEmp, e.indAp, e.perEv].join("|"); if (!desl.has(k)) return;
       e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per), entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não"; espLinha("S-1200", k, e, l, r, entra, e.perEv); }); });
-    rescs.forEach(e => e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per), entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não"; espLinha("S-2299", [e.cpf, e.nrEmp, l.ind, l.perApur].join("|"), e, l, r, entra, l.perApur); }));
+    rescs.forEach(e => e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per), entra = e.catFora ? "Categoria fora" : !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não"; espLinha("S-2299", [e.cpf, e.nrEmp, l.ind, l.perApur].join("|"), e, l, r, entra, l.perApur); }));
     espelho.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]) || x[6].localeCompare(y[6]) || String(x[9]).localeCompare(String(y[9])));
     if (espelho.length) conjuntos.push({ id: "espelhoDeslig", titulo: "Espelho do desligado no mês (S-1200 + S-2299)", sub: "Tudo o que o desligado recebeu na competência do desligamento: as rubricas do S-1200 do mês e as do S-2299, linha a linha",
       cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Data Desligamento", "Origem", "Número Inscrição Estabelecimento", "Código Lotação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
