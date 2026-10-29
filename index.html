@@ -868,19 +868,30 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .hero-txt{padding-top:0}
 #viewHome > .hero{margin-top:0}
 #viewHome .topnav,.topnav{margin-bottom:clamp(16px,3vw,28px)}
-.hero-kicker{margin:0 0 18px;font-size:.78rem;font-weight:600;letter-spacing:0;text-transform:uppercase;color:var(--muted)}
+.hero-kicker{margin:0 0 18px;font-size:.9rem;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted)}
 .hero-h1{font-size:clamp(3rem,7.4vw,6.8rem);line-height:.9;letter-spacing:-.055em;margin:0}
 .hero-h1 .w{display:inline-block;animation:sobe 1s var(--ease) calc(var(--i,0) * 90ms + 80ms) backwards}
 .hero-h1 .w.cor{color:var(--muted)}
 @keyframes sobe{from{opacity:0;transform:translateY(.45em) rotate(2deg);filter:blur(6px)}}
 .hero .lede{margin-top:26px;font-size:1.18rem;max-width:42ch;animation:sobe 1s var(--ease) .45s backwards}
-.hero-meta{display:flex;gap:34px;margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:.72rem;letter-spacing:0;text-transform:uppercase;color:var(--muted);animation:sobe 1s var(--ease) .65s backwards}
+.hero-meta{display:flex;gap:34px;margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:.84rem;letter-spacing:0;text-transform:none;color:var(--muted);animation:sobe 1s var(--ease) .65s backwards}
 .hero-meta b{display:block;font-size:1.4rem;letter-spacing:-.03em;text-transform:none;color:var(--ink);font-weight:600}
 
 /* A cena: moedas à esquerda, máquina e a fita saindo por cima */
 .maq-cena{position:relative;height:520px;display:flex;align-items:flex-end;justify-content:center;gap:22px;animation:sobe 1.1s var(--ease) .25s backwards}
 /* A maquininha de cartão: corpo preto, tela cinza, teclas em relevo, o "entra" laranja; segura por uma mão de manga laranja */
-.maq{position:relative;width:236px;z-index:2;flex:none;margin:0 70px 44px 36px;transform:rotate(-7deg);transform-origin:50% 100%}
+.maq{position:relative;width:236px;z-index:2;flex:none;margin:0 70px 44px 36px;transform:rotate(-7deg);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.3,1.4,.5,1)}
+/* No mouse: a mão ergue a máquina, ajeita a pegada, a tela acende */
+.maq:hover{transform:rotate(-3deg) translateY(-12px) scale(1.025)}
+.maq:hover .maq-mao{animation:pegada 1.6s ease-in-out infinite}
+.maq:hover .maq-mao.frente{animation-name:pegada-dedos}
+@keyframes pegada{50%{transform:translate(2px,-3px) rotate(-.8deg)}}
+@keyframes pegada-dedos{50%{transform:translate(3px,-3px) rotate(-.8deg)}}
+.maq .maq-tela{transition:box-shadow .4s}
+.maq:hover .maq-tela{box-shadow:inset 0 0 0 3px #111112,inset 0 7px 14px rgba(0,0,0,.55),inset 0 0 22px rgba(255,159,10,.16),0 1px 0 rgba(255,255,255,.1)}
+.maq:hover .maq-rotulo b{animation:pisca 1.2s ease-in-out infinite}
+@keyframes pisca{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.maq,.maq:hover{transition:none;transform:rotate(-7deg)}.maq:hover .maq-mao,.maq:hover .maq-rotulo b{animation:none}}
 .maq-corpo{position:relative;border-radius:30px 30px 40px 40px;padding:30px 16px 24px;
   background:radial-gradient(120% 60% at 20% 0%,#3A3A3C 0,rgba(58,58,60,0) 55%),linear-gradient(165deg,#1C1C1E 0%,#0A0A0B 55%,#000000 100%);
   box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 2px 0 0 rgba(255,255,255,.05),inset -3px -8px 14px rgba(0,0,0,.7),0 0 0 1px #000000,
@@ -891,7 +902,7 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .maq-boca{position:absolute;left:50%;top:-12px;width:164px;height:7px;transform:translateX(-50%);border-radius:4px;background:#000000;box-shadow:inset 0 1px 2px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.12)}
 .maq-tela{margin:4px 2px 12px;padding:9px 13px 7px;border-radius:14px;background:linear-gradient(180deg,#3A3A3C,#2C2C2E);
   box-shadow:inset 0 0 0 3px #111112,inset 0 7px 14px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.1)}
-.maq-rotulo{display:flex;justify-content:space-between;font:600 .6rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:.12em;color:#8E8E93}
+.maq-rotulo{display:flex;justify-content:space-between;font:500 .72rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:0;color:#8E8E93}
 .maq-rotulo b{color:var(--ios-laranja);font-weight:700}
 .maq-visor{display:block;height:2.9rem;margin:4px 0 0;padding:0;background:none;color:#FFFFFF;text-align:right;
   font:300 2.5rem/1.15 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -911,11 +922,6 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
   box-shadow:0 4px 0 #A35A00,0 5px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
 .maq-teclas button.fn:active,.maq-teclas button.fn.aperta,.maq-teclas button.op:active,.maq-teclas button.op.aperta{transform:translateY(3px);box-shadow:0 1px 0 #2C2C2E,inset 0 1px 0 rgba(255,255,255,.3)}
 .maq-teclas button:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:3px}
-/* O cartão enfiado embaixo */
-.maq-cartao{position:absolute;left:50%;bottom:-46px;width:128px;height:60px;margin-left:-64px;z-index:-1;border-radius:0 0 8px 8px;
-  background:linear-gradient(160deg,#C7C7CC,#8E8E93);box-shadow:inset 0 -1px 0 rgba(0,0,0,.25),0 8px 12px -6px rgba(0,0,0,.4);
-  font:600 .5rem/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#48484A;padding:30px 0 0 12px;box-sizing:border-box}
-.maq-cartao::before{content:"";position:absolute;right:12px;top:24px;width:20px;height:14px;border-radius:3px;background:linear-gradient(135deg,#FFB340,var(--ios-laranja))}
 /* A mão: palma e manga atrás, dedos e polegar por cima */
 .maq-mao{position:absolute;left:-80px;top:0;width:460px;height:460px;overflow:visible;pointer-events:none}
 .maq-mao.tras{z-index:-2}
@@ -942,19 +948,27 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 @keyframes varre{to{left:calc(100% - 30px)}}
 
 /* Moedas de verdade: borda serrilhada, face com aro e R$ em relevo */
-.moedas-area{position:relative;width:140px;height:300px;margin-left:-44px;flex:none;align-self:flex-end;z-index:3}
+.moedas-area{position:relative;width:140px;height:300px;margin-left:-44px;flex:none;align-self:flex-end;z-index:3;--moeda-chao:rgba(0,0,0,.38);--moeda-luz:transparent}
+:root[data-theme="dark"] .moedas-area{--moeda-chao:rgba(0,0,0,.9);--moeda-luz:rgba(255,255,255,.2)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .moedas-area{--moeda-chao:rgba(0,0,0,.9);--moeda-luz:rgba(255,255,255,.2)}}
+/* O chão: no escuro, um halo claro de luz para a sombra aparecer; depois a sombra da pilha e a da moeda em pé */
+.moedas-area::before{content:"";position:absolute;left:-28px;right:-18px;bottom:-26px;height:60px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 52% 50%,var(--moeda-luz),transparent 70%)}
+.moedas-area::after{content:"";position:absolute;left:-22px;width:84px;bottom:-7px;height:16px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 60% 45%,var(--moeda-chao),transparent 70%);filter:blur(1px)}
 .moedas{position:absolute;left:44px;bottom:0;width:96px;height:300px;border:0;background:none;cursor:pointer;padding:0}
-.moeda{position:absolute;left:10px;bottom:calc(var(--n) * 11px);width:76px;height:34px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.32))}
-.moedas::before{content:"";position:absolute;left:-2px;right:-2px;bottom:-9px;height:22px;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.34),rgba(0,0,0,0) 68%);pointer-events:none}
-.moeda::before{content:"";position:absolute;left:0;right:0;bottom:0;height:22px;border-radius:0 0 38px 38px / 0 0 14px 14px;
-  background:linear-gradient(90deg,rgba(0,0,0,.14),transparent 25%,rgba(255,255,255,.18) 50%,transparent 75%,rgba(0,0,0,.14)),
-    repeating-linear-gradient(90deg,#A6A6AB 0 3px,#9D9DA2 3px 6px)}
-.moeda::after{content:"";position:absolute;left:0;right:0;top:0;height:26px;border-radius:50%;background:var(--moeda-sm) center/100% 100% no-repeat;box-shadow:0 1px 2px rgba(0,0,0,.28)}
-.moeda.cai{animation:surge .35s var(--ease) backwards}
+.moeda{position:absolute;left:10px;bottom:calc(var(--n) * 11px);width:76px;height:34px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+.moedas::before{content:"";position:absolute;left:0;right:0;bottom:-10px;height:24px;border-radius:50%;background:radial-gradient(ellipse at 50% 45%,var(--moeda-chao),transparent 68%);filter:blur(1px);pointer-events:none}
+/* Lateral serrilhada com cantos arredondados (sem degrau) e a face recortada com borda macia */
+.moeda::before{content:"";position:absolute;left:.5px;right:.5px;bottom:0;height:23px;border-radius:0 0 50% 50% / 0 0 13px 13px;
+  background:linear-gradient(90deg,rgba(0,0,0,.2),transparent 25%,transparent 75%,rgba(0,0,0,.2)),
+    repeating-linear-gradient(90deg,#A6A6AB 0 2px,#98989D 2px 4px)}
+.moeda::after{content:"";position:absolute;left:0;right:0;top:0;height:26px;border-radius:50%;background:var(--moeda-sm) center/106% 106% no-repeat,#B4B4B9;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),inset 0 -1px 1px rgba(0,0,0,.22),0 1px 1px rgba(0,0,0,.25)}
 @keyframes surge{from{opacity:0;transform:scale(.85)}}
 /* A moeda em pé, escorada na pilha */
-.moeda-pe{position:absolute;left:-14px;bottom:3px;width:72px;height:72px;border:0;border-radius:50%;cursor:pointer;padding:0;z-index:1;background:var(--moeda-img) center/100% 100% no-repeat;
-  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.22);filter:drop-shadow(2px 4px 3px rgba(0,0,0,.3));transform:rotate(11deg);transform-origin:50% 100%;backface-visibility:hidden}
+.moeda-pe{position:absolute;left:-14px;bottom:3px;width:72px;height:72px;border:0;border-radius:50%;cursor:pointer;padding:0;z-index:1;background:var(--moeda-img) center/104% 104% no-repeat,#B4B4B9;
+  box-shadow:inset 0 0 0 1.5px #9A9A9F,inset -3px -4px 6px rgba(0,0,0,.18);filter:drop-shadow(3px 5px 3px rgba(0,0,0,.38));transform:rotate(11deg);transform-origin:50% 100%;backface-visibility:hidden}
 .moeda-pe.gira{animation:gira 1s cubic-bezier(.2,.8,.2,1)}
 @keyframes gira{from{transform:rotate(11deg)}to{transform:rotate(11deg) rotateY(1080deg)}}
 .moedas:focus-visible,.moeda-pe:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:4px;border-radius:12px}
@@ -974,7 +988,7 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 /* O rolo: a fita escapa e toma a tela; um clique rasga tudo */
 .rolo{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--bg) 35%,transparent);animation:escurece .5s ease both}
 @keyframes escurece{from{background:transparent}}
-.tira{position:absolute;top:-30px;left:var(--x);width:var(--w,150px);height:125vh;transform-origin:50% 0;transform:translateX(-50%) rotate(var(--r));
+.tira{position:absolute;top:var(--y,-30px);left:var(--x);width:var(--w,150px);height:var(--h,125vh);transform-origin:50% 0;transform:translateX(-50%) rotate(var(--r));
   clip-path:inset(0 0 100% 0);animation:desenrola 1.7s var(--ease) var(--d) forwards}
 .tira ol{list-style:none;margin:0;height:100%;padding:16px 14px;background:#FFFFFF;color:#333333;font:500 .72rem/1.7 ui-monospace,Menlo,Consolas,monospace;
   box-shadow:0 18px 40px -20px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 21px,rgba(0,0,0,.035) 21px 22px)}
@@ -988,7 +1002,20 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .rolo.despenca{animation-duration:.25s}
 .rolo.despenca .tira{clip-path:none;animation:despenca .62s cubic-bezier(.25,1.35,.4,1) var(--d) backwards}
 .rolo.despenca.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards}
-@keyframes despenca{from{transform:translateX(-50%) translateY(-135vh) rotate(calc(var(--r) * -5))}}
+@keyframes despenca{from{transform:translateX(-50%) translateY(-150vh) rotate(calc(var(--r) * -3))}}
+/* A nota da carga tributária, no mesmo traço do convite, apontando para as notas */
+.dica-carga{position:absolute;right:max(3vw,24px);top:16vh;width:250px;z-index:5;pointer-events:none;color:#3A3A3C;text-align:left;animation:sobe .6s var(--ease) .55s backwards}
+.dica-carga::before{content:"";position:absolute;inset:-46px -40px -30px -46px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,#FFFFFF 62%,rgba(255,255,255,0));filter:blur(4px)}
+.dica-carga p{margin:0;font:500 1.45rem/1.12 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;transform:rotate(-3deg);transform-origin:0 0;
+  text-shadow:0 0 3px #FFFFFF,0 0 8px #FFFFFF,0 0 14px #FFFFFF,0 0 22px #FFFFFF}
+.dica-carga p b{font-weight:700;color:#000000}
+.dica-carga p em{font-style:normal;color:var(--ios-laranja)}
+.dica-carga small{display:block;margin-top:4px;font-size:1.1rem;color:#636366}
+.dica-carga svg{display:block;width:104px;height:56px;margin:4px 0 0 18px;overflow:visible;transform:scaleX(-1);filter:drop-shadow(0 0 3px #FFFFFF) drop-shadow(0 0 6px #FFFFFF)}
+.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .7s var(--ease) 1s forwards}
+.dica-carga .ponta{animation-delay:1.6s;animation-duration:.35s}
+.rolo.rasga .dica-carga{opacity:0;transition:opacity .25s}
+@media (max-width:700px){.dica-carga{display:none}}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
@@ -1034,7 +1061,7 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .mod[data-grupo="retificacao"]{--cor:var(--ios-tecla);--cor-ink:#FFFFFF}
 .mods .mod:nth-child(2){--base:var(--g2)}.mods .mod:nth-child(3){--base:var(--g1)}.mods .mod:nth-child(4){--base:var(--g1)}
 .mods .mod:nth-child(5){--base:var(--g2)}.mods .mod:nth-child(6){--base:var(--g2)}.mods .mod:nth-child(7){--base:var(--g1)}
-.mod .grupo{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;font-size:.68rem;font-weight:600;letter-spacing:0;text-transform:uppercase;color:var(--muted);transition:color .35s}
+.mod .grupo{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;font-size:.8rem;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);transition:color .35s}
 .mod .grupo::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cor);box-shadow:0 0 0 2px color-mix(in srgb,var(--cor) 25%,transparent);transition:background .35s}
 .mod:hover .grupo,.mod:focus-visible .grupo{color:color-mix(in srgb,var(--cor-ink) 80%,transparent)}
 .mod:hover .grupo::before,.mod:focus-visible .grupo::before{background:var(--cor-ink)}
@@ -1131,7 +1158,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <p class="hero-kicker">Tributação · Previdência · eSocial</p>
         <h1 class="hero-h1"><span class="w" style="--i:0">Hub</span> <span class="w" style="--i:1">Fiscal</span> <span class="w cor" style="--i:2">&amp;</span><br><span class="w" style="--i:3">Previdenciário</span></h1>
         <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
-        <div class="hero-meta"><span><b>8</b>módulos</span><span><b>5 anos</b>de rubricas na análise</span><span><b>100%</b>no seu navegador</span></div>
+        <div class="hero-meta"><span><b>8</b>Módulos</span><span><b>5 anos</b>de rubricas na análise</span><span><b>100%</b>no seu navegador</span></div>
       </div>
       <div class="maq-cena" data-calc="hero" aria-label="Maquininha de cartão"></div>
     </section>
@@ -2385,7 +2412,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     <div class="moedas-area">
       <button class="moedas" type="button" aria-label="Empilhar uma moeda"></button>
       <button class="moeda-pe" type="button" aria-label="Girar a moeda"></button>
-      <div class="dica-brinque" aria-hidden="true"><span>faça uma conta</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path class="rabisco" pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
+      <div class="dica-brinque" aria-hidden="true"><span>Simule o seu holerite</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path class="rabisco" pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     </div>
     
     <div class="maq">
@@ -2405,7 +2432,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         </svg>
       <div class="maq-corpo">
         <div class="maq-boca" aria-hidden="true"><span class="cabeca"></span></div>
-        <div class="maq-tela"><span class="maq-rotulo" aria-hidden="true"><span>VALOR</span><b>R$</b></span><output class="maq-visor">0</output></div>
+        <div class="maq-tela"><span class="maq-rotulo" aria-hidden="true"><span>Valor</span><b>R$</b></span><output class="maq-visor">0</output></div>
         <div class="maq-soft" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div class="maq-teclas">
           <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="AC" class="fn" aria-label="Cancelar">✕</button>
@@ -2414,7 +2441,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           <button type="button" data-k=",">,</button><button type="button" data-k="0">0</button><button type="button" data-k="00">00</button>
         </div>
       </div>
-      <span class="maq-cartao" aria-hidden="true">•••• 0000</span>
       <svg class="maq-mao frente" viewBox="-80 0 460 460" aria-hidden="true">
           <g fill="url(#pele__ID__)" stroke="#8E8E93" stroke-opacity=".4" stroke-width="1">
             <rect x="-23" y="228" width="37" height="33" rx="16.5" transform="rotate(-6 -4 244)"/>
@@ -2568,18 +2594,25 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const ROTULOS = ["HOLERITE", "HOLERITE", "INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
     const linhaFake = i => i % 9 === 8 ? `<li class="tot"><span>${fmtCalc(Math.random() * 900000 + 10000)}</span><b>*</b></li>`
       : `<li><span>${ROTULOS[Math.floor(Math.random() * ROTULOS.length)]}</span><span>${fmtCalc(Math.random() * 90000)}</span></li>`;
+    // O que a empresa paga além do salário (sobre a folha): INSS patronal, RAT ajustado pelo FAP e terceiros
+    const DICA_CARGA = `<div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br><b>20%</b> INSS patronal<br>+ <b>RAT × FAP</b> (0,5% a 6%)<br>+ <b>5,8%</b> terceiros<br>= <em>até ~32% a mais</em><small>e reflete em férias, 13º e DSR</small></p>
+      <svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>`;
     function desenrolar(despenca){
       rolando = true;
       const minhas = [...lista.querySelectorAll("li")].map(li => li.outerHTML).join("");
       const ov = document.createElement("div"); ov.className = "rolo" + (despenca ? " despenca" : ""); ov.setAttribute("role", "button"); ov.setAttribute("aria-label", "Rasgar a fita");
-      const n = Math.max(4, Math.min(9, Math.round(innerWidth / 190)));
-      let html = "";
+      const n = Math.max(4, Math.min(9, Math.round(innerWidth / 190))) + (despenca ? 5 : 0), meio = Math.floor(n / 2);
+      let html = "", minha = "";
       for (let i = 0; i < n; i++){
-        const x = ((i + .5) / n) * 100 + (Math.random() * 6 - 3), r = (Math.random() * 8 - 4).toFixed(1), w = 175 + Math.round(Math.random() * 35);
-        let ls = i === Math.floor(n / 2) ? minhas : ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + i);
-        html += `<div class="tira" style="--x:${x}%;--r:${r}deg;--w:${w}px;--d:${(despenca ? Math.random() * .22 : i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
+        let x = ((i + .5) / n) * 100 + (Math.random() * 6 - 3), r = Math.random() * 8 - 4, w = 175 + Math.round(Math.random() * 35), y = -30, h = 125;
+        // Na chuva, as notas caem jogadas: tortas, sobrepostas, umas mais altas, outras curtas
+        if (despenca && i !== meio){ x = Math.random() * 104 - 2; r = (Math.random() - .5) * (Math.random() < .3 ? 70 : 30); y = -40 - Math.random() * 260; h = 70 + Math.random() * 70; }
+        let ls = i === meio ? minhas : ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + i);
+        const t = `<div class="tira" style="--x:${x.toFixed(1)}%;--r:${r.toFixed(1)}deg;--w:${w}px;--y:${y.toFixed(0)}px;--h:${h.toFixed(0)}vh;--d:${(despenca ? Math.random() * .22 : i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
+        if (despenca && i === meio) minha = t; else html += t;
       }
-      ov.innerHTML = html;
+      // a fita com os seus holerites cai por cima de todas
+      ov.innerHTML = html + minha + (despenca ? DICA_CARGA : "");
       document.body.appendChild(ov);
       // Se ninguém clicar, a fita se rasga sozinha em 5 segundos
       let sozinha = 0;
