@@ -918,8 +918,8 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 @keyframes varre{to{left:calc(100% - 30px)}}
 
 /* Moedas de verdade: borda serrilhada, face com aro e R$ em relevo */
-.moedas-area{position:relative;width:96px;height:300px;flex:none;align-self:flex-end;z-index:3}
-.moedas{position:absolute;left:0;bottom:0;width:96px;height:300px;border:0;background:none;cursor:pointer;padding:0}
+.moedas-area{position:relative;width:140px;height:300px;margin-left:-44px;flex:none;align-self:flex-end;z-index:3}
+.moedas{position:absolute;left:44px;bottom:0;width:96px;height:300px;border:0;background:none;cursor:pointer;padding:0}
 .moeda{position:absolute;left:10px;bottom:calc(var(--n) * 11px);width:76px;height:34px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.32))}
 .moedas::before{content:"";position:absolute;left:-2px;right:-2px;bottom:-9px;height:22px;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.34),rgba(0,0,0,0) 68%);pointer-events:none}
 .moeda::before{content:"";position:absolute;left:0;right:0;bottom:0;height:22px;border-radius:0 0 38px 38px / 0 0 14px 14px;
@@ -928,18 +928,16 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .moeda::after{content:"";position:absolute;left:0;right:0;top:0;height:26px;border-radius:50%;background:var(--moeda-sm) center/100% 100% no-repeat;box-shadow:0 1px 2px rgba(0,0,0,.28)}
 .moeda.cai{animation:surge .35s var(--ease) backwards}
 @keyframes surge{from{opacity:0;transform:scale(.85)}}
-.moeda-pe{position:absolute;left:10px;bottom:calc(100% - 22px);width:76px;height:76px;border:0;border-radius:50%;cursor:pointer;padding:0;background:var(--moeda-img) center/100% 100% no-repeat;
-  box-shadow:0 0 0 3px #A3A3A8,0 0 0 5px #BDBDC1;filter:drop-shadow(0 12px 9px rgba(0,0,0,.38));animation:flutua-moeda 4s ease-in-out infinite}
-.moeda-pe::before{content:"";position:absolute;inset:-5px;border-radius:50%;background:repeating-conic-gradient(#A0A0A5 0 2deg,#B9B9BD 2deg 4deg);
-  -webkit-mask:radial-gradient(circle,transparent 60%,#000 61%);mask:radial-gradient(circle,transparent 60%,#000 61%);z-index:-1}
+/* A moeda em pé, escorada na pilha */
+.moeda-pe{position:absolute;left:0;bottom:3px;width:60px;height:60px;border:0;border-radius:50%;cursor:pointer;padding:0;z-index:1;background:var(--moeda-img) center/100% 100% no-repeat;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.22);filter:drop-shadow(2px 4px 3px rgba(0,0,0,.3));transform:rotate(11deg);transform-origin:50% 100%;backface-visibility:hidden}
 .moeda-pe.gira{animation:gira 1s cubic-bezier(.2,.8,.2,1)}
-@keyframes gira{to{transform:rotateY(1080deg)}}
-@keyframes flutua-moeda{50%{transform:translateY(-6px)}}
+@keyframes gira{from{transform:rotate(11deg)}to{transform:rotate(11deg) rotateY(1080deg)}}
 .moedas:focus-visible,.moeda-pe:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:4px;border-radius:12px}
 
 /* Convite: uma frase discreta e uma seta desenhada à mão apontando a calculadora */
-.dica-brinque{position:absolute;left:50%;margin-left:-75px;top:76px;width:150px;text-align:center;color:var(--muted);z-index:4;pointer-events:none;transition:opacity .5s var(--ease);animation:sobe 1s var(--ease) 1.2s backwards}
-.dica-brinque span{display:block;font:500 1.32rem/1.1 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:rotate(-4deg);transform-origin:0 100%}
+.dica-brinque{position:absolute;left:17px;top:76px;width:150px;text-align:center;color:var(--muted);z-index:4;pointer-events:none;transition:opacity .5s var(--ease);animation:sobe 1s var(--ease) 1.2s backwards}
+.dica-brinque span{display:block;font:500 1.32rem/1.1 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:translateX(-46px) rotate(-4deg);transform-origin:0 100%}
 .dica-brinque svg{display:block;width:104px;height:56px;margin:2px auto 0;overflow:visible}
 .dica-brinque path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .9s var(--ease) 1.6s forwards}
 .dica-brinque .ponta{animation-delay:2.35s;animation-duration:.4s}
@@ -964,23 +962,23 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 @keyframes desenrola{to{clip-path:inset(0 0 0 0)}}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
-/* O valor circulado a pincel preto, o zoom e o boom de luz */
-.giz{position:fixed;inset:0;z-index:92;pointer-events:none}
-.giz-fundo{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(255,252,246,.96),rgba(236,236,242,.92));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:opacity .7s var(--ease)}
+/* O valor circulado a pincel preto, o fundo em breu, o brilho e o zoom */
+.giz{position:fixed;inset:0;z-index:92;pointer-events:none;--giz-brilho:rgba(199,199,204,.9)}
+:root[data-theme="dark"] .giz{--giz-brilho:rgba(255,255,255,.85)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .giz{--giz-brilho:rgba(255,255,255,.85)}}
+.giz-fundo{position:absolute;inset:0;opacity:0;background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
 .giz.escurece .giz-fundo{opacity:1}
 .giz-zoom{position:absolute;transform-origin:50% 50%;will-change:transform}
-.giz-valor{display:block;text-align:center;white-space:nowrap;font:800 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
-  color:transparent;background:linear-gradient(105deg,#000 0,#000 40%,#FF9F0A 47%,#FFE2A8 50%,#FF9F0A 53%,#000 60%,#000 100%) 100% 0/260% 100%;-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 3px rgba(255,159,10,.7)) drop-shadow(0 0 9px rgba(255,159,10,.45));animation:brilho 1.7s linear infinite}
+.giz-fumaca{position:absolute;border-radius:50%;filter:blur(20px);opacity:.95;
+  --f:color-mix(in srgb,var(--giz-brilho) 45%,transparent);
+  background:radial-gradient(ellipse 46% 52% at 36% 46%,var(--f),transparent 100%),radial-gradient(ellipse 44% 48% at 64% 56%,var(--f),transparent 100%),radial-gradient(ellipse 58% 56% at 50% 50%,var(--giz-brilho) 0,var(--f) 45%,transparent 100%);
+  animation:fumaca 3.2s ease-in-out infinite alternate}
+@keyframes fumaca{to{transform:scale(1.07,.95) rotate(3deg);opacity:.8}}
+.giz-valor{position:relative;display:block;text-align:center;white-space:nowrap;font:800 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color:transparent;background:linear-gradient(105deg,#000 0,#000 40%,#8E8E93 47%,#D1D1D6 50%,#8E8E93 53%,#000 60%,#000 100%) 100% 0/260% 100%;-webkit-background-clip:text;background-clip:text;
+  transform:scale(1.22);animation:brilho 1.7s linear infinite}
 @keyframes brilho{to{background-position:-60% 0}}
 .giz svg{position:absolute;overflow:visible}
-.giz-raios{position:absolute;left:50%;top:50%;width:260vmax;height:260vmax;margin:-130vmax 0 0 -130vmax;opacity:0;
-  background:repeating-conic-gradient(from 0deg,rgba(255,159,10,.7) 0 3.5deg,rgba(255,255,255,0) 3.5deg 11deg);
-  -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.35) 18%,transparent 46%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.35) 18%,transparent 46%)}
-.giz-flash{position:absolute;inset:0;background:radial-gradient(circle,#FFFFFF 0,rgba(255,236,200,.92) 28%,rgba(255,159,10,0) 68%);opacity:0}
-.giz-onda{position:absolute;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:5px solid #FF9F0A;box-shadow:0 0 30px 6px rgba(255,159,10,.55),inset 0 0 22px 2px rgba(255,255,255,.9);opacity:0}
-.giz-faisca{position:absolute;left:50%;top:50%;width:var(--t);height:var(--t);margin:calc(var(--t) / -2) 0 0 calc(var(--t) / -2);background:var(--c);
-  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);filter:drop-shadow(0 0 6px var(--c));opacity:0}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
 
 /* Chuva de moedas ao baixar a planilha de oportunidades */
@@ -2512,7 +2510,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const linhas = pend.map(l => [l[0], l[1], false]).concat([[fmtCalc(acc), "*", true]]); pend = [];
         entrada = ""; posResultado = true; tAC.textContent = "AC"; acende(null); mostrar(fmtCalc(acc)); poeMoeda(true);
         const impresso = imprimirConta(linhas);
-        // No terceiro "=", depois de imprimir: o valor é circulado a giz, a tela dá zoom e estoura
+        // No terceiro "=", depois de imprimir: o valor é circulado a pincel e a tela dá zoom nele
         if (++iguais >= 3){ iguais = 0; impresso.then(() => setTimeout(momentoBoom, reduzMov ? 0 : 350)); }
       }
     }
@@ -2559,70 +2557,55 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       document.addEventListener("keydown", function sai(e){ if (e.key === "Escape"){ document.removeEventListener("keydown", sai); if (ov.isConnected) fechar(); } });
     }
 
-    // Antes do boom: um pincel imaginário (preto vivo) circula o total, a tela dá zoom nele e estoura em luz
+    // Antes do rolo: um pincel preto circula o total (uma volta e meia, pontas finas), o fundo cai em breu e a tela dá zoom no valor
     function pincelGiz(w, h){
-      const cx = w / 2, cy = h / 2, rx = w / 2 + 30, ry = h / 2 + 24, rot = -3 * Math.PI / 180, fase = Math.random() * 6, N = 150, W = 7.5;
-      const t0 = -2.55, t1 = 2 * Math.PI * 2.05 - 2.2, pts = [];
+      const cx = w / 2, cy = h / 2, rx = w / 2 + 26, ry = h / 2 + 16, rot = -2.5 * Math.PI / 180, N = 260, W = 4.2;
+      // começa em cima à esquerda, dá a volta inteira e passa do ponto, saindo para fora em cima à direita
+      const t0 = -2.75, t1 = -2.75 + 2 * Math.PI + 2.5, pts = [];
       for (let i = 0; i <= N; i++){
-        const t = t0 + (t1 - t0) * i / N, k = 1 + .045 * Math.sin(2.3 * t + fase) + .03 * (t / (2 * Math.PI)), x = rx * k * Math.cos(t), y = ry * k * Math.sin(t);
+        const u = i / N, t = t0 + (t1 - t0) * u, k = 1 + .1 * u * u, x = rx * k * Math.cos(t), y = ry * (1 - .12 * u) * Math.sin(t) - 4 * u;
         pts.push([cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot)]);
       }
       const L = [], R = [];
       pts.forEach((q, i) => {
         const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, nx = -dy / m, ny = dx / m, u = i / N;
-        const ponta = Math.min(1, u * 7) * Math.min(1, (1 - u) * 5), wd = W * (.28 + .72 * Math.pow(ponta, .55)) * (1 + .1 * Math.sin(i * .9)) / 2;
+        const wd = W * Math.pow(Math.min(1, u * 9), .7) * Math.pow(Math.min(1, (1 - u) * 4), .8) / 2;
         L.push([q[0] + nx * wd, q[1] + ny * wd]); R.push([q[0] - nx * wd, q[1] - ny * wd]);
       });
-      const f = n => n.toFixed(1), poly = L.concat(R.reverse()).map((q, i) => (i ? "L" : "M") + f(q[0]) + " " + f(q[1])).join("") + "Z";
+      const f = n => n.toFixed(2), poly = L.concat(R.reverse()).map((q, i) => (i ? "L" : "M") + f(q[0]) + " " + f(q[1])).join("") + "Z";
       return { contorno: poly, centro: pts.map((q, i) => (i ? "L" : "M") + f(q[0]) + " " + f(q[1])).join("") };
     }
     async function momentoBoom(){
       rolando = true;
       const li = [...lista.querySelectorAll("li.tot")].pop(), sp = li && li.firstElementChild;
       if (!sp || reduzMov){ desenrolar(); return; }
-      const r = sp.getBoundingClientRect(), w = r.width + 12, h = r.height + 4, pad = 70, br = pincelGiz(w, h);
+      const r = sp.getBoundingClientRect(), w = r.width + 12, h = r.height + 4, pad = 50, br = pincelGiz(w, h), mx = 42, my = 30;
       const ov = document.createElement("div"); ov.className = "giz";
-      ov.innerHTML = `<svg width="0" height="0" style="position:absolute"><filter id="filtroPincel" x="-8%" y="-8%" width="116%" height="116%">
-          <feTurbulence type="fractalNoise" baseFrequency=".9 .05" numOctaves="2" seed="3" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="d"/>
-          <feTurbulence type="fractalNoise" baseFrequency=".07 .55" numOctaves="2" seed="11" result="s"/>
-          <feColorMatrix in="s" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 5 -1.3" result="sa"/>
-          <feComposite in="d" in2="sa" operator="in"/></filter></svg>
-        <div class="giz-fundo"></div><div class="giz-raios"></div><div class="giz-flash"></div><div class="giz-onda"></div>
+      ov.innerHTML = `<div class="giz-fundo"></div>
         <div class="giz-zoom" style="left:${r.left - 6}px;top:${r.top - 2}px;width:${w}px;height:${h}px">
+          <span class="giz-fumaca" style="left:${-mx}px;top:${-my}px;width:${w + mx * 2}px;height:${h + my * 2}px"></span>
           <span class="giz-valor" style="width:${w}px;height:${h}px;font-size:${getComputedStyle(sp).fontSize}">${esc(sp.textContent)}</span>
           <svg style="left:${-pad}px;top:${-pad}px" width="${w + pad * 2}" height="${h + pad * 2}" viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}">
-            <mask id="mascaraPincel" maskUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${w + pad * 2}" height="${h + pad * 2}"><path class="rastro" d="${br.centro}" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
-            <path d="${br.contorno}" fill="#000" mask="url(#mascaraPincel)" filter="url(#filtroPincel)"/>
+            <mask id="mascaraPincel" maskUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${w + pad * 2}" height="${h + pad * 2}"><path class="rastro" d="${br.centro}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
+            <path d="${br.contorno}" fill="#000" mask="url(#mascaraPincel)"/>
           </svg>
         </div>`;
       document.body.appendChild(ov);
       const zoom = ov.querySelector(".giz-zoom"), rastro = ov.querySelector(".rastro");
       await espera(60); ov.classList.add("escurece");
-      // 1) o pincel passa duas vezes em volta do valor
-      await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1250, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
-      await espera(240);
+      // 1) o pincel circula o valor
+      await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
+      await espera(200);
       // 2) zoom no valor
-      const alvo = Math.min(innerWidth * .56 / (w + 60), innerHeight * .46 / (h + 48)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
-      await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * .95})` }, { transform: `translate(${dx}px,${dy}px) scale(${alvo})` }],
-        { duration: 950, easing: "cubic-bezier(.7,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
-      // 3) BOOM de luz: clarão, raios, onda, faíscas e a tela sacudindo; a fita invade
-      const q = sel => ov.querySelector(sel), pagina = document.querySelector(".wrap");
-      q(".giz-flash").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: "ease-out", fill: "forwards" });
-      q(".giz-raios").animate([{ opacity: 1, transform: "scale(.25) rotate(0deg)" }, { opacity: 0, transform: "scale(1) rotate(28deg)" }], { duration: 1100, easing: "cubic-bezier(.1,.7,.2,1)", fill: "forwards" });
-      q(".giz-onda").animate([{ opacity: 1, transform: "scale(.2)" }, { opacity: 0, transform: "scale(34)" }], { duration: 950, easing: "cubic-bezier(.1,.7,.2,1)", fill: "forwards" });
-      for (let i = 0; i < 26; i++){
-        const f = document.createElement("i"), ang = Math.random() * Math.PI * 2, dist = 260 + Math.random() * Math.max(innerWidth, innerHeight) * .5, t = 14 + Math.random() * 26;
-        f.className = "giz-faisca"; f.style.cssText = `--t:${t.toFixed(0)}px;--c:${["#FF9F0A", "#FFFFFF", "#FFC85C", "#000000"][i % 4]}`; ov.appendChild(f);
-        f.animate([{ opacity: 1, transform: "translate(0,0) rotate(0deg) scale(.2)" }, { opacity: 1, transform: `translate(${Math.cos(ang) * dist * .6}px,${Math.sin(ang) * dist * .6}px) rotate(${(Math.random() * 180).toFixed(0)}deg) scale(1.1)`, offset: .45 },
-          { opacity: 0, transform: `translate(${Math.cos(ang) * dist}px,${Math.sin(ang) * dist}px) rotate(${(Math.random() * 360).toFixed(0)}deg) scale(.4)` }], { duration: 900 + Math.random() * 500, easing: "cubic-bezier(.1,.7,.3,1)", fill: "forwards" });
-      }
-      const sac = []; for (let i = 0; i < 12; i++) sac.push({ transform: `translate(${((Math.random() - .5) * 22).toFixed(1)}px,${((Math.random() - .5) * 22).toFixed(1)}px)` }); sac.push({ transform: "none" });
-      pagina.animate(sac, { duration: 520, easing: "steps(12,end)" });
-      zoom.animate([{ transform: `translate(${dx}px,${dy}px) scale(${alvo})`, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * 1.7})`, opacity: 0 }], { duration: 560, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" });
-      q(".giz-fundo").style.transition = "opacity .9s ease"; q(".giz-fundo").style.opacity = "0";
+      const alvo = Math.min(innerWidth * .6 / (w + mx * 2), innerHeight * .5 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
+      await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo})` }],
+        { duration: 900, easing: "cubic-bezier(.7,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
+      await espera(1400);
+      // 3) some com calma e a fita toma a tela
+      zoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: "ease", fill: "forwards" });
+      const fundo = ov.querySelector(".giz-fundo"); fundo.style.transition = "opacity .6s ease"; fundo.style.opacity = "0";
       desenrolar();
-      setTimeout(() => ov.remove(), 1700);
+      setTimeout(() => ov.remove(), 700);
     }
     imprimir("0,00", "T");
     return { apertar, demo, pararDemo };
