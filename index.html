@@ -1552,7 +1552,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <ol>
         <li>S-5011: alíquotas por período, estabelecimento e lotação (RAT, FAP, GILRAT) e outras entidades pela tabela FPAS + código de terceiros (menos o suspenso). Patronal 20% (22,5% para cooperativa); com substituição 1, 5% em 2025, 10% em 2026, 15% em 2027 e 0% nos demais anos; com substituição 2, a patronal (ou a de transição de 2025 a 2027) reduzida pelo percentual de redução.</li>
         <li>S-1200: vale o maior grau de exposição do CPF na competência (ou, sem ela, o maior do CPF; padrão 1). Agentes nocivos: grau 2 ou 6 = 12%, 3 ou 7 = 9%, 4 ou 8 = 6%.</li>
-        <li>S-5001: só tipo de valor 11 e categoria empregado. Linhas repetidas pelo achatamento do Parquet são descartadas e vale o recibo mais recente de cada CPF e competência. Usa a base de referência quando existe; senão, a base normal.</li>
+        <li>S-5001: só tipo de valor 11 e categorias iniciadas em 1 (101, 103…). Linhas repetidas pelo achatamento do Parquet são descartadas e vale o recibo mais recente de cada CPF e competência. Usa a base de referência quando existe; senão, a base normal.</li>
         <li>Entram as competências dos últimos 5 anos até dois meses atrás. Base redutora = (remuneração − 200) × soma das alíquotas.</li>
         <li>A planilha sai com as abas Base Consolidada e Totalizadores, com as fórmulas de rateio do crédito por competência.</li>
       </ol>
@@ -1604,7 +1604,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
         <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 não pode ser classificada e fica como “Corrompido” em Validade do evento (desconsiderada pelo módulo Rubricas); as demais ficam “Válido”. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
-        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
+        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010, só categorias iniciadas em 1, como 101 e 103) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -2129,6 +2129,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
 
   // Funções do script original
+  // Só categorias de trabalhador que começam com 1 (101, 103…); sem código, cai no texto "empregado"
+  function catEmpregadoEso(v){ const t = txtNormEso(v), m = t.match(/^\d+/); return m ? m[0].startsWith("1") : t.startsWith("empregado"); }
   function txtNormEso(t){ return t == null ? "" : String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase(); }
   function formPerEso(p){
     if (p == null || p === "") return ""; if (p instanceof Date) return `${String(p.getUTCMonth()+1).padStart(2,"0")}/${p.getUTCFullYear()}`;
@@ -2185,7 +2187,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         if (cm9 && !String(r[cm9] ?? "").trim().startsWith("11")) continue;
         const p = formPerEso(r[cm1]); if (!p) continue;
         const rc = cm2 ? String(r[cm2] ?? "").trim() : "", kR = `${rc}_${c}_${p}`, vR = cm7 ? convNumEso(r[cm7]) : 0; if (vR > 0) rcRef.add(kR);
-        if (cm10 && !txtNormEso(r[cm10]).startsWith("empregado")) continue;
+        if (cm10 && !catEmpregadoEso(r[cm10])) continue;
         const lt = String(r[cm5] ?? "").trim().replace(/\.0$/, ""), iL = limpInsEso(r[cm6]), vN = cm8 ? convNumEso(r[cm8]) : 0;
         if (cmNome && !nomesIns.has(iL)){ const nm = String(r[cmNome] ?? "").trim(); if (nm && nm.toLowerCase() !== "nan") nomesIns.set(iL, nm); }
         const chDup = [
@@ -4517,7 +4519,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           const c=limpCPFEso(r[cm3]); if(!c) continue; if(cm4){const mt=String(r[cm4]||'').trim().replace(/\.0$/,''); if(mt&&!['nan','null'].includes(mt.toLowerCase())) mapMat.set(c,mt);}
           if(cm9&&!String(r[cm9]??'').trim().startsWith('11')) continue; const p=formPerEso(r[cm1]); if(!p)continue;
           const rc=cm2?String(r[cm2]??'').trim():'', kR=`${rc}_${c}_${p}`, vR=cm7?convNumEso(r[cm7]):0; if(vR>0) rcRef.add(kR);
-          if(cm10&&!txtNormEso(r[cm10]).startsWith('empregado')) continue;
+          if(cm10&&!catEmpregadoEso(r[cm10])) continue;
           const lt=String(r[cm5]??'').trim().replace(/\.0$/,''), iL=limpInsEso(r[cm6]), vN=cm8?convNumEso(r[cm8]):0;
           // Deduplicação: mesma base repetida pelo achatamento do Parquet
           const chDup = [
@@ -4961,7 +4963,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const cpf = xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indRetif = xTxt(ev, "ideEvento/indRetif");
       const linhas = [];
       for (const dm of xDesc(ev, ["dmDev"])){
-        const cat = xTxt(dm, "codCateg");
+        const cat = xTxt(dm, "codCateg"); if (!cat.startsWith("1")) continue;
         for (const el of xDesc(dm, ["ideEstabLot"])){
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estTp = xTxt(el, "tpInsc"), estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
@@ -5080,7 +5082,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     remuns.forEach(e => {
       const chaveRem = [e.nrEmp, e.indAp, e.perEv].join("|");
       if (!somaRem.has(chaveRem)) somaRem.set(chaveRem, { rem: 0, semTab: 0, trabs: new Set() });
-      const acc = somaRem.get(chaveRem); acc.trabs.add(e.cpf);
+      const acc = somaRem.get(chaveRem); if (e.linhas.length) acc.trabs.add(e.cpf);
       const t = estado.trab.get(e.cpf) || {};
       e.linhas.forEach(l => {
         const r = rubDe(l.cod, l.tab, l.per); if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
