@@ -4939,6 +4939,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const xTxt = (el, caminho) => { let a = el; for (const n of caminho.split("/")){ a = xDir(a, n); if (!a) return ""; } return (a.textContent || "").trim(); };
   const xDesc = (el, nomes, saida = []) => { for (const c of xFilhos(el)){ if (nomes.includes(c.localName)) saida.push(c); else xDesc(c, nomes, saida); } return saida; };
   const xDescRe = (el, re, saida = []) => { for (const c of xFilhos(el)){ if (re.test(c.localName)) saida.push(c); else xDescRe(c, re, saida); } return saida; };
+  const xGrau = (v, topo) => { for (let a = v.parentNode; a && a.nodeType === 1; a = a.parentNode){ const g = xTxt(a, "infoAgNocivo/grauExp"); if (g) return g; if (a === topo) break; } return ""; };
   const xAcha = (el, nome) => { const r = xDesc(el, [nome]); return r.length ? (r[0].textContent || "").trim() : ""; };
   const xEventos = (el, saida = []) => { for (const c of xFilhos(el)){ if (/^evt[A-Z]/.test(c.localName)) saida.push(c); else xEventos(c, saida); } return saida; };
   const xNum = s => { const n = parseFloat(String(s ?? "").replace(",", ".")); return isNaN(n) ? 0 : n; };
@@ -5027,7 +5028,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estTp = xTxt(el, "tpInsc"), estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
           for (const v of xDesc(el, ["detVerbas", "itensRemun"]))
-            linhas.push({ per: perRef || per, cat, estTp, estNr, lot, grau: xTxt(el, "infoAgNocivo/grauExp"), cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
+            linhas.push({ per: perRef || per, cat, estTp, estNr, lot, grau: xGrau(v, el), cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
         }
       }
       xGuardarMaisRecente(estado.remun, [nome, nrEmp, cpf, indAp, per].join("|"), rank, { id, recibo, indRetif, indAp, perEv: per, nrEmp, cpf, linhas }, estado);
@@ -5067,9 +5068,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
           const perApur = ind === "2" ? dt.slice(0, 4) : dt.slice(0, 7);
-          const grau = xTxt(el, "infoAgNocivo/grauExp"), dmId = xTxt(dm, "ideDmDev");
+          const dmId = xTxt(dm, "ideDmDev");
           for (const v of xDesc(el, ["detVerbas", "itensRemun"]))
-            linhas.push({ per: perRef || perApur, perApur, ind, estNr, lot, dmId, grau, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), qtd: xTxt(v, "qtdRubr"), fator: xTxt(v, "fatorRubr"), unit: xTxt(v, "vrUnit"), val: xNum(xTxt(v, "vrRubr")) });
+            linhas.push({ per: perRef || perApur, perApur, ind, estNr, lot, dmId, grau: xGrau(v, el), cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), qtd: xTxt(v, "qtdRubr"), fator: xTxt(v, "fatorRubr"), unit: xTxt(v, "vrUnit"), val: xNum(xTxt(v, "vrRubr")) });
         }
       }
       const extra = { nis: xDig(xAcha(ev, "nisTrab")), mat, mtv: xAcha(ev, "mtvDeslig"), api: xAcha(ev, "indPagtoAPI"), pens: xAcha(ev, "pensAlim"), cump: xAcha(ev, "indCumprParc"), indRetif: xTxt(ev, "ideEvento/indRetif"), nrRetif: nrRetif, dh: env.dh };
@@ -5480,9 +5481,18 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const u = URL.createObjectURL(new Blob([dados], { type: mime })), a = document.createElement("a");
     a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
   }
+  // Com uma só empresa nos arquivos lidos, o nome dela abre o nome do arquivo exportado
+  function xmlNomeEmpresa(){
+    const raizes = new Set();
+    for (const m of [xmlEstado.remun, xmlEstado.cs, xmlEstado.resc]) for (const e of m.values()) if (e.nrEmp) raizes.add(e.nrEmp.slice(0, 8));
+    if (!raizes.size) xmlEstado.emps.forEach((_, r) => raizes.add(r));
+    if (raizes.size !== 1) return "";
+    const nome = xmlEstado.emps.get([...raizes][0]) || "";
+    return nome.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  }
   async function exportarXml(ds){
     const fmt = await perguntarFormatoXml(ds); if (!fmt) return;
-    const base = `XML eSocial - ${ds.arquivo}`;
+    const emp = xmlNomeEmpresa(), base = `${emp ? emp + " - " : "XML eSocial - "}${ds.arquivo}`;
     try {
       if (fmt === "parquet"){
         const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
