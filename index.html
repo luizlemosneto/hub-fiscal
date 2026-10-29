@@ -5203,11 +5203,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       rows: resumo, num: new Set(["Verbas no XML", "Verbas lidas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
 
     // 1e) Espelho do desligado no mês: tudo o que ele recebeu na competência do desligamento, S-1200 (o mês) + S-2299 (as verbas), linha a linha
-    const desl = new Map(), espelho = [], espSoma = new Map();
+    const desl = new Map(), espelho = [];
     rescs.forEach(e => e.linhas.forEach(l => { const k = [e.cpf, e.nrEmp, l.ind, l.perApur].join("|"); if (!desl.has(k)) desl.set(k, { cpf: e.cpf, nrEmp: e.nrEmp, per: l.perApur, dt: e.dt, nome: (estado.trab.get(e.cpf) || {}).nome || "" }); }));
     const espLinha = (origem, k, e, l, r, entra, per, ind) => {
-      const d = desl.get(k); if (!espSoma.has(k)) espSoma.set(k, { s1200: 0, s2299: 0, outros: 0, sem: 0 });
-      const a = espSoma.get(k); if (entra === "Sim") a[origem === "S-1200" ? "s1200" : "s2299"] += l.val; else if (entra === "Sem S-1010") a.sem += l.val; else a.outros += l.val;
+      const d = desl.get(k);
       espelho.push([xCompOut(per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", d.cpf, d.nome, d.dt, origem, xCnpj(l.estNr), l.lot, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
     };
     remuns.forEach(e => { const k = [e.cpf, e.nrEmp, e.indAp, e.perEv].join("|"); if (!desl.has(k)) return;
@@ -5217,11 +5216,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (espelho.length) conjuntos.push({ id: "espelhoDeslig", titulo: "Espelho do desligado no mês (S-1200 + S-2299)", sub: "Tudo o que o desligado recebeu na competência do desligamento: as rubricas do S-1200 do mês e as do S-2299, linha a linha",
       cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Data Desligamento", "Origem", "Número Inscrição Estabelecimento", "Código Lotação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
       rows: espelho, num: new Set(["Vlr Rubrica"]), arquivo: "Espelho do desligado no mes" });
-    const espRes = [...espSoma].map(([k, a]) => { const d = desl.get(k); return [xCompOut(d.per), xCnpj(d.nrEmp), estado.emps.get(d.nrEmp.slice(0, 8)) || "", d.cpf, d.nome, d.dt, xMoeda(a.s1200), xMoeda(a.s2299), xMoeda(a.s1200 + a.s2299), xMoeda(a.outros), xMoeda(a.sem)]; });
-    espRes.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]));
-    if (espRes.length) conjuntos.push({ id: "espelhoDeslig2", titulo: "Espelho do desligado no mês · Totais", sub: "Uma linha por desligado: o que entra na base no S-1200 do mês, no S-2299 e a soma",
-      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Data Desligamento", "S-1200 do mês (entra na base)", "S-2299 (entra na base)", "Total na base", "Fora da base (não somado)", "Sem S-1010 (não somado)"],
-      rows: espRes, num: new Set(["S-1200 do mês (entra na base)", "S-2299 (entra na base)", "Total na base", "Fora da base (não somado)", "Sem S-1010 (não somado)"]), arquivo: "Espelho do desligado no mes totais" });
 
     // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
@@ -5234,15 +5228,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       if (tot === null) sit = "Só no S-5011"; else if (base === null) sit = "Sem S-5011";
       else { dif = xMoeda(tot - base); sit = Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"; }
       if (sit !== "Confere") divergencias++;
-      const fora = new Map([...(a ? a.fora : []), ...(rs ? rs.fora : [])]);
-      conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, resc, tot === null ? "" : tot, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
-        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : "", a ? xMoeda(a.total) : "", fora.size ? [...fora].map(([k, v]) => `${k}: ${xMoeda(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`).join(" | ") : ""]);
+            conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, resc, tot === null ? "" : tot, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
+        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : "", a ? xMoeda(a.total) : "", dif === null || !base ? "" : dif / base]);
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
     conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
     if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299) × S-5011", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
-      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
-      rows: conf, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
+      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"],
+      rows: conf, pct: "Divergência (%)", num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
 
     // 2b) A mesma conferência por estabelecimento e lotação: mostra em qual lotação a diferença aparece
     css.forEach(c => c.linhas.forEach(l => { const a = lotAcc(l.nrEmp, c.indAp, c.per, l.estNr, l.lot); a.base = (a.base || 0) + l.base; }));
@@ -5431,6 +5424,11 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         for (let p = 0, n = 1; p < Math.max(ds.rows.length, 1); p += LIM, n++){
           const ws = XLSX.utils.aoa_to_sheet([ds.cols, ...ds.rows.slice(p, p + LIM)]);
           ws["!cols"] = ds.cols.map(c => ({ wch: Math.min(Math.max(c.length + 2, 12), 40) }));
+          if (ds.pct){ // % de divergência: letra vermelha acima de 5% ou abaixo de -5%, verde entre os dois
+            const ci = ds.cols.indexOf(ds.pct);
+            ds.rows.slice(p, p + LIM).forEach((r, i) => { const v = r[ci]; if (typeof v !== "number") return; const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: ci })]; if (!c) return;
+              c.z = "0.00%"; c.s = { font: { bold: true, color: { rgb: Math.abs(v) > 0.05 ? "C00000" : "1E8E3E" } } }; });
+          }
           XLSX.utils.book_append_sheet(wb, ws, (n === 1 ? "Dados" : "Dados " + n));
         }
         baixarArquivoXml(base + ".xlsx", XLSX.write(wb, { bookType: "xlsx", type: "array" }), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
