@@ -5416,9 +5416,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       return [estado.emps.get(nrEmp.slice(0, 8)) || "", xCnpj(nrEmp), per, indAp === "2" ? "13º salário" : "Mensal", xCnpj(est), lot, xMoeda(v.rem), xMoeda(v.resc), tot, base, dif, base === "" ? "Sem S-5011" : xSituacao(dif, base)]; });
     confLot.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[4].localeCompare(y[4]) || String(x[5]).localeCompare(String(y[5])));
     confLot.forEach(r => { r[2] = xCompOut(r[2]); });
-    if (confLot.length) conjuntos.push({ id: "conferenciaLot", titulo: "Conferência por estabelecimento e lotação", sub: "S-1200 + S-2299 contra o S-5011, em cada estabelecimento e lotação (para achar onde a diferença está)",
+    if (confLot.length) conjuntos.push({ id: "conferenciaLot", titulo: "Auditoria de Bases e Rubricas (por Estabelecimento)", sub: "S-1200 + S-2299 contra o S-5011, em cada estabelecimento e lotação (para achar onde a diferença está)",
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Número Inscrição Estabelecimento", "Código Lotação", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação"],
-      rows: confLot, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença"]), arquivo: "Conferencia por estabelecimento e lotacao" });
+      rows: confLot, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença"]), arquivo: "Auditoria de Bases e Rubricas (por Estabelecimento)" });
 
     // 2d) Conferência por competência e estabelecimento: só segue para a análise (cruzamento) o que está Válido ou Válido com Ressalvas
     const porEstab = new Map();
