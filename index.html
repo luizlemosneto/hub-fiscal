@@ -167,9 +167,6 @@ h2.sec{font-family:var(--display);font-weight:700;font-size:1.45rem;letter-spaci
 .btn-vai:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .btn-vai:disabled{opacity:.6;cursor:progress}
 /* A transição: a tela se desfaz em grãos e a próxima se refaz (filtro de ruído com deslocamento animado) */
-.dissolve-onda{position:fixed;z-index:95;pointer-events:none;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,159,10,.55),rgba(255,159,10,.18) 45%,transparent 70%);animation:dissolve-onda 1.1s cubic-bezier(.2,.7,.2,1) forwards}
-@keyframes dissolve-onda{from{transform:scale(.2);opacity:1}to{transform:scale(70);opacity:0}}
 @media (prefers-reduced-motion: reduce){.btn-vai::before{animation:none}}
 .files{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;border:1px solid var(--line)}
 .file{position:relative;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto auto;gap:14px 18px;align-items:end;padding:18px 20px;border-top:1px solid var(--line);transition:background .2s}
@@ -5782,19 +5779,25 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
   $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
 
-  /* ---------- Do cruzamento direto para as Rubricas, com a tela se desfazendo ---------- */
-  function filtroDissolve(){
-    if (document.getElementById("dissolveF")) return;
-    document.body.insertAdjacentHTML("beforeend", '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="dissolveF" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".014 .022" numOctaves="2" seed="7" result="r"/><feDisplacementMap id="dissolveMap" in="SourceGraphic" in2="r" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
+  /* ---------- Do cruzamento direto para as Rubricas, com a tela virando papel amassado ---------- */
+  // ruído deforma a folha e o mesmo ruído vira relevo iluminado (os vincos do papel)
+  function filtroAmassa(){
+    if (document.getElementById("amassaF")) return;
+    document.body.insertAdjacentHTML("beforeend", '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="amassaF" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".011 .015" numOctaves="3" seed="4" result="r"/><feDisplacementMap id="amassaMap" in="SourceGraphic" in2="r" scale="0" xChannelSelector="R" yChannelSelector="G" result="d"/><feDiffuseLighting id="amassaLuz" in="r" surfaceScale="0" diffuseConstant="1.15" lighting-color="#fff" result="l"><feDistantLight azimuth="225" elevation="52"/></feDiffuseLighting><feComposite in="d" in2="l" operator="arithmetic" k1="1.2" k2="0" k3="0" k4="0"/></filter></svg>');
   }
-  // anima o deslocamento (0 = inteiro, grande = em grãos) junto com a opacidade
-  function desfazer(el, de, ate, ms, opac, easing){
+  // p: 0 = folha lisa, 1 = bolinha de papel. A bolinha encolhe, gira e some.
+  function amassar(el, de, ate, ms, easing){
     return new Promise(fim => {
-      const mapa = document.getElementById("dissolveMap"), t0 = performance.now();
-      el.style.filter = "url(#dissolveF)"; el.style.willChange = "filter, opacity";
+      const mapa = document.getElementById("amassaMap"), luz = document.getElementById("amassaLuz"), t0 = performance.now();
+      const r = el.getBoundingClientRect(), oy = Math.max(0, Math.min(r.height, innerHeight * .42 - r.top));
+      el.style.transformOrigin = `50% ${oy}px`; el.style.filter = "url(#amassaF)"; el.style.willChange = "filter, transform, opacity";
+      const quadro = p => {
+        mapa.setAttribute("scale", (p * 300).toFixed(1)); luz.setAttribute("surfaceScale", (p * 7).toFixed(2));
+        el.style.transform = `scale(${(1 - p * .9).toFixed(3)}) rotate(${(p * 14).toFixed(2)}deg)`;
+        el.style.opacity = (p < .75 ? 1 : 1 - (p - .75) / .25).toFixed(3);
+      };
       const passo = agora => {
-        const f = Math.min(1, (agora - t0) / ms), e = easing(f);
-        mapa.setAttribute("scale", (de + (ate - de) * e).toFixed(1)); el.style.opacity = (opac[0] + (opac[1] - opac[0]) * e).toFixed(3);
+        const f = Math.min(1, (agora - t0) / ms); quadro(de + (ate - de) * easing(f));
         if (f < 1) requestAnimationFrame(passo); else fim();
       };
       requestAnimationFrame(passo);
@@ -5807,19 +5810,19 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
     const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
     xmlEstado.emps.forEach((nome, raiz) => { if (nome && !rub.empresas.has(raiz)) rub.empresas.set(raiz, nome); });   // o nome da empresa (S-1000) segue junto
-    const tela = elDaVista(vista), r = btn.getBoundingClientRect();
+    const tela = elDaVista(vista), limpa = el => { el.style.filter = el.style.opacity = el.style.transform = el.style.transformOrigin = el.style.willChange = ""; };
+    let nova = null;
     try {
       if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
-      filtroDissolve();
-      const onda = document.createElement("div"); onda.className = "dissolve-onda"; onda.style.left = (r.left + r.width / 2) + "px"; onda.style.top = (r.top + r.height / 2) + "px"; document.body.appendChild(onda); setTimeout(() => onda.remove(), 1200);
-      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a tela se desfaz
-      await desfazer(tela, 0, 380, 780, [1, 0], f => f * f * (3 - 2 * f));
+      filtroAmassa();
+      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a folha amassa
+      await amassar(tela, 0, 1, 820, f => f * f * (3 - 2 * f));
       irPara("rubricas", true, true);
-      tela.style.filter = tela.style.opacity = tela.style.willChange = "";
-      const nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
-      await desfazer(nova, 380, 0, 900, [0, 1], f => 1 - Math.pow(1 - f, 3));
-      nova.style.filter = nova.style.opacity = nova.style.willChange = "";
-    } finally { xmlIndo = false; btn.disabled = false; }
+      limpa(tela);
+      nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
+      await amassar(nova, 1, 0, 900, f => 1 - Math.pow(1 - f, 3));   // a bolinha abre e alisa
+    } finally {
+      limpa(tela); if (nova) limpa(nova); xmlIndo = false; btn.disabled = false; }
   }
   $("xmlParaRubricas").addEventListener("click", seguirParaRubricas);
   $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i]); });
