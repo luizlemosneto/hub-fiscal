@@ -6,7 +6,7 @@
 <title>Hub Fiscal & Previdenciário</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Inter:wght@200;300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -270,7 +270,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .painel select,.painel .inp{width:100%}
 select.inp{padding-right:28px}
 .risco{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0}
-.r-Administrativo{background:#6B8F73}.r-Verde{background:#2E9E5B}.r-Amarelo{background:#D7A21E}.r-Vermelho{background:#C8473A}.r-Outros{background:#8C9AA3}
+.r-Pacificado{background:#6B8F73}.r-Baixo{background:#2E9E5B}.r-Médio{background:#D7A21E}.r-Alto{background:#C8473A}.r-Outros{background:#8C9AA3}
 
 .acao{position:sticky;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:5;margin-top:26px;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;justify-content:space-between;
   padding:14px 16px 14px 22px;border-radius:18px;background:var(--surface);border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:0 24px 50px -28px var(--glow)}
@@ -802,6 +802,191 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 @keyframes caiCifrao{0%{transform:translateY(0) rotate(0deg) scale(.8);opacity:0}10%{opacity:1}100%{transform:translateY(120vh) rotate(360deg) scale(1.5);opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
+<style id="swiss">
+/* ===================================================================
+   Swiss: grade rígida, tipografia grotesca, papel, preto e vermelho de sinal.
+   Fica por último para valer sobre o tema anterior em todos os módulos.
+   =================================================================== */
+:root{
+  --bg:#F2F1EC; --surface:#FFFFFF; --surface-2:#F2F1EC;
+  --ink:#0B0B0B; --muted:#6A6963; --line:#D6D4CC; --rule:#0B0B0B;
+  --accent:#E3241B; --accent-2:#E3241B; --accent-ink:#FFFFFF; --accent-soft:#FBE3E0;
+  --glow:transparent;
+  --warn:#8F5400; --warn-soft:#F6EBD6; --err:#B3261E; --err-soft:#F8E0DC;
+  --display:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --body:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(.2,.7,.1,1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C0C0B; --surface:#151514; --surface-2:#1C1C1A;
+    --ink:#F2F1EC; --muted:#9C9A92; --line:#2E2D2A; --rule:#F2F1EC;
+    --accent:#FF3B2F; --accent-2:#FF3B2F; --accent-ink:#0C0C0B; --accent-soft:#3A1715;
+    --glow:transparent; --warn:#E8B45E; --warn-soft:#33270F; --err:#FF7B6E; --err-soft:#3A1916;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C0C0B; --surface:#151514; --surface-2:#1C1C1A;
+  --ink:#F2F1EC; --muted:#9C9A92; --line:#2E2D2A; --rule:#F2F1EC;
+  --accent:#FF3B2F; --accent-2:#FF3B2F; --accent-ink:#0C0C0B; --accent-soft:#3A1715;
+  --glow:transparent; --warn:#E8B45E; --warn-soft:#33270F; --err:#FF7B6E; --err-soft:#3A1916;
+}
+
+body{background:var(--bg);letter-spacing:-.006em;font-feature-settings:"cv11","ss01","tnum" 0}
+.aurora{display:none}
+.wrap{max-width:1240px}
+
+/* Sem cantos arredondados nem sombras: tudo é grade (menos o que é ponto ou ícone redondo) */
+.wrap *:not(.spinner):not(.risco):not(.info):not(.acao-x):not(.tema-x):not(input):not(.fchips .chip button){border-radius:0!important}
+:where(.stub,.drop,.mod,.kpi,.tablebox,.painel,.btn,.ghost-btn,.tbtn,.pick,.badge,.chip-arq,.seg,.seg button,.inp,.mini,.tp,.bulk,.xml-aviso,
+  .fmt-opt,.passos span,.slot-tag,.rodar,.toast,.chip,select,textarea,input[type=text],input[type=search],input[type=number],dialog,
+  details.how > summary,.progress,.prog-track,.prog-fill,.prog-shine,.how,.opcoes,.modo,.steps li,.fchips .chip){border-radius:0!important}
+:where(.mod,.stub,.kpi,.tablebox,.painel,.btn,.pick,.chip-arq,.fmt-opt,.tbtn,.ghost-btn,.seg button,.rodar){box-shadow:none!important}
+
+/* Tipografia */
+h1{font-family:var(--display);font-weight:800;font-size:clamp(3rem,8.2vw,6.6rem);line-height:.88;letter-spacing:-.055em;
+  background:none;-webkit-text-fill-color:currentColor;color:var(--ink);animation:none}
+.lede{color:var(--muted);font-size:1.08rem;line-height:1.45;max-width:48ch}
+h2.sec{font-weight:700;font-size:1.05rem;letter-spacing:.02em;text-transform:uppercase}
+.sec-head{border-bottom:2px solid var(--rule);padding-bottom:10px;margin-bottom:0}
+.sec-head .hint{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+/* Topo: marca e navegação */
+.topnav{border-bottom:2px solid var(--rule);padding-bottom:16px;margin-bottom:clamp(28px,5vw,56px)}
+.brand{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;font-size:1rem;letter-spacing:-.01em;text-transform:none;gap:10px}
+.brand::before{content:"";width:14px;height:14px;background:var(--accent);flex:none}
+.ghost-btn,.ghost-btn.back{background:transparent;border:1px solid var(--rule);color:var(--ink);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;backdrop-filter:none}
+.ghost-btn:hover,.ghost-btn.back:hover{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:none}
+.ghost-btn.back svg{width:14px;height:14px}
+.ghost-btn.back:hover svg{transform:translateX(-3px)}
+
+/* ===== Página inicial: índice em grade numerada ===== */
+#viewHome > h1,#viewHome > .lede{text-align:left;margin-inline:0}
+#viewHome > .lede{margin-top:20px}
+.home-cols{grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:0;border-top:2px solid var(--rule);margin-top:clamp(32px,5vw,56px)}
+.home-side{top:16px}
+.mods{counter-reset:mod;gap:1px;background:var(--line);border-left:1px solid var(--line);margin-top:0}
+.mod,#viewHome .mod{counter-increment:mod;background:var(--surface);border:0;align-items:flex-start;text-align:left;
+  padding:58px 26px 22px;min-height:230px;gap:6px;transform:none!important;animation:swissIn .5s var(--ease) calc(var(--i,0) * 50ms) backwards;transition:background .18s,color .18s}
+@keyframes swissIn{from{opacity:0}}
+.mod::before{display:none}
+.mod::after{content:counter(mod,decimal-leading-zero);position:absolute;top:22px;left:26px;right:auto;font-size:.78rem;font-weight:600;letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums}
+.mod .sigla,#viewHome .mod .sigla{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;letter-spacing:-.05em;font-size:clamp(2rem,3.4vw,2.8rem);line-height:.95;margin:0 0 auto}
+.mod h2,#viewHome .mod h2{font-size:1rem;font-weight:700;letter-spacing:-.005em;margin:26px 0 0}
+.mod p,#viewHome .mod p{font-size:.86rem;line-height:1.45;color:var(--muted);margin:0;max-width:44ch}
+.mod .abrir,#viewHome .mod .abrir{color:var(--ink);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:14px;justify-content:flex-start}
+.mod .abrir span[aria-hidden]{font-size:0}
+.mod .abrir span[aria-hidden]::after{content:"→";font-size:.95rem;letter-spacing:0}
+.mod:hover,.mod:focus-visible{background:var(--ink);outline:none}
+.mod:hover .sigla,.mod:hover h2,.mod:hover .abrir,.mod:focus-visible .sigla,.mod:focus-visible h2,.mod:focus-visible .abrir{color:var(--bg)}
+.mod:hover p,.mod:hover::after,.mod:focus-visible p{color:color-mix(in srgb,var(--bg) 70%,transparent)}
+.mod:hover .passos span{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
+.mods.escolheu .mod:not(.escolhido){opacity:.25;transform:none}
+.mods.escolheu .mod.escolhido{background:var(--accent)}
+
+/* Rubricas: destaque assimétrico em duas colunas */
+#viewHome .mod.hero-card{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);justify-items:start;align-items:end;gap:6px 40px;padding:58px 30px 26px;min-height:300px}
+#viewHome .mod.hero-card .sigla{grid-row:1/6;align-self:end;font-size:clamp(3.2rem,8vw,6.4rem);letter-spacing:-.06em}
+#viewHome .mod.hero-card h2{margin:0;font-size:1.25rem}
+.mod .passos{justify-content:flex-start!important;gap:6px}
+.mod .passos span{background:transparent;border:1px solid var(--line);color:var(--ink);font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px}
+
+/* XML: bloco vermelho de sinal na coluna da esquerda */
+.mod.hero-xml,#viewHome .mod.hero-xml{background:var(--accent);color:var(--accent-ink);border:0;justify-content:flex-end;align-items:flex-start;text-align:left;padding:58px 26px 24px}
+.mod.hero-xml::after{content:"Novo";top:22px;left:26px;right:auto;color:var(--accent-ink);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.mod.hero-xml .novo{display:none}
+.mod.hero-xml .sigla,#viewHome .mod.hero-xml .sigla{color:var(--accent-ink);font-size:clamp(4rem,9vw,6.4rem);letter-spacing:-.07em;margin:0 0 auto}
+.mod.hero-xml h2,#viewHome .mod.hero-xml h2{color:var(--accent-ink);font-size:1.15rem;margin-top:32px}
+.mod.hero-xml p,#viewHome .mod.hero-xml p{color:color-mix(in srgb,var(--accent-ink) 82%,transparent)}
+.mod.hero-xml .abrir,#viewHome .mod.hero-xml .abrir{color:var(--accent-ink)}
+.mod.hero-xml .passos span{background:transparent;color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent-ink) 45%,transparent)}
+.mod.hero-xml:hover,#viewHome .mod.hero-xml:hover{background:var(--ink)}
+.mod.hero-xml:hover .sigla,.mod.hero-xml:hover h2,.mod.hero-xml:hover .abrir{color:var(--bg)}
+.home-side{align-self:stretch}
+.home-side .mod.hero-xml{height:100%;min-height:520px}
+@media (max-width:900px){.home-cols{grid-template-columns:1fr}.home-side .mod.hero-xml{min-height:0}.mods{border-left:0}}
+@media (max-width:760px){#viewHome .mod.hero-card{grid-template-columns:1fr}#viewHome .mod.hero-card .sigla{grid-row:auto}}
+
+/* ===== Páginas dos módulos ===== */
+.mod-head{border-bottom:0;padding-bottom:0;margin-bottom:34px}
+.mod-head .lede{margin-top:18px}
+.stub{background:var(--surface);border:1px solid var(--rule)}
+.stub::before{display:none}
+.stub::after{border-radius:0}
+.drop{padding:30px clamp(20px,3vw,36px) 28px}
+.drop .big{color:var(--ink);font-weight:800;letter-spacing:-.03em;font-size:clamp(1.4rem,2.6vw,2rem)}
+.drop .slot-tag,#rubStub .drop .slot-tag{background:var(--ink);color:var(--bg);font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px}
+.drop.feito .slot-tag{background:var(--accent);color:var(--accent-ink)}
+.slots .drop + .drop{border-left:1px solid var(--line)}
+.stub.over .drop{background:var(--accent-soft)}
+.drop .pick,#rubStub .drop .pick,.pick-row .pick{background:var(--ink);color:var(--bg);font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 18px;box-shadow:none;transform:none}
+.drop .pick:hover,.pick-row .pick:hover{background:var(--accent);color:var(--accent-ink);transform:none;box-shadow:none}
+.pick-row .pick.sec{background:transparent;color:var(--ink);outline:1px solid var(--rule);outline-offset:-1px}
+.pick-row .pick.sec:hover{background:var(--ink);color:var(--bg)}
+.drop .slot-file{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.progress{border-top:1px solid var(--line);background:var(--surface)}
+.prog-pct{font-weight:800;letter-spacing:-.05em}
+.prog-track{height:4px;background:var(--line)}
+.prog-fill{background:var(--accent)}
+.prog-shine{display:none}
+
+/* Botões */
+.btn{border-radius:0;font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;border:1px solid var(--rule);background:transparent;color:var(--ink)}
+.btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:none}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);transform:none}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--accent);background:transparent}
+.tbtn{border:1px solid var(--rule);background:transparent;font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.tbtn:hover{background:var(--ink);color:var(--bg)}
+.tbtn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{border:1px solid var(--rule);background:transparent;padding:0;gap:0}
+.seg button{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip-arq{background:var(--surface);border:1px solid var(--rule)}
+.chip-arq .ico{border-radius:0!important;background:var(--ink);color:var(--bg)}
+.inp{border:1px solid var(--rule)}
+.inp:focus{outline:2px solid var(--accent);outline-offset:0}
+
+/* Números grandes, sem caixas */
+.kpis{gap:0 28px;margin-top:34px}
+.kpi{background:transparent;border:0;border-top:2px solid var(--rule);padding:12px 0 0}
+.kpi:hover{transform:none}
+.kpi small{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.kpi b{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;font-size:clamp(2.2rem,4vw,3.4rem);letter-spacing:-.06em;line-height:1;margin-top:10px}
+
+/* Tabelas */
+.tablebox{border:0;border-top:0;background:var(--surface)}
+th{background:var(--surface);color:var(--ink);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
+td{border-bottom:1px solid var(--line)}
+tbody tr:hover td{background:var(--surface-2)}
+.badge{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--surface-2);color:var(--ink)}
+.badge.ok{background:var(--ink);color:var(--bg)}
+.badge.run{background:var(--accent);color:var(--accent-ink)}
+.badge.err{background:var(--accent);color:var(--accent-ink)}
+
+/* Blocos de apoio */
+details.how > summary{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:6px 0}
+details.how > summary::before{border-radius:0!important;background:var(--ink);color:var(--bg)}
+.painel{border:0;border-top:2px solid var(--rule);background:transparent}
+.painel h3,.painel-h h3{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.hub-log{background:var(--surface)}
+.rodar{border:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:transparent;padding-inline:0}
+.xml-aviso{border:0;border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink)}
+.xml-tab .btn{padding:8px 14px}
+.toast{background:var(--ink);color:var(--bg);font-weight:600}
+#xmlFmt{border:2px solid var(--rule);box-shadow:none}
+#xmlFmt::backdrop{background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:none}
+.fmt-in h3{font-weight:800;letter-spacing:-.04em;font-size:1.5rem}
+.fmt-opt{border:1px solid var(--rule);background:transparent}
+.fmt-opt b{font-weight:800;letter-spacing:-.02em}
+.fmt-opt:hover,.fmt-opt:focus-visible{background:var(--ink);color:var(--bg);transform:none;box-shadow:none}
+.fmt-opt:hover span,.fmt-opt:focus-visible span{color:color-mix(in srgb,var(--bg) 75%,transparent)}
+.rodape{font-weight:500;text-transform:uppercase;letter-spacing:.14em;text-align:left;border-top:1px solid var(--line);margin-top:64px;padding-top:16px}
+.topbar i{background:var(--accent);box-shadow:none}
+:focus-visible{outline-color:var(--accent)}
+@media (prefers-reduced-motion: reduce){.mod,#viewHome .mod{animation:none}}
+</style>
 </head>
 <body>
 <div class="topbar" id="topbar" aria-hidden="true"><i id="topbarFill"></i></div>
@@ -1053,8 +1238,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
           <div class="tema-form">
             <input class="inp" id="temaNome" placeholder="Novo tema (ex.: Auxílio Combustível)" aria-label="Nome do novo tema" maxlength="80" autocomplete="off">
             <select class="inp" id="temaTipo" aria-label="O tema vale para"><option value="P">Provento</option><option value="D">Desconto</option><option value="PD">Ambos</option></select>
-            <span class="risco r-Administrativo" id="temaDot"></span>
-            <select class="inp" id="temaRisco" aria-label="Risco do novo tema"><option>Administrativo</option><option>Verde</option><option>Amarelo</option><option>Vermelho</option><option>Outros</option></select>
+            <span class="risco r-Pacificado" id="temaDot"></span>
+            <select class="inp" id="temaRisco" aria-label="Risco do novo tema"><option>Pacificado</option><option>Alto</option><option>Médio</option><option>Baixo</option><option>Outros</option></select>
             <button class="btn primary" type="button" id="temaAdd">Adicionar</button>
           </div>
           <div class="tablebox"><table><thead><tr><th>Ponto</th><th>Risco</th><th class="num">Rubricas</th><th class="num">Reflexo</th></tr></thead><tbody id="rubPontos"></tbody></table></div>
@@ -2353,7 +2538,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const NATUREZAS = {"9201":["Contribuição previdenciária","Não Oportunidade","Desconto INSS"],"9202":["Contribuição militar","Não Oportunidade","Não Oportunidade"],"9203":["Imposto de Renda Retido na Fonte","Não Oportunidade","Desconto IRRF"],"9205":["Provisão de contribuição previdenciária","Não Oportunidade","Não Oportunidade"],"9213":["Pensão alimentícia","Não Oportunidade","Não Oportunidade"],"9216":["Desconto de vale-transporte","Não Oportunidade","Desconto De Vale Transporte"],"9218":["Retenções judiciais","Não Oportunidade","Não Oportunidade"],"9219":["Desconto de assistência médica ou odontológica","Não Oportunidade","Desconto De Assistência Médica e Odontológica"],"9220":["Alimentação - Desconto","Auxilio Alimentação","Desconto De Vale Alimentação"],"9222":["Desconto de outros impostos e contribuições","Não Oportunidade","Não Oportunidade"],"9223":["Previdência complementar - Parte do empregado","Não Oportunidade","Desconto De Previdência Privada"],"9224":["FAPI - Parte do empregado","Não Oportunidade","Desconto De Previdência Privada"],"9225":["Previdência complementar - Parte do servidor","Não Oportunidade","Desconto De Previdência Privada"],"9230":["Contribuição sindical laboral","Não Oportunidade","Não Oportunidade"],"9231":["Mensalidade sindical ou associativa","Não Oportunidade","Não Oportunidade"],"9232":["Contribuição sindical - Assistencial","Não Oportunidade","Não Oportunidade"],"9233":["Contribuição sindical - Confederativa","Não Oportunidade","Não Oportunidade"],"9240":["Alimentação concedida em pecúnia - Desconto","Não Oportunidade","Não Oportunidade"],"9241":["Alimentação em ticket ou cartão, vinculada ao PAT - Desconto","Não Oportunidade","Desconto De Vale-Alimentação e Vale-Refeição"],"9242":["Alimentação em ticket ou cartão, não vinculada ao PAT - Desconto","Não Oportunidade","Desconto De Vale-Alimentação e Vale-Refeição"],"9243":["Cesta básica ou refeição, vinculada ao PAT - Desconto","Não Oportunidade","Desconto De Vale-Alimentação e Vale-Refeição"],"9244":["Cesta básica ou refeição, não vinculada ao PAT - Desconto","Não Oportunidade","Desconto De Vale-Alimentação e Vale-Refeição"],"9250":["Seguro de vida - Desconto","Não Oportunidade","Desconto De Seguro De Vida"],"9254":["Empréstimos consignados - Desconto","Não Oportunidade","Não Oportunidade"],"9255":["Empréstimos do empregador - Desconto","Não Oportunidade","Não Oportunidade"],"9258":["Convênios","Não Oportunidade","Não Oportunidade"],"9260":["FIES - Desconto","Não Oportunidade","Não Oportunidade"],"9270":["Danos e prejuízos causados pelo trabalhador","Não Oportunidade","Não Oportunidade"],"9291":["Abate-teto","Não Oportunidade","Não Oportunidade"],"9292":["Ressarcimento ao erário","Não Oportunidade","Não Oportunidade"],"9293":["Honorários advocatícios","Não Oportunidade","Não Oportunidade"],"9294":["Redutor EC 41/03","Não Oportunidade","Não Oportunidade"],"9299":["Outros descontos","Não Oportunidade","Não Oportunidade"],"9903":["Total da base de cálculo do IRRF","Não Oportunidade","Não Oportunidade"],"9938":["Isenção IRRF - 65 anos","Não Oportunidade","Não Oportunidade"],"1000":["Salário, vencimento, soldo","Não Oportunidade","Não Oportunidade"],"1001":["Subsídio","Não Oportunidade","Não Oportunidade"],"1002":["Descanso semanal remunerado - DSR","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1003":["Horas extraordinárias","Horas Extras","Não Oportunidade"],"1004":["Horas extraordinárias - Indenização de banco de horas","Horas Extras","Não Oportunidade"],"1005":["Direito de arena","Valores Decorrentes De Cessão De Direito De Imagem","Não Oportunidade"],"1006":["Intervalos intra e inter jornadas não concedidos","Intervalo Intrajornada/Interjornada","Não Oportunidade"],"1007":["Luvas e premiações","Prêmios e Bonificações","Não Oportunidade"],"1009":["Salário-família - Complemento","Não Oportunidade","Não Oportunidade"],"1010":["Salário in natura - Pagos em bens ou serviços","Salário in natura","Não Oportunidade"],"1011":["Sobreaviso e prontidão","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1020":["Férias","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1021":["Férias - Abono ou gratificação de férias superior a 20 dias","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1022":["Férias - Abono ou gratificação de férias não excedente a 20 dias","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1023":["Férias - Abono pecuniário","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1024":["Férias - Dobro na vigência do contrato","Férias em Dobro","Não Oportunidade"],"1040":["Licença-prêmio","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1041":["Licença-prêmio indenizada","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1050":["Remuneração de dias de afastamento","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1080":["Stock option","Stock Options","Não Oportunidade"],"1099":["Outras verbas salariais","Não Oportunidade","Não Oportunidade"],"1201":["Adicional de função / cargo confiança","Não Oportunidade","Não Oportunidade"],"1202":["Adicional de insalubridade","Adicional De Insalubridade","Não Oportunidade"],"1203":["Adicional de periculosidade","Não Oportunidade","Não Oportunidade"],"1204":["Adicional de transferência","Adicional de Transferência","Não Oportunidade"],"1205":["Adicional noturno","Adicional Noturno","Não Oportunidade"],"1206":["Adicional por tempo de serviço","Não Oportunidade","Não Oportunidade"],"1207":["Comissões, porcentagens, produção","Não Oportunidade","Não Oportunidade"],"1208":["Gueltas ou gorjetas - Repassadas por fornecedores ou clientes","Não Oportunidade","Não Oportunidade"],"1209":["Gueltas ou gorjetas - Repassadas pelo empregador","Não Oportunidade","Não Oportunidade"],"1210":["Gratificação por acordo ou convenção coletiva","Não Oportunidade","Não Oportunidade"],"1211":["Gratificações","Prêmios e Bonificações","Não Oportunidade"],"1212":["Gratificações ou outras verbas de natureza permanente","Não Oportunidade","Não Oportunidade"],"1213":["Gratificações ou outras verbas de natureza transitória","Não Oportunidade","Não Oportunidade"],"1214":["Adicional de penosidade","Não Oportunidade","Não Oportunidade"],"1215":["Adicional de unidocência","Não Oportunidade","Não Oportunidade"],"1216":["Adicional de localidade","Não Oportunidade","Não Oportunidade"],"1217":["Gratificação de curso/concurso","Não Oportunidade","Não Oportunidade"],"1225":["Quebra de caixa","Não Oportunidade","Não Oportunidade"],"1230":["Remuneração do dirigente sindical","Não Oportunidade","Não Oportunidade"],"1299":["Outros adicionais","Não Oportunidade","Não Oportunidade"],"1300":["PLR - Participação em Lucros ou Resultados","PLR","Não Oportunidade"],"1350":["Bolsa de estudo - Estagiário","Auxílio Educação","Não Oportunidade"],"1351":["Bolsa de estudo - Médico residente","Auxílio Educação","Não Oportunidade"],"1352":["Bolsa de estudo ou pesquisa","Auxílio Educação","Não Oportunidade"],"1401":["Abono","Abono","Não Oportunidade"],"1402":["Abono PIS/PASEP","Não Oportunidade","Não Oportunidade"],"1403":["Abono legal","Não Oportunidade","Não Oportunidade"],"1404":["Auxílio babá","Auxílio Babá","Não Oportunidade"],"1405":["Assistência Médica","Assistência Médica","Não Oportunidade"],"1406":["Auxílio-creche","Auxílio Creche","Não Oportunidade"],"1407":["Auxílio-educação","Auxílio Educação","Não Oportunidade"],"2930":["Insuficiência de saldo","Não Oportunidade","Não Oportunidade"],"2999":["Arredondamentos","Não Oportunidade","Não Oportunidade"],"1409":["Salário-família","Não Oportunidade","Não Oportunidade"],"1410":["Auxílio - Locais de difícil acesso","Horas in Itinere","Não Oportunidade"],"1411":["Auxílio-natalidade","Não Oportunidade","Não Oportunidade"],"1412":["Abono permanência","Não Oportunidade","Não Oportunidade"],"1601":["Ajuda de custo - Aeronauta","Ajuda De Custo","Não Oportunidade"],"1602":["Ajuda de custo de transferência","Ajuda De Custo","Não Oportunidade"],"1603":["Ajuda de custo","Ajuda De Custo","Não Oportunidade"],"1604":["Ajuda de custo - Acima de 50% da remuneração mensal","Ajuda De Custo","Não Oportunidade"],"1619":["Ajuda compensatória - Programa Emergencial de Manutenção do Emprego e da Renda","Não Oportunidade","Não Oportunidade"],"1620":["Ressarcimento de despesas pelo uso de veículo próprio","Ressarcimento De Despesas Por Utilização De Veículo Próprio","Não Oportunidade"],"1621":["Ressarcimento de despesas de viagem, exceto despesas com veículos","Diarias Para Viagem","Não Oportunidade"],"1623":["Ressarcimento de provisão","Não Oportunidade","Não Oportunidade"],"1629":["Ressarcimento de outras despesas","Não Oportunidade","Não Oportunidade"],"1650":["Diárias de viagem","Diarias Para Viagem","Não Oportunidade"],"1651":["Diárias de viagem - Até 50% do salário","Diarias Para Viagem","Não Oportunidade"],"5501":["Adiantamento de salário","Não Oportunidade","Não Oportunidade"],"5504":["13º salário - Adiantamento","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"1652":["Diárias de viagem - Acima de 50% do salário","Diarias Para Viagem","Não Oportunidade"],"1800":["Alimentação concedida em pecúnia","Auxilio Alimentação","Não Oportunidade"],"1801":["Alimentação","Auxilio Alimentação","Não Oportunidade"],"1802":["Etapas (marítimos)","Auxilio Alimentação","Não Oportunidade"],"1805":["Moradia","Não Oportunidade","Não Oportunidade"],"1806":["Alimentação em ticket ou cartão, vinculada ao PAT","Auxilio Alimentação","Não Oportunidade"],"1807":["Alimentação em ticket ou cartão, não vinculada ao PAT","Auxilio Alimentação","Não Oportunidade"],"1808":["Cesta básica ou refeição, vinculada ao PAT","Auxilio Alimentação","Não Oportunidade"],"1809":["Cesta básica ou refeição, não vinculada ao PAT","Auxilio Alimentação","Não Oportunidade"],"1810":["Transporte","Auxilio Vale Transporte","Não Oportunidade"],"1899":["Outros auxílios","Não Oportunidade","Não Oportunidade"],"1901":["Juros e/ou atualização monetária","Não Oportunidade","Não Oportunidade"],"2501":["Prêmios","Prêmios e Bonificações","Não Oportunidade"],"2502":["Liberalidades concedidas em mais de duas parcelas anuais","Prêmios e Bonificações","Não Oportunidade"],"2510":["Direitos autorais e intelectuais","Valores Decorrentes De Cessão De Direito De Imagem","Não Oportunidade"],"2801":["Quarentena remunerada","Não Oportunidade","Não Oportunidade"],"2901":["Empréstimos","Não Oportunidade","Não Oportunidade"],"2902":["Vestuário e equipamentos","Vestuario Fornecido Para Execução Das Atividades","Não Oportunidade"],"2920":["Reembolsos diversos","Não Oportunidade","Não Oportunidade"],"3501":["Remuneração por prestação de serviços","Não Oportunidade","Não Oportunidade"],"3505":["Retiradas (pró-labore) de diretores empregados","Não Oportunidade","Não Oportunidade"],"3506":["Retiradas (pró-labore) de diretores não empregados","Não Oportunidade","Não Oportunidade"],"3508":["Retiradas (pró-labore) de proprietários ou sócios","Não Oportunidade","Não Oportunidade"],"3509":["Honorários a conselheiros","Não Oportunidade","Não Oportunidade"],"3510":["Gratificação (jeton)","Não Oportunidade","Não Oportunidade"],"3511":["Gratificação eleitoral","Não Oportunidade","Não Oportunidade"],"3520":["Remuneração de cooperado","Não Oportunidade","Não Oportunidade"],"9200":["Desconto de adiantamentos","Não Oportunidade","Não Oportunidade"],"3525":["Côngruas, prebendas e afins","Não Oportunidade","Não Oportunidade"],"4010":["Complementação salarial de auxílio-doença","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"4011":["Complemento de salário-mínimo - RPPS","Não Oportunidade","Não Oportunidade"],"4050":["Salário-maternidade","Salário Maternidade","Não Oportunidade"],"4051":["Salário-maternidade - 13° salário","Salário Maternidade","Não Oportunidade"],"5001":["13º salário","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"5005":["13° salário complementar","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"5510":["Adiantamento de benefícios previdenciários","Não Oportunidade","Não Oportunidade"],"6000":["Saldo de salários na rescisão contratual","Não Oportunidade","Não Oportunidade"],"6001":["13º salário relativo ao aviso prévio indenizado","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"6002":["13° salário proporcional na rescisão","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"9214":["13° salário - Desconto de adiantamento","RAT Sem Exposição ao Risco Laboral","Não Oportunidade"],"6003":["Indenização compensatória do aviso prévio","Aviso Previo Indenizado","Não Oportunidade"],"9217":["Contribuição a Outras Entidades e Fundos","Não Oportunidade","Não Oportunidade"],"6004":["Férias - Dobro na rescisão","Férias em Dobro","Não Oportunidade"],"6006":["Férias proporcionais","Férias Proporcionais","Não Oportunidade"],"6007":["Férias vencidas na rescisão","Férias em Dobro","Não Oportunidade"],"6101":["Indenização compensatória - Multa rescisória 20 ou 40% (CF/88)","Aviso Previo Indenizado","Não Oportunidade"],"6102":["Indenização do art. 9º da Lei 7.238/1984","Não Oportunidade","Não Oportunidade"],"6103":["Indenização do art. 14 da Lei 5.889/1973","Não Oportunidade","Não Oportunidade"],"6104":["Indenização do art. 479 da CLT","Aviso Previo Indenizado","Não Oportunidade"],"6105":["Indenização recebida a título de incentivo a demissão","Incentivo A Demissão Voluntária (Pdv)","Não Oportunidade"],"6106":["Multa do art. 477 da CLT","Indenização Multa Art. 477","Não Oportunidade"],"6107":["Indenização por quebra de estabilidade","Indenização Estabilidade","Não Oportunidade"],"6108":["Tempo de espera do motorista profissional","Não Oportunidade","Não Oportunidade"],"6119":["Indenização rescisória - Programa Emergencial de Manutenção do Emprego e da Renda","Não Oportunidade","Não Oportunidade"],"6129":["Outras multas ou indenizações","Não Oportunidade","Não Oportunidade"],"6901":["Desconto do aviso prévio","Não Oportunidade","Não Oportunidade"],"6904":["Multa prevista no art. 480 da CLT","Não Oportunidade","Não Oportunidade"],"7001":["Proventos","Não Oportunidade","Não Oportunidade"],"7002":["Proventos - Pensão por morte Civil","Não Oportunidade","Não Oportunidade"],"7003":["Proventos - Reserva","Não Oportunidade","Não Oportunidade"],"7004":["Proventos - Reforma","Não Oportunidade","Não Oportunidade"],"7005":["Pensão Militar","Não Oportunidade","Não Oportunidade"],"7006":["Auxílio-reclusão","Não Oportunidade","Não Oportunidade"],"7007":["Pensões especiais","Não Oportunidade","Não Oportunidade"],"7008":["Complementação de aposentadoria/ pensão","Não Oportunidade","Não Oportunidade"],"9207":["Faltas","Não Oportunidade","Não Oportunidade"],"9290":["Desconto de pagamento indevido em meses anteriores","Não Oportunidade","Não Oportunidade"],"9208":["Atrasos","Não Oportunidade","Não Oportunidade"],"9209":["Faltas ou atrasos","Não Oportunidade","Não Oportunidade"],"9210":["DSR s/faltas e atrasos","Não Oportunidade","Não Oportunidade"],"9211":["DSR sobre faltas","Não Oportunidade","Não Oportunidade"],"9212":["DSR sobre atrasos","Não Oportunidade","Não Oportunidade"],"9901":["Base de cálculo da contribuição previdenciária","Não Oportunidade","Não Oportunidade"],"9221":["Desconto de férias","Não Oportunidade","Não Oportunidade"],"9226":["Desconto de férias - Abono","Não Oportunidade","Não Oportunidade"],"9902":["Total da base de cálculo do FGTS","Não Oportunidade","Não Oportunidade"],"9904":["Total da base de cálculo do FGTS rescisório","Não Oportunidade","Não Oportunidade"],"9905":["Serviço militar","Não Oportunidade","Não Oportunidade"],"9907":["Total da contribuição da previdenciária patronal - RPPS","Não Oportunidade","Não Oportunidade"],"9906":["Remuneração no exterior","Não Oportunidade","Não Oportunidade"],"9908":["FGTS - Depósito","Não Oportunidade","Não Oportunidade"],"9910":["Seguros","Não Oportunidade","Não Oportunidade"],"9930":["Salário-maternidade pago pela Previdência Social","Não Oportunidade","Não Oportunidade"],"9931":["Salário-maternidade pago pela Previdência Social - 13° salário","Não Oportunidade","Não Oportunidade"],"9932":["Auxílio-doença acidentário","Não Oportunidade","Não Oportunidade"],"9933":["Auxílio-doença","Não Oportunidade","Não Oportunidade"],"9939":["Outros valores tributáveis","Não Oportunidade","Não Oportunidade"],"9950":["Horas extraordinárias - Banco de horas","Não Oportunidade","Não Oportunidade"],"9951":["Horas compensadas - Banco de horas","Não Oportunidade","Não Oportunidade"],"9989":["Outros valores informativos","Não Oportunidade","Não Oportunidade"]}; // código: [nome da natureza, ponto se provento, ponto se desconto]
   const NAO_OP = "Não Oportunidade";
   const RAT_PNT = "RAT Sem Exposição ao Risco Laboral", RAT_PNT_ANTIGO = "RAT Período Não Trabalhado";
-  const RISCOS = ["Administrativo","Verde","Amarelo","Vermelho","Outros"];
+  const RISCOS = ["Pacificado","Alto","Médio","Baixo","Outros"];
   const normTxt = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase().replace(/\s+/g, " ");
   const ehNaoOp = p => !p || ["NAO OPORTUNIDADE","NAO E OPORTUNIDADE","-"].includes(normTxt(p));
   const ehPnt = p => { const t = normTxt(p); return t === normTxt(RAT_PNT) || t === normTxt(RAT_PNT_ANTIGO); };
@@ -2362,31 +2547,31 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
   // Riscos padrão: os mesmos do Diagnóstico PRO
   const MAPA_RISCO = Object.fromEntries(Object.entries({
-    "RATXFAP":"Administrativo","DESONERAÇÃO DA FOLHA":"Administrativo","RETENÇÕES":"Administrativo","AVISO PRÉVIO INDENIZADO":"Administrativo","SALÁRIO MATERNIDADE":"Administrativo","LICENÇA MATERNIDADE":"Administrativo",
-    "15 PRIMEIROS DIAS DE AFASTAMENTO":"Administrativo","ABONO ASSIDUIDADE":"Administrativo","SALÁRIO EDUCAÇÃO":"Administrativo","PIS SOBRE FOLHA":"Administrativo","RAT - AJUSTE CBO/CNAE":"Administrativo",
-    "PAGAMENTO A MAIOR":"Administrativo","PRÊMIOS E BONIFICAÇÕES":"Administrativo","FÉRIAS EM DOBRO":"Administrativo","FÉRIAS INDENIZADAS":"Administrativo","PREVIDÊNCIA PRIVADA (CONTRIBUIÇÃO PATRONAL)":"Administrativo",
-    "AUXÍLIO ALIMENTAÇÃO":"Administrativo","AUXÍLIO TRANSPORTE (VALE-TRANSPORTE)":"Administrativo","AUXÍLIO REFEIÇÃO":"Administrativo","MULTA RESCISÓRIA (40% FGTS)":"Administrativo",
-    "INDENIZAÇÃO ART. 479":"Administrativo","INDENIZAÇÃO SAFRISTA":"Administrativo","INCENTIVO À DEMISSÃO VOLUNTÁRIA (PDV)":"Administrativo","INCENTIVO A DEMISSÃO VOLUNTÁRIA (PDV)":"Administrativo","INDENIZAÇÃO ADICIONAL DA LEI Nº 7.238/1984":"Administrativo",
-    "LICENÇA-PRÊMIO INDENIZADA":"Administrativo","ABONO PECUNIÁRIO DE FÉRIAS":"Administrativo","DIÁRIAS PARA VIAGEM":"Administrativo","RESSARCIMENTO DE DESPESAS COM UTILIZAÇÃO DE VEÍCULO PRÓPRIO":"Administrativo",
-    "AUXILIO CRECHE":"Administrativo","REEMBOLSO BABÁ":"Administrativo","ASSISTÊNCIA MÉDICA":"Administrativo","REEMBOLSO DE DESPESAS MÉDICAS":"Administrativo","REEMBOLSO DE MEDICAMENTOS":"Administrativo",
-    "REEMBOLSO DE DESPESAS HOSPITALARES":"Administrativo","BOLSA ESTUDO":"Administrativo","AUXILIO EDUCAÇÃO":"Administrativo","PROGRAMAS DE QUALIFICAÇÃO PROFISSIONAL":"Administrativo","BOLSA ESTÁGIO":"Administrativo",
-    "PREVIDÊNCIA COMPLEMENTAR":"Administrativo","SEGURO DE VIDA":"Administrativo","PLR":"Administrativo","ABONOS":"Administrativo","VESTUÁRIO FORNECIDO PARA EXECUÇÃO DAS ATIVIDADES":"Administrativo",
-    "UNIFORMES":"Administrativo","EQUIPAMENTOS DE PROTEÇÃO INDIVIDUAL (EPIS)":"Administrativo","COMPLEMENTAÇÃO DE AUXÍLIO POR INCAPACIDADE TEMPORÁRIA":"Administrativo","INDENIZAÇÃO MULTA ART. 477":"Administrativo",
-    "AUXÍLIO FUNERAL":"Administrativo","VALE-CULTURA":"Administrativo","PRORROGAÇÃO DO SALÁRIO-MATERNIDADE":"Administrativo","ATUALIZAÇÃO MONETÁRIA":"Administrativo",
-    "LICENÇA PATERNIDADE":"Verde","BONUS RETENÇÃO":"Verde","STOCK OPTIONS":"Verde",
-    "HORAS EXTRAS":"Amarelo","RAT SEM EXPOSIÇÃO AO RISCO LABORAL":"Amarelo","13º SOBRE AVISO PRÉVIO INDENIZADO":"Amarelo",
-    "ADICIONAL NOTURNO":"Vermelho","ADICIONAL DE INSALUBRIDADE":"Vermelho","CRÉDITO ATUALIZADO PARAFISCAIS":"Vermelho","CRÉDITO ATUALIZADO SISTEMA S":"Vermelho","OUTRAS ENTIDADES":"Vermelho",
-    "DESCONTO DE VALE TRANSPORTE":"Amarelo","DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO":"Amarelo"
+    "RATXFAP":"Pacificado","DESONERAÇÃO DA FOLHA":"Pacificado","RETENÇÕES":"Pacificado","AVISO PRÉVIO INDENIZADO":"Pacificado","SALÁRIO MATERNIDADE":"Pacificado","LICENÇA MATERNIDADE":"Pacificado",
+    "15 PRIMEIROS DIAS DE AFASTAMENTO":"Pacificado","ABONO ASSIDUIDADE":"Pacificado","SALÁRIO EDUCAÇÃO":"Pacificado","PIS SOBRE FOLHA":"Pacificado","RAT - AJUSTE CBO/CNAE":"Pacificado",
+    "PAGAMENTO A MAIOR":"Pacificado","PRÊMIOS E BONIFICAÇÕES":"Pacificado","FÉRIAS EM DOBRO":"Pacificado","FÉRIAS INDENIZADAS":"Pacificado","PREVIDÊNCIA PRIVADA (CONTRIBUIÇÃO PATRONAL)":"Pacificado",
+    "AUXÍLIO ALIMENTAÇÃO":"Pacificado","AUXÍLIO TRANSPORTE (VALE-TRANSPORTE)":"Pacificado","AUXÍLIO REFEIÇÃO":"Pacificado","MULTA RESCISÓRIA (40% FGTS)":"Pacificado",
+    "INDENIZAÇÃO ART. 479":"Pacificado","INDENIZAÇÃO SAFRISTA":"Pacificado","INCENTIVO À DEMISSÃO VOLUNTÁRIA (PDV)":"Pacificado","INCENTIVO A DEMISSÃO VOLUNTÁRIA (PDV)":"Pacificado","INDENIZAÇÃO ADICIONAL DA LEI Nº 7.238/1984":"Pacificado",
+    "LICENÇA-PRÊMIO INDENIZADA":"Pacificado","ABONO PECUNIÁRIO DE FÉRIAS":"Pacificado","DIÁRIAS PARA VIAGEM":"Pacificado","RESSARCIMENTO DE DESPESAS COM UTILIZAÇÃO DE VEÍCULO PRÓPRIO":"Pacificado",
+    "AUXILIO CRECHE":"Pacificado","REEMBOLSO BABÁ":"Pacificado","ASSISTÊNCIA MÉDICA":"Pacificado","REEMBOLSO DE DESPESAS MÉDICAS":"Pacificado","REEMBOLSO DE MEDICAMENTOS":"Pacificado",
+    "REEMBOLSO DE DESPESAS HOSPITALARES":"Pacificado","BOLSA ESTUDO":"Pacificado","AUXILIO EDUCAÇÃO":"Pacificado","PROGRAMAS DE QUALIFICAÇÃO PROFISSIONAL":"Pacificado","BOLSA ESTÁGIO":"Pacificado",
+    "PREVIDÊNCIA COMPLEMENTAR":"Pacificado","SEGURO DE VIDA":"Pacificado","PLR":"Pacificado","ABONOS":"Pacificado","VESTUÁRIO FORNECIDO PARA EXECUÇÃO DAS ATIVIDADES":"Pacificado",
+    "UNIFORMES":"Pacificado","EQUIPAMENTOS DE PROTEÇÃO INDIVIDUAL (EPIS)":"Pacificado","COMPLEMENTAÇÃO DE AUXÍLIO POR INCAPACIDADE TEMPORÁRIA":"Pacificado","INDENIZAÇÃO MULTA ART. 477":"Pacificado",
+    "AUXÍLIO FUNERAL":"Pacificado","VALE-CULTURA":"Pacificado","PRORROGAÇÃO DO SALÁRIO-MATERNIDADE":"Pacificado","ATUALIZAÇÃO MONETÁRIA":"Pacificado",
+    "LICENÇA PATERNIDADE":"Baixo","BONUS RETENÇÃO":"Baixo","STOCK OPTIONS":"Baixo",
+    "HORAS EXTRAS":"Médio","RAT SEM EXPOSIÇÃO AO RISCO LABORAL":"Médio","13º SOBRE AVISO PRÉVIO INDENIZADO":"Médio",
+    "ADICIONAL NOTURNO":"Alto","ADICIONAL DE INSALUBRIDADE":"Alto","CRÉDITO ATUALIZADO PARAFISCAIS":"Alto","CRÉDITO ATUALIZADO SISTEMA S":"Alto","OUTRAS ENTIDADES":"Alto",
+    "DESCONTO DE VALE TRANSPORTE":"Médio","DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO":"Médio"
   }).map(([k, v]) => [normTxt(k), v]));
   function riscoPadrao(p){
     const t = normTxt(p);
     if (ehNaoOp(p)) return "Outros";
-    if (t === normTxt(RAT_PNT)) return "Amarelo";
-    if (t.includes("OUTRAS ENTIDADES")) return "Vermelho";
-    if (t === "DESCONTO DE VALE TRANSPORTE" || t === "DESCONTO DE VALE-ALIMENTACAO E VALE-REFEICAO") return "Amarelo";
-    if (t.includes("DESCONTO") || t.includes("INSS") || t.includes("IRRF")) return "Vermelho";
-    if (t.includes("AVISO") && t.includes("INDENIZADO")) return "Administrativo";
-    if (t.includes("AJUDA DE CUSTO") || t.includes("SALARIO FAMILIA") || t.includes("CRECHE")) return "Administrativo";
+    if (t === normTxt(RAT_PNT)) return "Médio";
+    if (t.includes("OUTRAS ENTIDADES")) return "Alto";
+    if (t === "DESCONTO DE VALE TRANSPORTE" || t === "DESCONTO DE VALE-ALIMENTACAO E VALE-REFEICAO") return "Médio";
+    if (t.includes("DESCONTO") || t.includes("INSS") || t.includes("IRRF")) return "Alto";
+    if (t.includes("AVISO") && t.includes("INDENIZADO")) return "Pacificado";
+    if (t.includes("AJUDA DE CUSTO") || t.includes("SALARIO FAMILIA") || t.includes("CRECHE")) return "Pacificado";
     return MAPA_RISCO[t] || "Outros";
   }
 
@@ -2437,6 +2622,9 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const lerMem = k => { try { return JSON.parse(localStorage.getItem(k) || "{}") || {}; } catch(e){ return {}; } };
   const gravarMem = (k, o) => { try { localStorage.setItem(k, JSON.stringify(o)); } catch(e){} };
   const memPontos = lerMem("rubricas-pontos"), memRiscos = lerMem("rubricas-riscos"), memNomes = lerMem("rubricas-empresas");
+  { const R = { Administrativo: "Pacificado", Verde: "Baixo", Amarelo: "Médio", Vermelho: "Alto" }; let mudou = false;
+    Object.keys(memRiscos).forEach(k => { if (R[memRiscos[k]]){ memRiscos[k] = R[memRiscos[k]]; mudou = true; } });
+    if (mudou) try { localStorage.setItem("rubricas-riscos", JSON.stringify(memRiscos)); } catch(e){} }
   try {
     if (!localStorage.getItem("rubricas-pontos-v2")){
       Object.keys(memPontos).forEach(k => delete memPontos[k]);
@@ -4244,6 +4432,20 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const xNum = s => { const n = parseFloat(String(s ?? "").replace(",", ".")); return isNaN(n) ? 0 : n; };
   const xDig = s => String(s ?? "").replace(/\D/g, "");
   const xMoeda = n => Math.round(n * 100) / 100;
+  // Combinado: competência de 4 dígitos é 13º (13/aaaa) e aaaa-mm vira mm/aaaa; CNPJ sempre com ponto, barra e traço
+  function xCompOut(v){
+    const t = String(v ?? "").trim();
+    if (/^\d{4}$/.test(t)) return "13/" + t;
+    const m = t.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+    return m ? m[2] + "/" + m[1] : t;
+  }
+  function xCnpj(v){
+    const d = xDig(v);
+    if (d.length === 8) return xCnpj(cnpjMatriz(d));   // raiz do S-1000: mostra o CNPJ da matriz
+    return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : String(v ?? "");
+  }
+  const xEhComp = nome => /(^|\.)(perApur|perRef|perAnt|perAfast|mesRef|competencia)$/i.test(nome);
+  const xEhInsc = nome => /(^|\.)(nrInsc|cnpj\w*)$/i.test(nome);
   // Recibo e data de recepção: vêm do retorno do portal que envolve o evento (quando o XML é o retorno), senão do Id
   function xEnvelope(ev, doc, unico){
     const achar = no => { const nr = xDesc(no, ["nrRecibo"]).find(n => !n.parentNode || n.parentNode.localName !== "ideEvento"); const dh = xDesc(no, ["dhRecepcao", "dhProcessamento"])[0]; return { recibo: nr ? (nr.textContent || "").trim() : "", dh: dh ? xDig(dh.textContent).slice(0, 14) : "" }; };
@@ -4375,7 +4577,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   }
 
   const XML_COL_RUBRICAS = ["Período", "Tipo Rubrica", "Incidência Previdência Social", "Natureza Rubrica", "Descrição Rubrica", "Código Rubrica", "Tabela de Rubricas", "Vlr Total Rubrica", "Validade do evento",
-    "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Data Admissão", "Data Desligamento", "Indicador Apuração", "Indicador Retificação", "Id Evento", "Recibo",
+    "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Data Admissão", "Data Desligamento", "Indicador Apuração", "Indicador Retificação", "Id Evento", "Recibo",
     "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Período Fechado (S-1299)"];
   const XML_NUM = new Set(["Vlr Total Rubrica", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento"]);
   const xEhValor = nome => /^(valor|vr[A-Z]|aliq|fap|fator|qtd|perc)/i.test(nome.split(".").pop());
@@ -4433,8 +4635,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         const r = rubDe(l.cod, l.tab, l.per); if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
         else if (r.tp === "1" && XML_INC_BASE.has(r.incCP)) acc.rem += l.val;
         const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
-        emp.push([l.per, r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
-          e.nrEmp, l.estNr, l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
+        emp.push([xCompOut(l.per), r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
+          xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
           c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
       });
     });
@@ -4455,6 +4657,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
         a ? a.trabs.size : "", a ? xMoeda(a.semTab) : ""]);
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
+    conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
     if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência S-1200 × S-5011", sub: "Remuneração do cruzamento contra a base do S-5011, por competência", cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010"],
       rows: conf, num: new Set(["Remuneração S-1200", "Base S-5011", "Diferença", "Valor sem S-1010"]), arquivo: "Conferencia S-1200 x S-5011" });
 
@@ -4465,9 +4668,10 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
     // 4) S-5011 (com as bases por tipo, para você conferir)
     const nomesBase = [...new Set(css.flatMap(c => c.linhas.flatMap(l => Object.keys(l.bases))))].sort();
-    const cs = []; css.forEach(c => c.linhas.forEach(l => cs.push([l.per, l.nrEmp, l.estNr, l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recibo || ""])));
-    cs.sort((a, b) => xPerOrd(a[0]).localeCompare(xPerOrd(b[0])) || a[2].localeCompare(b[2]));
-    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
+    const csRaw = []; css.forEach(c => c.linhas.forEach(l => csRaw.push({ per: l.per, est: l.estNr, row: [xCompOut(l.per), xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recibo || ""] })));
+    csRaw.sort((a, b) => xPerOrd(a.per).localeCompare(xPerOrd(b.per)) || a.est.localeCompare(b.est));
+    const cs = csRaw.map(x => x.row);
+    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
       rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Base CP Total", ...nomesBase]), arquivo: "S-5011 Aliquotas e bases" });
 
     // 5) Demais eventos
@@ -4476,7 +4680,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
       if (!linhas.length) continue;
       const cols = []; const vistos = new Set(); linhas.forEach(l => { for (const k in l) if (!vistos.has(k)){ vistos.add(k); cols.push(k); } });
       const num = new Set(cols.filter(xEhValor));
-      const rows = linhas.map(l => cols.map(c => { const v = l[c] ?? ""; return num.has(c) && v !== "" ? xNum(v) : v; }));
+      const rows = linhas.map(l => cols.map(c => { const v = l[c] ?? ""; if (xEhComp(c)) return xCompOut(v); if (xEhInsc(c)) return xCnpj(v); return num.has(c) && v !== "" ? xNum(v) : v; }));
       const [cod, desc] = XML_EVT[nome] || [nome, nome];
       conjuntos.push({ id: nome, titulo: `${cod} · ${desc}`, sub: "Tabela achatada do evento", cols, rows, num, arquivo: `${cod} ${desc}` });
     }
@@ -4692,24 +4896,24 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   const salariosMinimos = { 2021: 1100.00, 2022: 1212.00, 2023: 1320.00, 2024: 1412.00, 2025: 1518.00, 2026: 1621.00, 2027: 1720.00 };
 
   const mapaBruto = {
-    'RATXFAP': 'Administrativo', 'DESONERAÇÃO DA FOLHA': 'Administrativo', 'RETENÇÕES': 'Administrativo', 'AVISO PRÉVIO INDENIZADO': 'Administrativo', 'SALÁRIO MATERNIDADE': 'Administrativo', 'LICENÇA MATERNIDADE': 'Administrativo',
-    '15 PRIMEIROS DIAS DE AFASTAMENTO': 'Administrativo', 'ABONO ASSIDUIDADE': 'Administrativo', 'SALÁRIO EDUCAÇÃO': 'Administrativo', 'PIS SOBRE FOLHA': 'Administrativo', 'RAT - AJUSTE CBO/CNAE': 'Administrativo',
-    'PAGAMENTO A MAIOR': 'Administrativo', 'PRÊMIOS E BONIFICAÇÕES': 'Administrativo', 'FÉRIAS EM DOBRO': 'Administrativo', 'FÉRIAS INDENIZADAS': 'Administrativo', 'PREVIDÊNCIA PRIVADA (CONTRIBUIÇÃO PATRONAL)': 'Administrativo',
-    'AUXÍLIO ALIMENTAÇÃO': 'Administrativo', 'AUXÍLIO TRANSPORTE (VALE-TRANSPORTE)': 'Administrativo', 'AUXÍLIO REFEIÇÃO': 'Administrativo', 'MULTA RESCISÓRIA (40% FGTS)': 'Administrativo',
-    'INDENIZAÇÃO ART. 479': 'Administrativo', 'INDENIZAÇÃO SAFRISTA': 'Administrativo', 'INCENTIVO À DEMISSIONAMENTO VOLUNTÁRIO (PDV)': 'Administrativo', 'INCENTIVO À DEMISSÃO VOLUNTÁRIA (PDV)': 'Administrativo', 'INDENIZAÇÃO ADICIONAL DA LEI Nº 7.238/1984': 'Administrativo',
-    'LICENÇA-PRÊMIO INDENIZADA': 'Administrativo', 'ABONO PECUNIÁRIO DE FÉRIAS': 'Administrativo', 'DIÁRIAS PARA VIAGEM': 'Administrativo', 'RESSARCIMENTO DE DESPESAS COM UTILIZAÇÃO DE VEÍCULO PRÓPRIO': 'Administrativo',
-    'AUXILIO CRECHE': 'Administrativo', 'AUXÍLIO CRECHE': 'Administrativo', 'REEMBOLSO BABÁ': 'Administrativo', 'ASSISTÊNCIA MÉDICA': 'Administrativo', 'REEMBOLSO DE DESPESAS MÉDICAS': 'Administrativo', 'REEMBOLSO DE MEDICAMENTOS': 'Administrativo',
-    'REEMBOLSO DE DESPESAS HOSPITALARES': 'Administrativo', 'BOLSA ESTUDO': 'Administrativo', 'FORNECIMENTO OU REEMBOLSO DE PRÓTESES, ÓRTESES, APARELHOS ORTOPÉDICOS, ÓCULOS E SIMILARES': 'Administrativo',
-    'AUXILIO EDUCAÇÃO': 'Administrativo', 'PROGRAMAS DE QUALIFICAÇÃO PROFISSIONAL': 'Administrativo', 'BOLSA ESTÁGIO': 'Administrativo', 'BOLSA DE ENSINO, PESQUISA, EXTENSÃO E INCENTIVO À INOVAÇÃO': 'Administrativo',
-    'PREVIDÊNCIA COMPLEMENTAR': 'Administrativo', 'SEGURO DE VIDA': 'Administrativo', 'PLR': 'Administrativo', 'ABONOS': 'Administrativo', 'VESTUÁRIO FORNECIDO PARA EXECUÇÃO DAS ATIVIDADES': 'Administrativo',
-    'UNIFORMES': 'Administrativo', 'EQUIPAMENTOS DE PROTEÇÃO INDIVIDUAL (EPIS)': 'Administrativo', 'FERRAMENTAS E ACESSÓRIOS FORNECIDOS PARA PRESTAÇÃO DOS SERVIÇOS': 'Administrativo',
-    'ALIMENTAÇÃO, TRANSPORTE E HABITAÇÃO EM CANTEIROS DE OBRA OU LOCAIS DE DIFÍCIL ACESSO': 'Administrativo', 'COMPLEMENTAÇÃO DE AUXÍLIO POR INCAPACIDADE TEMPORÁRIA': 'Administrativo',
-    'VALORES DECORRENTES DE CESSÃO DE DIREITOS AUTORAIS': 'Administrativo', 'INDENIZAÇÃO MULTA ART. 477': 'Administrativo', 'AUXÍLIO FUNERAL': 'Administrativo', 'ASSISTÊNCIA À FAMÍLIA EM RAZÃO DO FALECIMENTO DO SEGURADO': 'Administrativo',
-    'VALE-CULTURA': 'Administrativo', 'AUXÍLIO-INCLUSÃO DA PESSOA COM DEFICIÊNCIA': 'Administrativo', 'PRORROGAÇÃO DO SALÁRIO-MATERNIDADE': 'Administrativo', 'ATUALIZAÇÃO MONETÁRIA': 'Administrativo',
-    'LICENÇA PATERNIDADE': 'Verde', 'BONUS RETENÇÃO': 'Verde', 'STOCK OPTIONS': 'Verde',
-    'HORAS EXTRAS': 'Amarelo', 'RAT SEM EXPOSIÇÃO AO RISCO LABORAL': 'Amarelo', '13º SOBRE AVISO PRÉVIO INDENIZADO': 'Amarelo',
-    'ADICIONAL NOTURNO': 'Vermelho', 'ADICIONAL DE INSALUBRIDADE': 'Vermelho', 'CRÉDITO ATUALIZADO PARAFISCAIS': 'Vermelho', 'CRÉDITO ATUALIZADO SISTEMA S': 'Vermelho', 'OUTRAS ENTIDADES': 'Vermelho',
-    'DESCONTO DE VALE TRANSPORTE': 'Amarelo', 'DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO': 'Amarelo'
+    'RATXFAP': 'Pacificado', 'DESONERAÇÃO DA FOLHA': 'Pacificado', 'RETENÇÕES': 'Pacificado', 'AVISO PRÉVIO INDENIZADO': 'Pacificado', 'SALÁRIO MATERNIDADE': 'Pacificado', 'LICENÇA MATERNIDADE': 'Pacificado',
+    '15 PRIMEIROS DIAS DE AFASTAMENTO': 'Pacificado', 'ABONO ASSIDUIDADE': 'Pacificado', 'SALÁRIO EDUCAÇÃO': 'Pacificado', 'PIS SOBRE FOLHA': 'Pacificado', 'RAT - AJUSTE CBO/CNAE': 'Pacificado',
+    'PAGAMENTO A MAIOR': 'Pacificado', 'PRÊMIOS E BONIFICAÇÕES': 'Pacificado', 'FÉRIAS EM DOBRO': 'Pacificado', 'FÉRIAS INDENIZADAS': 'Pacificado', 'PREVIDÊNCIA PRIVADA (CONTRIBUIÇÃO PATRONAL)': 'Pacificado',
+    'AUXÍLIO ALIMENTAÇÃO': 'Pacificado', 'AUXÍLIO TRANSPORTE (VALE-TRANSPORTE)': 'Pacificado', 'AUXÍLIO REFEIÇÃO': 'Pacificado', 'MULTA RESCISÓRIA (40% FGTS)': 'Pacificado',
+    'INDENIZAÇÃO ART. 479': 'Pacificado', 'INDENIZAÇÃO SAFRISTA': 'Pacificado', 'INCENTIVO À DEMISSIONAMENTO VOLUNTÁRIO (PDV)': 'Pacificado', 'INCENTIVO À DEMISSÃO VOLUNTÁRIA (PDV)': 'Pacificado', 'INDENIZAÇÃO ADICIONAL DA LEI Nº 7.238/1984': 'Pacificado',
+    'LICENÇA-PRÊMIO INDENIZADA': 'Pacificado', 'ABONO PECUNIÁRIO DE FÉRIAS': 'Pacificado', 'DIÁRIAS PARA VIAGEM': 'Pacificado', 'RESSARCIMENTO DE DESPESAS COM UTILIZAÇÃO DE VEÍCULO PRÓPRIO': 'Pacificado',
+    'AUXILIO CRECHE': 'Pacificado', 'AUXÍLIO CRECHE': 'Pacificado', 'REEMBOLSO BABÁ': 'Pacificado', 'ASSISTÊNCIA MÉDICA': 'Pacificado', 'REEMBOLSO DE DESPESAS MÉDICAS': 'Pacificado', 'REEMBOLSO DE MEDICAMENTOS': 'Pacificado',
+    'REEMBOLSO DE DESPESAS HOSPITALARES': 'Pacificado', 'BOLSA ESTUDO': 'Pacificado', 'FORNECIMENTO OU REEMBOLSO DE PRÓTESES, ÓRTESES, APARELHOS ORTOPÉDICOS, ÓCULOS E SIMILARES': 'Pacificado',
+    'AUXILIO EDUCAÇÃO': 'Pacificado', 'PROGRAMAS DE QUALIFICAÇÃO PROFISSIONAL': 'Pacificado', 'BOLSA ESTÁGIO': 'Pacificado', 'BOLSA DE ENSINO, PESQUISA, EXTENSÃO E INCENTIVO À INOVAÇÃO': 'Pacificado',
+    'PREVIDÊNCIA COMPLEMENTAR': 'Pacificado', 'SEGURO DE VIDA': 'Pacificado', 'PLR': 'Pacificado', 'ABONOS': 'Pacificado', 'VESTUÁRIO FORNECIDO PARA EXECUÇÃO DAS ATIVIDADES': 'Pacificado',
+    'UNIFORMES': 'Pacificado', 'EQUIPAMENTOS DE PROTEÇÃO INDIVIDUAL (EPIS)': 'Pacificado', 'FERRAMENTAS E ACESSÓRIOS FORNECIDOS PARA PRESTAÇÃO DOS SERVIÇOS': 'Pacificado',
+    'ALIMENTAÇÃO, TRANSPORTE E HABITAÇÃO EM CANTEIROS DE OBRA OU LOCAIS DE DIFÍCIL ACESSO': 'Pacificado', 'COMPLEMENTAÇÃO DE AUXÍLIO POR INCAPACIDADE TEMPORÁRIA': 'Pacificado',
+    'VALORES DECORRENTES DE CESSÃO DE DIREITOS AUTORAIS': 'Pacificado', 'INDENIZAÇÃO MULTA ART. 477': 'Pacificado', 'AUXÍLIO FUNERAL': 'Pacificado', 'ASSISTÊNCIA À FAMÍLIA EM RAZÃO DO FALECIMENTO DO SEGURADO': 'Pacificado',
+    'VALE-CULTURA': 'Pacificado', 'AUXÍLIO-INCLUSÃO DA PESSOA COM DEFICIÊNCIA': 'Pacificado', 'PRORROGAÇÃO DO SALÁRIO-MATERNIDADE': 'Pacificado', 'ATUALIZAÇÃO MONETÁRIA': 'Pacificado',
+    'LICENÇA PATERNIDADE': 'Baixo', 'BONUS RETENÇÃO': 'Baixo', 'STOCK OPTIONS': 'Baixo',
+    'HORAS EXTRAS': 'Médio', 'RAT SEM EXPOSIÇÃO AO RISCO LABORAL': 'Médio', '13º SOBRE AVISO PRÉVIO INDENIZADO': 'Médio',
+    'ADICIONAL NOTURNO': 'Alto', 'ADICIONAL DE INSALUBRIDADE': 'Alto', 'CRÉDITO ATUALIZADO PARAFISCAIS': 'Alto', 'CRÉDITO ATUALIZADO SISTEMA S': 'Alto', 'OUTRAS ENTIDADES': 'Alto',
+    'DESCONTO DE VALE TRANSPORTE': 'Médio', 'DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO': 'Médio'
   };
 
   function obterCorteQuinquenalDiag() {
@@ -4809,7 +5013,7 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
   function classifCatDiag(opNome) {
     const t = String(opNome || '').trim().toUpperCase();
-    if (t.includes("OUTRAS ENTIDADES")) return "Vermelho"; if (t === "DESCONTO DE VALE TRANSPORTE" || t === "DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO") return "Amarelo"; if (t.includes("DESCONTO") || t.includes("INSS") || t.includes("IRRF")) return "Vermelho"; if (t.includes("AVISO") && t.includes("INDENIZADO")) return "Administrativo"; if (t.includes("AJUDA DE CUSTO")) return "Administrativo"; if (t.includes("SALÁRIO FAMÍLIA") || t.includes("SALARIO FAMILIA")) return "Administrativo"; if (t.includes("CRECHE")) return "Administrativo";
+    if (t.includes("OUTRAS ENTIDADES")) return "Alto"; if (t === "DESCONTO DE VALE TRANSPORTE" || t === "DESCONTO DE VALE-ALIMENTAÇÃO E VALE-REFEIÇÃO") return "Médio"; if (t.includes("DESCONTO") || t.includes("INSS") || t.includes("IRRF")) return "Alto"; if (t.includes("AVISO") && t.includes("INDENIZADO")) return "Pacificado"; if (t.includes("AJUDA DE CUSTO")) return "Pacificado"; if (t.includes("SALÁRIO FAMÍLIA") || t.includes("SALARIO FAMILIA")) return "Pacificado"; if (t.includes("CRECHE")) return "Pacificado";
     return mapaBruto[t] || "Outros";
   }
 
@@ -4904,10 +5108,10 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
   // Construtor do painel HTML (Dashboard) do Diagnóstico PRO: igual ao do Hub
   function construirHTMLDashboard(d) {
     const cores = {
-      'Administrativo': 'linear-gradient(135deg, #2b3d30, #3d5644)',
-      'Verde': 'linear-gradient(135deg, #285433, #3a7548)',
-      'Amarelo': 'linear-gradient(135deg, #6e5522, #947535)',
-      'Vermelho': 'linear-gradient(135deg, #632e29, #8c423c)',
+      'Pacificado': 'linear-gradient(135deg, #2b3d30, #3d5644)',
+      'Baixo': 'linear-gradient(135deg, #285433, #3a7548)',
+      'Médio': 'linear-gradient(135deg, #6e5522, #947535)',
+      'Alto': 'linear-gradient(135deg, #632e29, #8c423c)',
       'Outros': 'linear-gradient(135deg, #27382d, #374e3f)'
     };
 
@@ -4934,10 +5138,10 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
     d.detalhePontos.forEach(dp => {
       if (dp.valor <= 0) return;
       let corBorda = "#a8b896";
-      if (dp.cat === 'Administrativo') corBorda = "#648160";
-      else if (dp.cat === 'Verde') corBorda = "#3a7548";
-      else if (dp.cat === 'Amarelo') corBorda = "#947535";
-      else if (dp.cat === 'Vermelho') corBorda = "#8c423c";
+      if (dp.cat === 'Pacificado') corBorda = "#648160";
+      else if (dp.cat === 'Baixo') corBorda = "#3a7548";
+      else if (dp.cat === 'Médio') corBorda = "#947535";
+      else if (dp.cat === 'Alto') corBorda = "#8c423c";
 
       let notaHtml = "";
       if (["RAT SEM EXPOSIÇÃO AO RISCO LABORAL", "HORAS EXTRAS"].includes(dp.op.toUpperCase())) {
@@ -5442,8 +5646,8 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
           });
           const [an, ms] = cM.split('_').map(Number); const dd = (salariosMinimos[an] || 1621) * 20; let cr = 0; if (bTS > dd) cr = (bTS - dd) * aD;
           const lP = ms === 13 ? `13/${an}` : `${ms.toString().padStart(2, '0')}/${an}`;
-          if (cr > 0) { tC5 += cr; const lO = { 'Origem': 'S-5011 Outras Entidades', 'Entra na Apuração': 'SIM', 'Oportunidade Potencial': "Outras Entidades", 'Categoria HTML': 'Vermelho', 'Valor Encargo Calculado': cr, 'Descrição Rubrica': `S-5011 Recibo: ${mR}`, 'Período': lP, 'Base S-5011': bTS, 'Alíquota Aplicada (%)': aD * 100, 'Dedução 20 SM': dd }; rFil.push(lO); lMe.push(lO); }
-          eCBO.forEach(e => { const b = e.ratAlvo === 2 ? bR2 : bR3; if (b <= 0) return; const c = b * 0.01; e.linhas.push({ periodo: lP, recibo: mR, base: b, aliquota: 0.01, credito: c }); const lC = { 'Origem': `S-5011 ${e.nome}`, 'Entra na Apuração': 'SIM', 'Oportunidade Potencial': e.nome, 'Categoria HTML': 'Administrativo', 'Valor Encargo Calculado': c, 'Descrição Rubrica': `S-5011 Recibo: ${mR}`, 'Período': lP, 'Base S-5011': b, 'Alíquota Aplicada (%)': 1, 'Dedução 20 SM': 0 }; rFil.push(lC); lMe.push(lC); });
+          if (cr > 0) { tC5 += cr; const lO = { 'Origem': 'S-5011 Outras Entidades', 'Entra na Apuração': 'SIM', 'Oportunidade Potencial': "Outras Entidades", 'Categoria HTML': 'Alto', 'Valor Encargo Calculado': cr, 'Descrição Rubrica': `S-5011 Recibo: ${mR}`, 'Período': lP, 'Base S-5011': bTS, 'Alíquota Aplicada (%)': aD * 100, 'Dedução 20 SM': dd }; rFil.push(lO); lMe.push(lO); }
+          eCBO.forEach(e => { const b = e.ratAlvo === 2 ? bR2 : bR3; if (b <= 0) return; const c = b * 0.01; e.linhas.push({ periodo: lP, recibo: mR, base: b, aliquota: 0.01, credito: c }); const lC = { 'Origem': `S-5011 ${e.nome}`, 'Entra na Apuração': 'SIM', 'Oportunidade Potencial': e.nome, 'Categoria HTML': 'Pacificado', 'Valor Encargo Calculado': c, 'Descrição Rubrica': `S-5011 Recibo: ${mR}`, 'Período': lP, 'Base S-5011': b, 'Alíquota Aplicada (%)': 1, 'Dedução 20 SM': 0 }; rFil.push(lC); lMe.push(lC); });
           lP5.push({ periodo: lP, recibo: mR, base: bTS, aliquota_pct: aD, deducao: dd, credito: cr });
         });
         if (lP5.length) b5011 = await gerWbMem5011Diag(lP5);
