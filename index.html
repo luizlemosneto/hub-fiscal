@@ -5197,6 +5197,27 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Data Desligamento", "Motivo Desligamento", "Indicador Retificação", "Id Evento", "Recibo", "Linhas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"],
       rows: resumo, num: new Set(["Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
 
+    // 1e) Espelho do desligado no mês: tudo o que ele recebeu na competência do desligamento, S-1200 (o mês) + S-2299 (as verbas), linha a linha
+    const desl = new Map(), espelho = [], espSoma = new Map();
+    rescs.forEach(e => e.linhas.forEach(l => { const k = [e.cpf, e.nrEmp, l.ind, l.perApur].join("|"); if (!desl.has(k)) desl.set(k, { cpf: e.cpf, nrEmp: e.nrEmp, per: l.perApur, dt: e.dt, nome: (estado.trab.get(e.cpf) || {}).nome || "" }); }));
+    const espLinha = (origem, k, e, l, r, entra, per, ind) => {
+      const d = desl.get(k); if (!espSoma.has(k)) espSoma.set(k, { s1200: 0, s2299: 0, outros: 0, sem: 0 });
+      const a = espSoma.get(k); if (entra === "Sim") a[origem === "S-1200" ? "s1200" : "s2299"] += l.val; else if (entra === "Sem S-1010") a.sem += l.val; else a.outros += l.val;
+      espelho.push([xCompOut(per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", d.cpf, d.nome, d.dt, origem, xCnpj(l.estNr), l.lot, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
+    };
+    remuns.forEach(e => { const k = [e.cpf, e.nrEmp, e.indAp, e.perEv].join("|"); if (!desl.has(k)) return;
+      e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per), entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não"; espLinha("S-1200", k, e, l, r, entra, e.perEv); }); });
+    rescs.forEach(e => e.linhas.forEach(l => { const r = rubDe(l.cod, l.tab, l.per), entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não"; espLinha("S-2299", [e.cpf, e.nrEmp, l.ind, l.perApur].join("|"), e, l, r, entra, l.perApur); }));
+    espelho.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]) || x[6].localeCompare(y[6]) || String(x[9]).localeCompare(String(y[9])));
+    if (espelho.length) conjuntos.push({ id: "espelhoDeslig", titulo: "Espelho do desligado no mês (S-1200 + S-2299)", sub: "Tudo o que o desligado recebeu na competência do desligamento: as rubricas do S-1200 do mês e as do S-2299, linha a linha",
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Data Desligamento", "Origem", "Número Inscrição Estabelecimento", "Código Lotação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
+      rows: espelho, num: new Set(["Vlr Rubrica"]), arquivo: "Espelho do desligado no mes" });
+    const espRes = [...espSoma].map(([k, a]) => { const d = desl.get(k); return [xCompOut(d.per), xCnpj(d.nrEmp), estado.emps.get(d.nrEmp.slice(0, 8)) || "", d.cpf, d.nome, d.dt, xMoeda(a.s1200), xMoeda(a.s2299), xMoeda(a.s1200 + a.s2299), xMoeda(a.outros), xMoeda(a.sem)]; });
+    espRes.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]));
+    if (espRes.length) conjuntos.push({ id: "espelhoDeslig2", titulo: "Espelho do desligado no mês · Totais", sub: "Uma linha por desligado: o que entra na base no S-1200 do mês, no S-2299 e a soma",
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Data Desligamento", "S-1200 do mês (entra na base)", "S-2299 (entra na base)", "Total na base", "Fora da base (não somado)", "Sem S-1010 (não somado)"],
+      rows: espRes, num: new Set(["S-1200 do mês (entra na base)", "S-2299 (entra na base)", "Total na base", "Fora da base (não somado)", "Sem S-1010 (não somado)"]), arquivo: "Espelho do desligado no mes totais" });
+
     // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
     css.forEach(c => { const k = [c.nrEmp, c.indAp, c.per].join("|"); somaBase.set(k, (somaBase.get(k) || 0) + c.baseTotal); });
