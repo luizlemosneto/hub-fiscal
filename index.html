@@ -969,13 +969,14 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .giz-fundo{position:absolute;inset:0;opacity:0;background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
 .giz.escurece .giz-fundo{opacity:1}
 .giz-zoom{position:absolute;transform-origin:50% 50%;will-change:transform}
-.giz-fumaca{position:absolute;border-radius:50%;filter:blur(14px);opacity:.95;
-  background:radial-gradient(ellipse 42% 48% at 34% 46%,var(--giz-brilho),transparent 100%),radial-gradient(ellipse 40% 44% at 66% 56%,var(--giz-brilho),transparent 100%),radial-gradient(ellipse 52% 50% at 50% 50%,var(--giz-brilho),transparent 100%);
+.giz-fumaca{position:absolute;border-radius:50%;filter:blur(20px);opacity:.95;
+  --f:color-mix(in srgb,var(--giz-brilho) 45%,transparent);
+  background:radial-gradient(ellipse 46% 52% at 36% 46%,var(--f),transparent 100%),radial-gradient(ellipse 44% 48% at 64% 56%,var(--f),transparent 100%),radial-gradient(ellipse 58% 56% at 50% 50%,var(--giz-brilho) 0,var(--f) 45%,transparent 100%);
   animation:fumaca 3.2s ease-in-out infinite alternate}
 @keyframes fumaca{to{transform:scale(1.07,.95) rotate(3deg);opacity:.8}}
 .giz-valor{position:relative;display:block;text-align:center;white-space:nowrap;font:800 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   color:transparent;background:linear-gradient(105deg,#000 0,#000 40%,#8E8E93 47%,#D1D1D6 50%,#8E8E93 53%,#000 60%,#000 100%) 100% 0/260% 100%;-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 2px var(--giz-brilho));animation:brilho 1.7s linear infinite}
+  transform:scale(1.22);animation:brilho 1.7s linear infinite}
 @keyframes brilho{to{background-position:-60% 0}}
 .giz svg{position:absolute;overflow:visible}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
@@ -2596,7 +2597,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
       await espera(200);
       // 2) zoom no valor
-      const alvo = Math.min(innerWidth * .5 / (w + mx * 2), innerHeight * .42 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
+      const alvo = Math.min(innerWidth * .6 / (w + mx * 2), innerHeight * .5 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
       await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo})` }],
         { duration: 900, easing: "cubic-bezier(.7,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
       await espera(1400);
