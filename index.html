@@ -2501,10 +2501,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     nome: "Outras Entidades (20 salários mínimos)",
     colunas: ["Período de Apuração","Empresa","CNPJ Matriz ou CNO","FPAS","Código de OE","Remunerações (Base de Cálculo)","Reflexo paraf.","Reflexo Sistema S"], numericas: [5,6,7],
     valor: r => r.reflParaf + r.reflSisS,
-    celulasTela: r => [r.periodo.texto, r.empresa, r.cnpj || "—", r.fpas || "-", r.oe, brl.format(r.base), brl.format(r.reflParaf), brl.format(r.reflSisS)],
+    celulasTela: r => [r.periodo.texto, r.empresa, r.cnpj || "—", r.fpas || "-", r.oe, brl.format(r.baseRed), brl.format(r.reflParaf), brl.format(r.reflSisS)],
     chave: r => [r.periodo.texto, up(r.empresa), r.cnpj, r.fpas, r.oe].join("\u0001"),
     agrega: true,
-    // base de cada linha menos 20 salários mínimos do ano da competência; o que sobra x parafiscais e x Sistema S
+    // base de cada linha menos 20 salários mínimos do ano da competência; o que sobra (a coluna de remunerações) x parafiscais e x Sistema S
     finalizar: r => {
       const sm = salariosMinimos[+String(r.periodo.texto).slice(-4)] || 0, red = Math.max(0, r.base - 20 * sm), d = dividirOE(0, r.fpas, r.oe);
       return { ...r, baseRed: red, origemOE: sm ? d.origem : "sem-sm", reflParaf: sm ? Math.round(red * d.paraf) / 100 : 0, reflSisS: sm ? Math.round(red * d.sisS) / 100 : 0 };
@@ -2513,7 +2513,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       aba: "Outras Entidades", arquivo: e => nomeArqEmp(e, "Outras Entidades (20 SM)"), consolidado: "Outras Entidades (20 SM)",
       cab: ["Período de Apuração","Empresa","CNPJ Matriz ou CNO","FPAS","Código de OE","Remunerações (Base de Cálculo)","Reflexo paraf.","Reflexo Sistema S"],
       larguras: [16,36,20,8,13,28,16,18],
-      linha: r => [dataCel(r.periodo), txt(r.empresa), txt(r.cnpj), txt(r.fpas || "-"), txt(r.oe), num(r.base, "#,##0.00"), num(r.reflParaf, "#,##0.00"), num(r.reflSisS, "#,##0.00")]
+      linha: r => [dataCel(r.periodo), txt(r.empresa), txt(r.cnpj), txt(r.fpas || "-"), txt(r.oe), num(r.baseRed, "#,##0.00"), num(r.reflParaf, "#,##0.00"), num(r.reflSisS, "#,##0.00")]
     }
   };
   const modDe = tipo => tipo === "base" && baseOE ? MOD_BASE_OE : MODULOS[tipo];
