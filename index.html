@@ -1632,7 +1632,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     </section>
 
     <div class="rodar">
-      <span class="rodar-txt"><span class="badge" id="statusXml">Aguardando</span></span>
+      <span class="rodar-txt"><span class="badge" id="statusXml">Aguardando</span><span id="xmlGuardados" hidden></span></span>
+      <button class="btn primary" type="button" id="xmlReprocessar" hidden>Reprocessar arquivos guardados</button>
+      <button class="btn ghost" type="button" id="xmlEsquecer" hidden>Esquecer arquivos guardados</button>
       <button class="btn ghost" type="button" id="xmlLimpar" hidden>Limpar leitura</button>
     </div>
 
@@ -5215,11 +5217,34 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     return itens;
   }
 
-  async function lerXmls(lista){
+  /* Os arquivos enviados ficam guardados neste navegador (IndexedDB), para reprocessar depois de uma atualização sem enviar tudo de novo */
+  const xmlBanco = {
+    abrir: () => new Promise((ok, falha) => { const r = indexedDB.open("HubXmlDB", 1); r.onupgradeneeded = e => e.target.result.createObjectStore("arquivos"); r.onsuccess = e => ok(e.target.result); r.onerror = e => falha(e.target.error); }),
+    async guardar(lista){
+      const db = await this.abrir();
+      const chave = f => [f.webkitRelativePath || f.name, f.size, f.lastModified].join("|");
+      await new Promise((ok, falha) => { const tx = db.transaction("arquivos", "readwrite"), st = tx.objectStore("arquivos"); lista.forEach(f => st.put(f, chave(f))); tx.oncomplete = ok; tx.onerror = () => falha(tx.error); tx.onabort = () => falha(tx.error); });
+      db.close();
+    },
+    async todos(){ const db = await this.abrir(); const r = await new Promise((ok, falha) => { const q = db.transaction("arquivos").objectStore("arquivos").getAll(); q.onsuccess = () => ok(q.result); q.onerror = () => falha(q.error); }); db.close(); return r; },
+    async limpar(){ const db = await this.abrir(); await new Promise((ok, falha) => { const tx = db.transaction("arquivos", "readwrite"); tx.objectStore("arquivos").clear(); tx.oncomplete = ok; tx.onerror = () => falha(tx.error); }); db.close(); }
+  };
+  async function atualizarGuardados(){
+    try {
+      const fs = await xmlBanco.todos(), mb = fs.reduce((t, f) => t + f.size, 0) / 1048576;
+      $("xmlGuardados").hidden = !fs.length; $("xmlReprocessar").hidden = !fs.length; $("xmlEsquecer").hidden = !fs.length;
+      $("xmlGuardados").textContent = fs.length ? `${xmlN(fs.length)} arquivo${fs.length === 1 ? "" : "s"} guardado${fs.length === 1 ? "" : "s"} neste navegador (${mb.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB)` : "";
+    } catch(e){ $("xmlGuardados").hidden = true; $("xmlReprocessar").hidden = true; $("xmlEsquecer").hidden = true; }
+  }
+  async function lerXmls(lista, guardar = true){
     if (xmlLendo) return;
     if (!lista.some(f => /\.(xml|zip)$/i.test(f.name))){ toast("Nenhum arquivo .xml ou .zip encontrado."); return; }
     xmlLendo = true;
     $("statusXml").textContent = "Lendo"; $("statusXml").className = "badge run";
+    if (guardar){
+      try { await xmlBanco.guardar(lista.filter(f => /\.(xml|zip)$/i.test(f.name))); }
+      catch(e){ logXml("Não consegui guardar os arquivos neste navegador para reprocessar depois (" + (e && e.message || "sem espaço") + "). A leitura segue normalmente.", "log-erro"); }
+    }
     const arquivos = await xmlExpandir(lista, logXml);
     if (!arquivos.length){ logXml("Nenhum XML encontrado nos arquivos enviados.", "log-erro"); toast("Nenhum XML encontrado."); xmlLendo = false; $("statusXml").textContent = "Aguardando"; $("statusXml").className = "badge"; return; }
     logXml(`Lendo ${xmlN(arquivos.length)} XML(s)…`);
@@ -5239,9 +5264,24 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     logXml(`Leitura concluída. ${dup ? xmlN(dup) + " evento(s) duplicado(s) ou substituído(s) por retificação removido(s)." : "Nenhuma duplicidade."}`, "log-sucesso");
     $("statusXml").textContent = "Pronto"; $("statusXml").className = "badge ok";
     xmlLendo = false;
-    renderXml();
+    renderXml(); atualizarGuardados();
   }
-  ligarSlotHub($("dropXml"), $("xmlPasta"), xmlStub, lerXmls);
+  ligarSlotHub($("dropXml"), $("xmlPasta"), xmlStub, f => lerXmls(f));
+  $("xmlReprocessar").addEventListener("click", async () => {
+    if (xmlLendo) return;
+    try {
+      const fs = await xmlBanco.todos(); if (!fs.length){ toast("Não há arquivos guardados."); return; }
+      xmlEstado = xNovoEstado(); xmlRes = { conjuntos: [], faltam: 0, semCS: 0, divergencias: 0, comparadas: 0 };
+      logXml(`Reprocessando ${xmlN(fs.length)} arquivo(s) guardado(s) com a versão atual…`);
+      await lerXmls(fs, false);
+    } catch(e){ toast("Não consegui ler os arquivos guardados. " + e.message); }
+  });
+  $("xmlEsquecer").addEventListener("click", async () => {
+    if (xmlLendo || !confirm("Apagar os arquivos guardados neste navegador? Você precisará enviá-los de novo para reprocessar.")) return;
+    try { await xmlBanco.limpar(); logXml("Arquivos guardados apagados.", "log-sucesso"); } catch(e){ toast("Não consegui apagar. " + e.message); }
+    atualizarGuardados();
+  });
+  atualizarGuardados();
   $("xmlArqs").addEventListener("change", e => { const fs = Array.from(e.target.files || []); e.target.value = ""; if (fs.length) lerXmls(fs); });
   $("xmlLimpar").addEventListener("click", () => {
     if (xmlLendo) return;
