@@ -1604,7 +1604,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
         <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 não pode ser classificada e fica como “Corrompido” em Validade do evento (desconsiderada pelo módulo Rubricas); as demais ficam “Válido”. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
-        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010, só categorias iniciadas em 1, como 101 e 103) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
+        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 com incidência 11, 12, 14 ou 15 na tabela S-1010, categorias que não começam com 1 ficam como “Inválido” e não entram, nem no S-1200 nem no S-5011) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -4965,7 +4965,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const cpf = xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indRetif = xTxt(ev, "ideEvento/indRetif");
       const linhas = [];
       for (const dm of xDesc(ev, ["dmDev"])){
-        const cat = xTxt(dm, "codCateg"); if (!cat.startsWith("1")) continue;
+        const cat = xTxt(dm, "codCateg");
         for (const el of xDesc(dm, ["ideEstabLot"])){
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estTp = xTxt(el, "tpInsc"), estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
@@ -4985,10 +4985,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const lots = xDesc(est, ["ideLotacao"]);
         if (!lots.length) linhas.push({ per, nrEmp, estNr, lot: "", rat, fap, ratAj, fpas: "", terc: "", susp: "", subst, bases: {}, base: 0 });
         for (const l of lots){
-          const bases = {}; let base = 0;
-          for (const b of xDescRe(l, /^vrBcCp\d+$/)){ const v = xNum(b.textContent); bases[b.localName] = (bases[b.localName] || 0) + v; base += v; }
+          const bases = {}; let base = 0, baseInv = 0;
+          for (const b of xDescRe(l, /^vrBcCp\d+$/)){
+            const v = xNum(b.textContent); let cat = ""; for (let a = b.parentNode; a && a !== l; a = a.parentNode){ const c = xDir(a, "codCateg"); if (c){ cat = (c.textContent || "").trim(); break; } }
+            if (cat && !cat.startsWith("1")){ baseInv += v; continue; }
+            bases[b.localName] = (bases[b.localName] || 0) + v; base += v;
+          }
           baseTotal += base;
-          linhas.push({ per, nrEmp, estNr, lot: xTxt(l, "codLotacao"), rat, fap, ratAj, fpas: xTxt(l, "fpas"), terc: xTxt(l, "codTercs"), susp: xTxt(l, "codTercsSusp"), subst, bases, base });
+          linhas.push({ per, nrEmp, estNr, lot: xTxt(l, "codLotacao"), rat, fap, ratAj, fpas: xTxt(l, "fpas"), terc: xTxt(l, "codTercs"), susp: xTxt(l, "codTercsSusp"), subst, bases, base, baseInv });
         }
       }
       xGuardarMaisRecente(estado.cs, [nome, nrEmp, indAp, per].join("|"), rank, { id, recibo, indAp, per, nrEmp, baseTotal, linhas }, estado);
@@ -5083,14 +5087,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const somaRem = new Map();   // empregador|apuração|competência -> remuneração do S-1200
     remuns.forEach(e => {
       const chaveRem = [e.nrEmp, e.indAp, e.perEv].join("|");
-      if (!somaRem.has(chaveRem)) somaRem.set(chaveRem, { rem: 0, semTab: 0, trabs: new Set() });
-      const acc = somaRem.get(chaveRem); if (e.linhas.length) acc.trabs.add(e.cpf);
+      if (!somaRem.has(chaveRem)) somaRem.set(chaveRem, { rem: 0, semTab: 0, foraCat: 0, trabs: new Set() });
+      const acc = somaRem.get(chaveRem); acc.trabs.add(e.cpf);
       const t = estado.trab.get(e.cpf) || {};
       e.linhas.forEach(l => {
-        const r = rubDe(l.cod, l.tab, l.per); if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
+        const r = rubDe(l.cod, l.tab, l.per), catOk = l.cat.startsWith("1");
+        if (!catOk) acc.foraCat++;
+        else if (!r) { faltam.add(l.cod + "|" + l.tab); acc.semTab += l.val; }
         else if (r.tp === "1" && XML_INC_BASE.has(r.incCP)) acc.rem += l.val;
         const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
-        emp.push([xCompOut(l.per), r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
+        emp.push([xCompOut(l.per), r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, !catOk ? "Inválido" : r ? "Válido" : "Corrompido",
           xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
           c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
       });
@@ -5123,11 +5129,11 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     // 4) S-5011 (com as bases por tipo, para você conferir)
     const nomesBase = [...new Set(css.flatMap(c => c.linhas.flatMap(l => Object.keys(l.bases))))].sort();
-    const csRaw = []; css.forEach(c => c.linhas.forEach(l => csRaw.push({ per: l.per, est: l.estNr, row: [xCompOut(l.per), xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recibo || ""] })));
+    const csRaw = []; css.forEach(c => c.linhas.forEach(l => csRaw.push({ per: l.per, est: l.estNr, row: [xCompOut(l.per), xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), xMoeda(l.baseInv || 0), c.id, c.recibo || ""] })));
     csRaw.sort((a, b) => xPerOrd(a.per).localeCompare(xPerOrd(b.per)) || a.est.localeCompare(b.est));
     const cs = csRaw.map(x => x.row);
-    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
-      rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Base CP Total", ...nomesBase]), arquivo: "S-5011 Aliquotas e bases" });
+    if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Base Inválida (categoria fora de 1)", "Id Evento", "Recibo"],
+      rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Base CP Total", ...nomesBase, "Base Inválida (categoria fora de 1)"]), arquivo: "S-5011 Aliquotas e bases" });
 
     // 5) Demais eventos
     for (const [nome, mapa] of estado.outros){
