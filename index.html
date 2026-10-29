@@ -5406,9 +5406,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
     conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
-    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299) × S-5011", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
+    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Auditoria de Bases e Rubricas", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"],
-      rows: conf, pct: "Divergência (%)", sit: "Situação", num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
+      rows: conf, pct: "Divergência (%)", sit: "Situação", num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"]), arquivo: "Auditoria de Bases e Rubricas" });
 
     // 2b) A mesma conferência por estabelecimento e lotação: mostra em qual lotação a diferença aparece
     css.forEach(c => c.linhas.forEach(l => { const a = lotAcc(l.nrEmp, c.indAp, c.per, l.estNr, l.lot); a.base = (a.base || 0) + l.base; }));
@@ -5511,7 +5511,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (xmlRes.faltam) extras.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” e são desconsideradas): envie o S-1010 para classificar`);
     if (xmlRes.semCS) extras.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const chaveExtras = extras.join("|"); if (chaveExtras !== xmlUltimosExtras){ xmlUltimosExtras = chaveExtras; extras.forEach(t => logXml("Atenção: " + t + ".")); }   // os detalhes ficam no registro
-    const av = $("xmlAvisos"), texto = xmlRes.divergencias ? `${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competências apresentaram inconsistência(s) - valide-a(s) em “Conferência (S-1200 + S-2299) × S-5011”.` : "";
+    const av = $("xmlAvisos"), texto = xmlRes.divergencias ? `${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competências apresentaram inconsistência(s) - valide-a(s) em “Auditoria de Bases e Rubricas”.` : "";
     if (texto !== av.dataset.t){   // só refaz a animação quando a mensagem muda
       av.dataset.t = texto; av.hidden = !texto;
       av.innerHTML = texto ? '<span class="xml-aviso-fio"></span><span class="xml-aviso-txt"></span>' : ""; if (texto) av.querySelector(".xml-aviso-txt").textContent = texto;
@@ -5779,44 +5779,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
   $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
 
-  /* ---------- Do cruzamento direto para as Rubricas, com a tela virando papel amassado ---------- */
-  // A tela é cortada em facetas angulosas (como as faces de uma folha amassada). Cada uma ganha sombra de dobra
-  // e vai para o centro girando em 3D, até virar uma bolinha. `entra` roda o filme ao contrário (a bolinha abre).
-  function folhaAmassada(el, entra){
-    return new Promise(fim => {
-      const W = innerWidth, H = innerHeight, r = el.getBoundingClientRect(), rnd = (a, b) => a + Math.random() * (b - a);
-      const COL = 4, LIN = 3, pts = [];
-      for (let j = 0; j <= LIN; j++){ pts[j] = []; for (let i = 0; i <= COL; i++){
-        const x = i * W / COL, y = j * H / LIN, borda = i === 0 || j === 0 || i === COL || j === LIN;
-        pts[j][i] = [x + (borda && (i === 0 || i === COL) ? 0 : borda ? rnd(-.12, .12) * W / COL : rnd(-.32, .32) * W / COL), y + (borda && (j === 0 || j === LIN) ? 0 : borda ? rnd(-.12, .12) * H / LIN : rnd(-.32, .32) * H / LIN)];
-      } }
-      const cena = document.createElement("div");
-      cena.style.cssText = "position:fixed;inset:0;z-index:95;pointer-events:none;overflow:hidden;perspective:1100px";
-      const cx = W / 2, cy = H * .45, anims = [];
-      for (let j = 0; j < LIN; j++) for (let i = 0; i < COL; i++){
-        const q = [pts[j][i], pts[j][i + 1], pts[j + 1][i + 1], pts[j + 1][i]];
-        const fx = q.reduce((s, p) => s + p[0], 0) / 4, fy = q.reduce((s, p) => s + p[1], 0) / 4;
-        const f = document.createElement("div");
-        f.style.cssText = `position:absolute;inset:0;transform-origin:${fx}px ${fy}px;clip-path:polygon(${q.map(p => p[0].toFixed(1) + "px " + p[1].toFixed(1) + "px").join(",")});backface-visibility:hidden`;
-        const papel = document.createElement("div"); papel.style.cssText = "position:absolute;inset:0;background:var(--bg);overflow:hidden";
-        const c = el.cloneNode(true); c.removeAttribute("hidden"); c.classList.remove("page-in", "entra-dir", "entra-esq", "sai-esq", "sai-dir");
-        c.querySelectorAll("[id]").forEach(n => n.removeAttribute("id")); c.removeAttribute("id");
-        c.style.cssText = `position:absolute;left:${r.left}px;top:${r.top}px;width:${r.width}px;margin:0;animation:none;visibility:visible`;
-        papel.appendChild(c);
-        const claro = Math.random() < .5, ang = rnd(0, 360).toFixed(0), forca = rnd(.25, .5).toFixed(2);
-        const sombra = document.createElement("div");
-        sombra.style.cssText = `position:absolute;inset:0;opacity:0;background:linear-gradient(${ang}deg,rgba(255,255,255,${claro ? forca : forca * .3}),rgba(0,0,0,${claro ? forca * .35 : forca}))`;
-        f.append(papel, sombra); cena.appendChild(f);
-        const fim3 = `translate(${((cx - fx) * .88 + rnd(-24, 24)).toFixed(0)}px,${((cy - fy) * .88 + rnd(-24, 24)).toFixed(0)}px) rotateX(${rnd(-70, 70).toFixed(0)}deg) rotateY(${rnd(-70, 70).toFixed(0)}deg) rotate(${rnd(-80, 80).toFixed(0)}deg) scale(${rnd(.1, .2).toFixed(2)})`;
-        const meio = `translate(${((cx - fx) * .06).toFixed(0)}px,${((cy - fy) * .06).toFixed(0)}px) rotateX(${rnd(-14, 14).toFixed(0)}deg) rotateY(${rnd(-14, 14).toFixed(0)}deg) rotate(${rnd(-4, 4).toFixed(1)}deg) scale(.96)`;
-        const dur = 1000, opts = { duration: dur, fill: "both", easing: "cubic-bezier(.5,0,.7,.4)", direction: entra ? "reverse" : "normal" };
-        anims.push(f.animate([{ transform: "none", filter: "brightness(1)" }, { transform: meio, filter: `brightness(${claro ? 1.08 : .88})`, offset: .38 }, { transform: fim3, filter: "brightness(.72)" }], opts));
-        anims.push(sombra.animate([{ opacity: 0 }, { opacity: 1, offset: .38 }, { opacity: 1 }], opts));
-      }
-      cena.animate([{ opacity: 1 }, { opacity: 1, offset: .82 }, { opacity: 0 }], { duration: 1000, fill: "both", direction: entra ? "reverse" : "normal" });
-      document.body.appendChild(cena); el.style.visibility = "hidden";
-      Promise.all(anims.map(a => a.finished)).then(() => { cena.remove(); if (entra) el.style.visibility = ""; fim(); });
-    });
+  /* ---------- Do cruzamento direto para as Rubricas, com um esmaecimento suave ---------- */
+  function esmaecer(el, de, ate, ms, easing){
+    el.style.willChange = "opacity";
+    return el.animate([{ opacity: de }, { opacity: ate }], { duration: ms, easing, fill: "both" }).finished;
   }
   let xmlIndo = false;
   async function seguirParaRubricas(){
@@ -5825,16 +5791,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
     const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
     xmlEstado.emps.forEach((nome, raiz) => { if (nome && !rub.empresas.has(raiz)) rub.empresas.set(raiz, nome); });   // o nome da empresa (S-1000) segue junto
-    const tela = elDaVista(vista), limpa = el => { el.style.filter = el.style.opacity = el.style.transform = el.style.transformOrigin = el.style.willChange = el.style.visibility = ""; };
+    const tela = elDaVista(vista), limpa = el => { el.getAnimations().forEach(a => a.cancel()); el.style.willChange = ""; };
     let nova = null;
     try {
       if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
-      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a folha amassa
-      await folhaAmassada(tela, false);
+      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a tela esmaece
+      await esmaecer(tela, 1, 0, 220, "cubic-bezier(.4,0,1,1)");
       irPara("rubricas", true, true);
       limpa(tela);
       nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
-      await folhaAmassada(nova, true);   // a bolinha abre e alisa
+      await esmaecer(nova, 0, 1, 320, "cubic-bezier(0,0,.2,1)");
     } finally {
       limpa(tela); if (nova) limpa(nova); xmlIndo = false; btn.disabled = false; }
   }
