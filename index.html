@@ -1552,7 +1552,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <ol>
         <li>S-5011: alíquotas por período, estabelecimento e lotação (RAT, FAP, GILRAT) e outras entidades pela tabela FPAS + código de terceiros (menos o suspenso). Patronal 20% (22,5% para cooperativa); com substituição 1, 5% em 2025, 10% em 2026, 15% em 2027 e 0% nos demais anos; com substituição 2, a patronal (ou a de transição de 2025 a 2027) reduzida pelo percentual de redução.</li>
         <li>S-1200: vale o maior grau de exposição do CPF na competência (ou, sem ela, o maior do CPF; padrão 1). Agentes nocivos: grau 2 ou 6 = 12%, 3 ou 7 = 9%, 4 ou 8 = 6%.</li>
-        <li>S-5001: só tipo de valor 11 e categorias iniciadas em 1 (101, 103…). Linhas repetidas pelo achatamento do Parquet são descartadas e vale o recibo mais recente de cada CPF e competência. Usa a base de referência quando existe; senão, a base normal.</li>
+        <li>S-5001: só tipo de valor 11 e categorias iniciadas em 1 (101, 103…). Linhas repetidas pelo achatamento do Parquet são descartadas e vale o recibo mais recente de cada CPF e competência. O recibo vem da coluna nrRecArqBase (Número Recibo Arquivo Base) e vale o de maior número; no S-1200 vale o mais recente de cada competência, CPF e lotação. Usa a base de referência quando existe; senão, a base normal.</li>
         <li>Entram as competências dos últimos 5 anos até dois meses atrás. Base redutora = (remuneração − 200) × soma das alíquotas.</li>
         <li>A planilha sai com as abas Base Consolidada e Totalizadores, com as fórmulas de rateio do crédito por competência.</li>
       </ol>
@@ -2151,6 +2151,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   function limpCPFEso(v){ let s = String(v || "").trim(); if (s.endsWith(".0")) s = s.slice(0,-2); s = s.replace(/\D/g, ""); return s ? s.padStart(11, "0") : ""; }
   function limpInsEso(v){ let s = String(v || "").trim(); if (s.endsWith(".0")) s = s.slice(0,-2); return s.replace(/\D/g, ""); }
   function locColEso(cols, kws, exc = []){ return cols.find(c => { const cu = txtNormEso(c).toUpperCase(); return kws.some(k => cu.includes(txtNormEso(k).toUpperCase())) && !exc.some(e => cu.includes(txtNormEso(e).toUpperCase())); }); }
+  // Recibo mais novo = maior número (1.1.0000000013080477947 → só os dígitos, comparados por tamanho e depois por texto)
+  function cmpRecEso(a, b){ const x = String(a ?? "").replace(/\D/g, "").replace(/^0+/, ""), y = String(b ?? "").replace(/\D/g, "").replace(/^0+/, ""); return x.length - y.length || (x < y ? -1 : x > y ? 1 : 0); }
+  // Coluna do número do recibo do arquivo base (nrRecArqBase), sem confundir com colunas de valor
+  function locRecEso(cols){ return cols.find(c => { const u = txtNormEso(c).toUpperCase().replace(/[^A-Z0-9]/g, ""); return u.includes("NRRECARQBASE") || u.includes("RECIBOARQUIVOBASE") || u.includes("RECARQBASE"); }) || locColEso(cols, ["RECIBO"], ["BASE","VLR","VALOR"]); }
   function locColEstEso(cols, exacts){ const ex = exacts.map(txtNormEso); return cols.find(c => ex.includes(txtNormEso(c))); }
 
   // CNPJ da matriz a partir da raiz (8 dígitos): raiz + 0001 + dígitos verificadores
@@ -2171,7 +2175,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     let linhasLidas = 0;
 
     linhasLidas = await procTab(file, cols => {
-      cm1 = locColEso(cols, ["COMPETENCIA","PERIODO"]); cm2 = locColEso(cols, ["RECIBO"], ["BASE"]); cm3 = locColEso(cols, ["CPF"]); cm4 = locColEstEso(cols, ["Matrícula"]) || locColEso(cols, ["MATRICULA"], ["ANTERIOR"]);
+      cm1 = locColEso(cols, ["COMPETENCIA","PERIODO"]); cm2 = locRecEso(cols); cm3 = locColEso(cols, ["CPF"]); cm4 = locColEstEso(cols, ["Matrícula"]) || locColEso(cols, ["MATRICULA"], ["ANTERIOR"]);
       cm5 = locColEstEso(cols, ["Código Lotação Tributária"]) || locColEso(cols, ["CODIGO LOTACAO","LOTACAO TRIBUTARIA"], ["TIPO","INSCRICAO"]);
       cm6 = locColEstEso(cols, ["Número Inscrição Lotação"]) || locColEso(cols, ["NUMERO INSCRICAO LOTACAO","INSCRICAO LOTACAO"]);
       cm7 = cols.find(c => { const u = txtNormEso(c).toUpperCase(); return u.includes("VLR BASE CALCULO") && u.includes("REFERENCIA"); });
@@ -2200,7 +2204,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         ].join("|");
         if (vistos5001.has(chDup)){ dup5001++; continue; }
         vistos5001.add(chDup);
-        const kT = `${c}_${p}`, rcS = mapRc.get(kT); if (!rcS || rc.localeCompare(rcS.r, undefined, { numeric: true }) >= 0) mapRc.set(kT, { id: gIdx, r: rc });
+        const kT = `${c}_${p}`, rcS = mapRc.get(kT); if (!rcS || cmpRecEso(rc, rcS.r) >= 0) mapRc.set(kT, { id: gIdx, r: rc });
         fl5001.push({ id: gIdx++, p, c, iL, lt, vR, vN, rc });
       }
     }, aoProgredir);
@@ -4493,23 +4497,27 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
       logTerminal("Lendo S-1200...", "log-info", "consoleLogEso");
       progEsoK = 1; progEso.arquivo(1, rawFile1200Eso.name);
-      let cc1, cc2, cc3, cc4; const map1200C = new Map(), map1200G = new Map();
+      let cc1, cc2, cc3, cc4, cc5, cc6; const map1200C = new Map(), map1200G = new Map(), map1200R = new Map();
       await procTabEso(rawFile1200Eso, cols => {
-        cc1=locColEso(cols,['CPF']); cc2=locColEso(cols,['COMPETENCIA','PERIODO']); cc3=locColEso(cols,['GRAU EXPOSICAO','AGENTES NOCIVOS']); cc4=locColEstEso(cols,['Código Categoria','Categoria Trabalhador','Categoria'])||locColEso(cols,['CATEGORIA']); return [cc1,cc2,cc3,cc4].filter(Boolean);
+        cc1=locColEso(cols,['CPF']); cc2=locColEso(cols,['COMPETENCIA','PERIODO']); cc3=locColEso(cols,['GRAU EXPOSICAO','AGENTES NOCIVOS']); cc4=locColEstEso(cols,['Código Categoria','Categoria Trabalhador','Categoria'])||locColEso(cols,['CATEGORIA']);
+        cc5=locRecEso(cols); cc6=locColEstEso(cols,['Código Lotação','Codigo Lotacao','Lotação','Lotacao'])||locColEso(cols,['CODIGO LOTACAO'],['TRIBUTARIA','TIPO','INSCRICAO']); return [cc1,cc2,cc3,cc4,cc5,cc6].filter(Boolean);
       }, rws => {
         for (let r of rws){
           const c=limpCPFEso(r[cc1]); if(!c)continue; if(cc4&&!catEmpregadoEso(r[cc4]))continue; const p=formPerEso(r[cc2]); const ge=parseInt(String(r[cc3]).trim())||0;
-          if(p) { const k=`${c}_${p}`; if(ge>(map1200C.get(k)||0)) map1200C.set(k,ge); }
-          if(ge>(map1200G.get(c)||0)) map1200G.set(c,ge);
+          // Em cada competência + CPF + lotação vale só o recibo mais recente; recibo mais antigo (retificado) é desprezado
+          const rc=cc5?String(r[cc5]??'').trim():'', lt=cc6?String(r[cc6]??'').trim().replace(/\.0$/,''):'', k=`${c}_${p||''}_${lt}`, ex=map1200R.get(k);
+          if(!ex||cmpRecEso(rc,ex.rc)>0) map1200R.set(k,{c,p,rc,ge}); else if(cmpRecEso(rc,ex.rc)===0&&ge>ex.ge) ex.ge=ge;
         }
       });
+      map1200R.forEach(v=>{ if(v.p){ const k=`${v.c}_${v.p}`; if(v.ge>(map1200C.get(k)||0)) map1200C.set(k,v.ge); } if(v.ge>(map1200G.get(v.c)||0)) map1200G.set(v.c,v.ge); });
+      map1200R.clear();
 
       logTerminal("Lendo S-5001...", "log-info", "consoleLogEso");
       progEsoK = 2; progEso.arquivo(2, rawFile5001Eso.name);
       let cm1, cm2, cm3, cm4, cm5, cm6, cm7, cm8, cm9, cm10, cm11; const mapMat = new Map(), rcRef = new Set(), mapRc = new Map(); let fl5001 = []; let gIdx=0;
       const vistos5001 = new Set(); let dup5001 = 0;
       await procTabEso(rawFile5001Eso, cols => {
-        cm1=locColEso(cols,['COMPETENCIA','PERIODO']); cm2=locColEso(cols,['RECIBO'],['BASE']); cm3=locColEso(cols,['CPF']); cm4=locColEstEso(cols,['Matrícula'])||locColEso(cols,['MATRICULA'],['ANTERIOR']);
+        cm1=locColEso(cols,['COMPETENCIA','PERIODO']); cm2=locRecEso(cols); cm3=locColEso(cols,['CPF']); cm4=locColEstEso(cols,['Matrícula'])||locColEso(cols,['MATRICULA'],['ANTERIOR']);
         cm5=locColEstEso(cols,['Código Lotação Tributária'])||locColEso(cols,['CODIGO LOTACAO','LOTACAO TRIBUTARIA'],['TIPO','INSCRICAO']);
         cm6=locColEstEso(cols,['Número Inscrição Lotação'])||locColEso(cols,['NUMERO INSCRICAO LOTACAO','INSCRICAO LOTACAO']);
         cm7=cols.find(c=>{const u=txtNormEso(c).toUpperCase(); return u.includes("VLR BASE CALCULO")&&u.includes("REFERENCIA");});
@@ -4534,7 +4542,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           ].join('|');
           if (vistos5001.has(chDup)) { dup5001++; continue; }
           vistos5001.add(chDup);
-          const kT=`${c}_${p}`, rcS=mapRc.get(kT); if(!rcS||rc.localeCompare(rcS.r,undefined,{numeric:true})>=0) mapRc.set(kT,{id:gIdx, r:rc});
+          const kT=`${c}_${p}`, rcS=mapRc.get(kT); if(!rcS||cmpRecEso(rc,rcS.r)>=0) mapRc.set(kT,{id:gIdx, r:rc});
           fl5001.push({id:gIdx++, p, c, iL, lt, vR, vN, rc});
         }
       });
@@ -6091,14 +6099,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           const a = String(r['Validade do evento'] || r['Linha Válida Auditoria'] || r['Linha Valida Auditoria'] || '').trim().toUpperCase(); if (a && a !== 'SIM' && a !== 'VÁLIDO' && a !== 'VALIDO') return;
           const { mes, ano } = parseMesAnoDiag(r['Período Apuração'] || r['Periodo Apuracao'] || r['Período'] || r['Periodo']); if (!compDentro5Anos(ano, mes, cQt)) return;
           const rcb = String(obChaveFlx(r, ['Número Recibo Arquivo Base', 'Numero Recibo Arquivo Base', 'Nº Recibo Arquivo Base', 'Nr Recibo Arquivo Base', 'Número Recibo', 'Numero Recibo']) || '').trim(); if (!rcb) return;
-          const cM = `${ano}_${mes}`; if (!rPM[cM]) rPM[cM] = {}; if (!rPM[cM][rcb]) rPM[cM][rcb] = []; rPM[cM][rcb].push(r);
+          const cM = `${ano}_${mes}`, ltR = String(obChaveFlx(r, ['Código Lotação', 'Codigo Lotacao', 'Lotação', 'Lotacao']) || '').trim(); if (!rPM[cM]) rPM[cM] = {}; if (!rPM[cM][ltR]) rPM[cM][ltR] = {}; if (!rPM[cM][ltR][rcb]) rPM[cM][ltR][rcb] = []; rPM[cM][ltR][rcb].push(r);
         });
 
         const lP5 = []; let tC5 = 0; const aD = mAT / 100.0;
         Object.keys(rPM).sort((a,b)=>{const [aA,aM]=a.split('_').map(Number);const [bA,bM]=b.split('_').map(Number);return (aA*100+aM)-(bA*100+bM);}).forEach(cM => {
-          const lR = Object.keys(rPM[cM]); if (!lR.length) return; lR.sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
-          const mR = lR[lR.length - 1]; const sh = new Set(), sr = new Set(); let bTS = 0, bR2 = 0, bR3 = 0;
-          rPM[cM][mR].forEach(r => {
+          const sel = []; let mR = ''; Object.keys(rPM[cM]).forEach(lt0 => { const lR = Object.keys(rPM[cM][lt0]).sort((a, b) => cmpRecEso(a, b)); const mx = lR[lR.length - 1]; sel.push(...rPM[cM][lt0][mx]); if (!mR || cmpRecEso(mx, mR) > 0) mR = mx; }); if (!sel.length) return;
+           const sh = new Set(), sr = new Set(); let bTS = 0, bR2 = 0, bR3 = 0;
+          sel.forEach(r => {
             const bN = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP', 'Valor Base Calculo CP', 'Vlr Base Calculo CP', 'Base Cálculo', 'Base Calculo'])), b15 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 15 anos', 'Vlr Base Calculo CP 15 anos', 'Valor Base Calculo CP 15 anos', 'Base Cálculo CP 15 anos'])), b20 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 20 anos', 'Vlr Base Calculo CP 20 anos', 'Valor Base Calculo CP 20 anos', 'Base Cálculo CP 20 anos'])), b25 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 25 anos', 'Vlr Base Calculo CP 25 anos', 'Valor Base Calculo CP 25 anos', 'Base Cálculo CP 25 anos']));
             const sl = bN + b15 + b20 + b25; if (sl <= 0) return; { const cc = String(obChaveFlx(r, ['Categoria Trabalhador', 'Categoria', 'Cod Categoria', 'Código Categoria']) || '').trim(); if (cc && !cc.startsWith('1')) return; }
             const st = String(obChaveFlx(r, ['Número Inscrição Estabelecimento', 'Numero Inscricao Estabelecimento', 'CNPJ Estabelecimento', 'Estabelecimento', 'Número Inscrição', 'Numero Inscricao']) || '').trim(), lt = String(obChaveFlx(r, ['Código Lotação', 'Codigo Lotacao', 'Lotação', 'Lotacao']) || '').trim(), ct = String(obChaveFlx(r, ['Categoria Trabalhador', 'Categoria', 'Cod Categoria']) || '').trim();
