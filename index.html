@@ -5187,15 +5187,15 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         else if (r.tp === "2") g.desc += l.val; else g.info += l.val;
       });
       grupos.forEach(g => {
-        const venc = g.entra + g.outrosV + g.sem;
+        const venc = g.entra + g.outrosV;
         resumo.push([xCompOut(g.per), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", e.cpf, t.nome || "", e.extra.mat, e.dt, e.extra.mtv, e.extra.indRetif, e.id, e.recibo || "", g.linhas,
           xMoeda(g.entra), xMoeda(g.outrosV), xMoeda(g.sem), xMoeda(venc), xMoeda(g.desc), xMoeda(g.info), xMoeda(venc - g.desc)]);
       });
     });
     resumo.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[3].localeCompare(y[3]));
     if (resumo.length) conjuntos.push({ id: "s2299res", titulo: "S-2299 · Resumo por desligamento", sub: "Uma linha por desligamento: vencimentos que entram na base, outros vencimentos, descontos e líquido, para comparar com o valor do desligamento",
-      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Data Desligamento", "Motivo Desligamento", "Indicador Retificação", "Id Evento", "Recibo", "Linhas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"],
-      rows: resumo, num: new Set(["Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Data Desligamento", "Motivo Desligamento", "Indicador Retificação", "Id Evento", "Recibo", "Linhas", "Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"],
+      rows: resumo, num: new Set(["Vencimentos que entram na base", "Outros vencimentos", "Vencimentos sem S-1010 (não somados)", "Total de vencimentos", "Descontos", "Informativas", "Líquido (vencimentos − descontos)"]), arquivo: "S-2299 Resumo por desligamento" });
 
     // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
