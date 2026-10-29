@@ -149,6 +149,8 @@ section{margin-top:40px}
 h2.sec{font-family:var(--display);font-weight:700;font-size:1.45rem;letter-spacing:-.015em;margin:0}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
 .sec-head .hint{color:var(--muted);font-size:.9rem}
+#viewXml .sec-head .hint{margin-left:auto}
+#xmlExportarTudo{padding:7px 16px;font-size:.85rem}
 .files{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;border:1px solid var(--line)}
 .file{position:relative;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto auto;gap:14px 18px;align-items:end;padding:18px 20px;border-top:1px solid var(--line);transition:background .2s}
 .file:first-child{border-top:0}
@@ -1629,6 +1631,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="sec-head">
         <h2 class="sec">O que dá para exportar</h2>
         <span class="hint" id="xmlResumo">Aguardando arquivos</span>
+        <button class="btn primary" type="button" id="xmlExportarTudo" hidden>Exportar todos (ZIP)</button>
       </div>
       <div class="tablebox">
         <table class="xml-tab">
@@ -5372,6 +5375,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("xmlCorpo").innerHTML = xmlRes.conjuntos.length ? xmlRes.conjuntos.map((c, i) =>
       `<tr><td><b>${esc(c.titulo)}</b><div class="sub-t">${esc(c.sub)}</div></td><td class="num">${xmlN(c.rows.length)}</td><td class="num">${xmlN(c.cols.length)}</td><td class="xml-acao"><button type="button" class="btn primary" data-i="${i}">Exportar</button></td></tr>`).join("")
       : '<tr><td colspan="4" class="empty">Envie os XMLs para ver o que dá para exportar.</td></tr>';
+    $("xmlExportarTudo").hidden = !xmlRes.conjuntos.length;
     $("xmlResumo").textContent = xmlRes.conjuntos.length ? `${xmlRes.conjuntos.length} conjunto${xmlRes.conjuntos.length === 1 ? "" : "s"}` : "Aguardando arquivos";
   }
 
@@ -5480,8 +5484,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   function perguntarFormatoXml(ds){
     const dlg = $("xmlFmt");
     $("xmlFmtTitulo").textContent = ds.titulo;
-    $("xmlFmtInfo").textContent = `${xmlN(ds.rows.length)} linhas · ${xmlN(ds.cols.length)} colunas`;
-    $("xmlFmtAviso").hidden = ds.rows.length <= 1000000;
+    $("xmlFmtInfo").textContent = ds.info || `${xmlN(ds.rows.length)} linhas · ${xmlN(ds.cols.length)} colunas`;
+    $("xmlFmtAviso").hidden = (ds.maxLinhas ?? ds.rows.length) <= 1000000;
     return new Promise(res => { dlg.returnValue = ""; dlg.addEventListener("close", () => res(dlg.returnValue || null), { once: true }); dlg.showModal(); });
   }
   function baixarArquivoXml(nome, dados, mime){
@@ -5497,39 +5501,69 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const nome = xmlEstado.emps.get([...raizes][0]) || "";
     return nome.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
   }
+  // Monta o arquivo de um conjunto (planilha ou Parquet) e devolve o nome e os bytes
+  async function gerarArquivoXml(ds, fmt, base){
+    if (fmt === "parquet"){
+      const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
+      const columnData = ds.cols.map((n, i) => {
+        const nm = ds.num.has(n);
+        return { name: n, type: nm ? "DOUBLE" : "STRING", data: ds.rows.map(r => nm ? (r[i] === "" || r[i] == null || !Number.isFinite(Number(r[i])) ? null : Number(r[i])) : String(r[i] ?? "")) };
+      });
+      return { nome: base + ".parquet", dados: parquetWriteBuffer({ columnData }), mime: "application/octet-stream" };
+    }
+    const wb = XLSX.utils.book_new(), LIM = 1000000;
+    for (let p = 0, n = 1; p < Math.max(ds.rows.length, 1); p += LIM, n++){
+      const ws = XLSX.utils.aoa_to_sheet([ds.cols, ...ds.rows.slice(p, p + LIM)]);
+      ws["!cols"] = ds.cols.map(c => ({ wch: Math.min(Math.max(c.length + 2, 12), 40) }));
+      if (ds.sit){ // Situação: verde (Válido), âmbar (com Ressalvas) e vermelho (Inválido)
+        const si = ds.cols.indexOf(ds.sit), cor = { "Válido": "1E8E3E", "Válido com Ressalvas": "B26A00", "Inválido": "C00000" };
+        ds.rows.slice(p, p + LIM).forEach((r, i) => { const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: si })]; if (c && cor[r[si]]) c.s = { font: { bold: true, color: { rgb: cor[r[si]] } } }; });
+      }
+      if (ds.pct){ // % de divergência: vermelho acima de 5%, âmbar de 1% a 5%, verde abaixo de 1%
+        const ci = ds.cols.indexOf(ds.pct);
+        ds.rows.slice(p, p + LIM).forEach((r, i) => { const v = r[ci]; if (typeof v !== "number") return; const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: ci })]; if (!c) return;
+          c.z = "0.00%"; c.s = { font: { bold: true, color: { rgb: Math.abs(v) > 0.05 ? "C00000" : Math.abs(v) >= 0.01 ? "B26A00" : "1E8E3E" } } }; });
+      }
+      XLSX.utils.book_append_sheet(wb, ws, (n === 1 ? "Dados" : "Dados " + n));
+    }
+    return { nome: base + ".xlsx", dados: XLSX.write(wb, { bookType: "xlsx", type: "array" }), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+  }
+  const nomeBaseXml = ds => `${xmlNomeEmpresa() ? xmlNomeEmpresa() + " - " : "XML eSocial - "}${ds.arquivo}`;
   async function exportarXml(ds){
     const fmt = await perguntarFormatoXml(ds); if (!fmt) return;
-    const emp = xmlNomeEmpresa(), base = `${emp ? emp + " - " : "XML eSocial - "}${ds.arquivo}`;
     try {
-      if (fmt === "parquet"){
-        const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
-        const columnData = ds.cols.map((n, i) => {
-          const nm = ds.num.has(n);
-          return { name: n, type: nm ? "DOUBLE" : "STRING", data: ds.rows.map(r => nm ? (r[i] === "" || r[i] == null || !Number.isFinite(Number(r[i])) ? null : Number(r[i])) : String(r[i] ?? "")) };
-        });
-        baixarArquivoXml(base + ".parquet", parquetWriteBuffer({ columnData }), "application/octet-stream");
-      } else {
-        const wb = XLSX.utils.book_new(), LIM = 1000000;
-        for (let p = 0, n = 1; p < Math.max(ds.rows.length, 1); p += LIM, n++){
-          const ws = XLSX.utils.aoa_to_sheet([ds.cols, ...ds.rows.slice(p, p + LIM)]);
-          ws["!cols"] = ds.cols.map(c => ({ wch: Math.min(Math.max(c.length + 2, 12), 40) }));
-          if (ds.sit){ // Situação: verde (Válido), âmbar (com Ressalvas) e vermelho (Inválido)
-            const si = ds.cols.indexOf(ds.sit), cor = { "Válido": "1E8E3E", "Válido com Ressalvas": "B26A00", "Inválido": "C00000" };
-            ds.rows.slice(p, p + LIM).forEach((r, i) => { const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: si })]; if (c && cor[r[si]]) c.s = { font: { bold: true, color: { rgb: cor[r[si]] } } }; });
-          }
-          if (ds.pct){ // % de divergência: vermelho acima de 5%, âmbar de 1% a 5%, verde abaixo de 1%
-            const ci = ds.cols.indexOf(ds.pct);
-            ds.rows.slice(p, p + LIM).forEach((r, i) => { const v = r[ci]; if (typeof v !== "number") return; const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: ci })]; if (!c) return;
-              c.z = "0.00%"; c.s = { font: { bold: true, color: { rgb: Math.abs(v) > 0.05 ? "C00000" : Math.abs(v) >= 0.01 ? "B26A00" : "1E8E3E" } } }; });
-          }
-          XLSX.utils.book_append_sheet(wb, ws, (n === 1 ? "Dados" : "Dados " + n));
-        }
-        baixarArquivoXml(base + ".xlsx", XLSX.write(wb, { bookType: "xlsx", type: "array" }), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      }
-      logXml(`Exportado: ${base}.${fmt === "parquet" ? "parquet" : "xlsx"} (${xmlN(ds.rows.length)} linhas).`, "log-sucesso");
-      toast(`Arquivo gerado: ${base}.${fmt === "parquet" ? "parquet" : "xlsx"}`);
+      const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds));
+      baixarArquivoXml(f.nome, f.dados, f.mime);
+      logXml(`Exportado: ${f.nome} (${xmlN(ds.rows.length)} linhas).`, "log-sucesso");
+      toast(`Arquivo gerado: ${f.nome}`);
     } catch(e){ logXml("Falha ao exportar: " + e.message, "log-erro"); toast("Não foi possível exportar. " + e.message); }
   }
+  // Em lote: todos os conjuntos de uma vez, num único .zip (o navegador costuma barrar vários downloads seguidos)
+  let xmlExportandoTudo = false;
+  async function exportarTodosXml(){
+    const lista = xmlRes.conjuntos; if (!lista.length || xmlExportandoTudo) return;
+    if (!window.JSZip){ toast("A biblioteca de ZIP não carregou. Confira a internet e recarregue a página."); return; }
+    const total = lista.reduce((t, c) => t + c.rows.length, 0);
+    const fmt = await perguntarFormatoXml({ titulo: "Exportar todos os conjuntos", info: `${xmlN(lista.length)} arquivos num único .zip · ${xmlN(total)} linhas no total`, maxLinhas: Math.max(...lista.map(c => c.rows.length)) });
+    if (!fmt) return;
+    const btn = $("xmlExportarTudo"), txt0 = btn.textContent; xmlExportandoTudo = true; btn.disabled = true;
+    try {
+      const zip = new JSZip(), usados = new Set();
+      for (const [k, ds] of lista.entries()){
+        btn.textContent = `Gerando ${k + 1} de ${lista.length}…`; await pausa();
+        const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds));
+        let nome = f.nome, n = 2; while (usados.has(nome)) nome = f.nome.replace(/(\.\w+)$/, ` (${n++})$1`);
+        usados.add(nome); zip.file(nome, f.dados);
+      }
+      btn.textContent = "Compactando…"; await pausa();
+      const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 3 } });
+      const emp = xmlNomeEmpresa(), nomeZip = `${emp ? emp + " - " : "XML eSocial - "}Todos os arquivos.zip`;
+      baixarArquivoXml(nomeZip, blob, "application/zip");
+      logXml(`Exportados ${xmlN(lista.length)} arquivos em ${nomeZip}.`, "log-sucesso"); toast(`${xmlN(lista.length)} arquivos salvos em ${nomeZip}`);
+    } catch(e){ logXml("Falha ao exportar em lote: " + e.message, "log-erro"); toast("Não foi possível exportar tudo. " + e.message); }
+    finally { xmlExportandoTudo = false; btn.disabled = false; btn.textContent = txt0; }
+  }
+  $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
   $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i]); });
   renderXml();
 
