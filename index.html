@@ -5672,50 +5672,133 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const nome = xmlEstado.emps.get([...raizes][0]) || "";
     return nome.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
   }
-  /* A planilha é montada num Web Worker (em segundo plano), para a tela não congelar em arquivos grandes.
-     Se o worker não puder rodar, cai no caminho antigo (na própria página). */
-  function corpoWorkerPlanilha(){
-    importScripts("https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js");
-    const LIM = 1000000, LIM_ESTILO = 1500000;
+  /* A planilha é gravada em fluxo: as linhas chegam em lotes, viram XML do .xlsx e já saem compactadas (fflate).
+     Nada de um objeto por célula: a memória fica no tamanho do arquivo final, e não no de milhões de células.
+     Esta função vai inteira (como texto) para o Web Worker, por isso não usa nada de fora dela. */
+  function escritorXlsx(fflate, cols, sit, pct){
+    const LIM = 1000000, enc = new TextEncoder(), partes = [];
+    const zip = new fflate.Zip((err, dado) => { if (err) throw err; partes.push(dado); });
+    const arquivo = (nome, texto) => { const f = new fflate.ZipDeflate(nome, { level: 1 }); zip.add(f); f.push(enc.encode(texto), true); };
+    const si = sit ? cols.indexOf(sit) : -1, ci = pct ? cols.indexOf(pct) : -1, corSit = { "Válido": 2, "Válido com Ressalvas": 3, "Inválido": 4 };
     const tamanho = v => v == null ? 0 : typeof v === "number" ? v.toLocaleString("pt-BR", { maximumFractionDigits: 2 }).length : String(v).length;
-    self.onmessage = e => {
-      try {
-        const { cols, rows, sit, pct } = e.data, wb = XLSX.utils.book_new();
-        for (let p = 0, n = 1; p < Math.max(rows.length, 1); p += LIM, n++){
-          const parte = rows.slice(p, p + LIM), ws = XLSX.utils.aoa_to_sheet([cols, ...parte]);
-          const larg = cols.map(c => tamanho(c)), estilar = (parte.length + 1) * cols.length <= LIM_ESTILO;
-          const si = sit ? cols.indexOf(sit) : -1, ci = pct ? cols.indexOf(pct) : -1, cor = { "Válido": "1E8E3E", "Válido com Ressalvas": "B26A00", "Inválido": "C00000" };
-          const centro = { alignment: { horizontal: "center", vertical: "center" } };
-          for (let r = 0; r <= parte.length; r++) for (let c = 0; c < cols.length; c++){
-            const cel = ws[XLSX.utils.encode_cell({ r, c })]; if (!cel) continue;
-            if (r > 0) larg[c] = Math.max(larg[c], tamanho(cel.v));
-            let s = centro;
-            if (r > 0 && c === si && cor[cel.v]) s = { ...centro, font: { bold: true, color: { rgb: cor[cel.v] } } };
-            else if (r > 0 && c === ci && typeof cel.v === "number"){ cel.z = "0.00%"; s = { ...centro, font: { bold: true, color: { rgb: Math.abs(cel.v) > 0.05 ? "C00000" : Math.abs(cel.v) >= 0.01 ? "B26A00" : "1E8E3E" } } }; }
-            if (estilar) cel.s = s;
+    const RUIM = /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g;
+    const esc = s => { s = String(s); if (s.length > 32767) s = s.slice(0, 32767); return s.replace(RUIM, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+    const letra = n => { let s = ""; for (n++; n > 0; n = (n - 1) / 26 | 0) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+    const celula = (v, s) => {
+      if (v == null || v === "") return "";
+      if (typeof v === "number") return Number.isFinite(v) ? `<c s="${s}"><v>${v}</v></c>` : "";
+      const t = esc(v); return `<c s="${s}" t="inlineStr"><is><t${/^\s|\s$/.test(t) ? ' xml:space="preserve"' : ""}>${t}</t></is></c>`;
+    };
+    let folha = null, nFolhas = 0, linhaNaFolha = 0;
+    const abrir = amostra => {
+      nFolhas++; linhaNaFolha = 1;
+      folha = new fflate.ZipDeflate(`xl/worksheets/sheet${nFolhas}.xml`, { level: 1 }); zip.add(folha);
+      const larg = cols.map(c => tamanho(c));
+      for (let r = 0; r < Math.min(amostra.length, 1500); r++) for (let c = 0; c < cols.length; c++) larg[c] = Math.max(larg[c], tamanho(amostra[r][c]));
+      folha.push(enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>'
+        + `<cols>${larg.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(Math.max(w + 3, 10), 60)}" customWidth="1"/>`).join("")}</cols><sheetData>`
+        + `<row r="1">${cols.map(c => celula(c, 1)).join("")}</row>`));
+    };
+    const fechar = () => { folha.push(enc.encode(`</sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`), true); folha = null; };
+    return {
+      lote(rows){
+        let i = 0;
+        while (i < rows.length || !folha){
+          if (!folha) abrir(rows.slice(i));
+          const ate = Math.min(rows.length, i + (LIM - (linhaNaFolha - 1))); let txt = "";
+          for (; i < ate; i++){
+            const r = rows[i]; linhaNaFolha++; let x = `<row r="${linhaNaFolha}">`;
+            for (let c = 0; c < cols.length; c++){
+              const v = r[c];
+              x += c === si && corSit[v] ? celula(v, corSit[v]) : c === ci && typeof v === "number" ? celula(v, Math.abs(v) > 0.05 ? 7 : Math.abs(v) >= 0.01 ? 6 : 5) : celula(v, 1);
+            }
+            txt += x + "</row>";
+            if (txt.length > 1 << 20){ folha.push(enc.encode(txt)); txt = ""; }
           }
-          ws["!cols"] = larg.map(w => ({ wch: Math.min(Math.max(w + 3, 10), 60) }));
-          XLSX.utils.book_append_sheet(wb, ws, n === 1 ? "Dados" : "Dados " + n);
+          if (txt) folha.push(enc.encode(txt));
+          if (linhaNaFolha - 1 >= LIM && i < rows.length) fechar(); else break;
         }
-        const dados = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        self.postMessage({ ok: true, dados }, [dados]);
-      } catch(err){ self.postMessage({ ok: false, erro: String(err && err.message || err) }); }
+      },
+      fim(){
+        if (!folha) this.lote([]);
+        fechar();
+        const nomes = Array.from({ length: nFolhas }, (_, k) => k ? "Dados " + (k + 1) : "Dados");
+        arquivo("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+          + nomes.map((_, k) => `<Override PartName="/xl/worksheets/sheet${k + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("") + "</Types>");
+        arquivo("_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+        arquivo("xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>'
+          + nomes.map((n, k) => `<sheet name="${n}" sheetId="${k + 1}" r:id="rId${k + 1}"/>`).join("") + "</sheets></workbook>");
+        arquivo("xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+          + nomes.map((_, k) => `<Relationship Id="rId${k + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${k + 1}.xml"/>`).join("")
+          + `<Relationship Id="rId${nFolhas + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+        // estilos: 1 centralizado; 2-4 Situação (verde, âmbar, vermelho); 5-7 % de divergência nas mesmas cores
+        const fonte = cor => `<font><b/><sz val="11"/><color rgb="FF${cor}"/><name val="Calibri"/><family val="2"/></font>`, centro = '<alignment horizontal="center" vertical="center"/>';
+        const xf = (fmt, f) => `<xf numFmtId="${fmt}" fontId="${f}" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1" applyAlignment="1">${centro}</xf>`;
+        arquivo("xl/styles.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+          + `<fonts count="4"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font>${fonte("1E8E3E")}${fonte("B26A00")}${fonte("C00000")}</fonts>`
+          + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+          + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+          + `<cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>${xf(0, 0)}${xf(0, 1)}${xf(0, 2)}${xf(0, 3)}${xf(10, 1)}${xf(10, 2)}${xf(10, 3)}</cellXfs>`
+          + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+        zip.end();
+        return new Blob(partes, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      }
     };
   }
-  function planilhaNoWorker(ds){
+  const FFLATE_URLS = ["https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js", "https://unpkg.com/fflate@0.8.2/umd/index.js"];
+  function corpoWorkerPlanilha(){
+    let fflate = null, escr = null;
+    for (const u of FFLATE_URLS){ try { importScripts(u); fflate = self.fflate; break; } catch(e){} }
+    self.onmessage = e => {
+      const m = e.data;
+      try {
+        if (m.tipo === "ini"){ if (!fflate) throw new Error("biblioteca de compactação indisponível"); escr = escritorXlsx(fflate, m.cols, m.sit, m.pct); self.postMessage({ tipo: "ok" }); }
+        else if (m.tipo === "lote"){ escr.lote(m.rows); self.postMessage({ tipo: "ok" }); }
+        else if (m.tipo === "fim") self.postMessage({ tipo: "pronto", blob: escr.fim() });
+      } catch(err){ self.postMessage({ tipo: "erro", erro: String(err && err.message || err) }); }
+    };
+  }
+  // Fala com o worker um lote por vez (espera a resposta antes de mandar o próximo): a página nunca copia tudo de uma vez
+  function planilhaNoWorker(ds, lote, prog){
     return new Promise((ok, falha) => {
-      let w; try { w = new Worker(URL.createObjectURL(new Blob([`(${corpoWorkerPlanilha.toString()})()`], { type: "text/javascript" }))); } catch(e){ falha(e); return; }
+      let w; try { w = new Worker(URL.createObjectURL(new Blob([`const FFLATE_URLS = ${JSON.stringify(FFLATE_URLS)};\n${escritorXlsx.toString()}\n(${corpoWorkerPlanilha.toString()})()`], { type: "text/javascript" }))); } catch(e){ falha(e); return; }
       const fim = () => { try { w.terminate(); } catch(e){} };
-      w.onmessage = m => { fim(); m.data.ok ? ok(m.data.dados) : falha(new Error(m.data.erro)); };
-      w.onerror = e => { fim(); falha(new Error(e.message || "worker indisponível")); };
-      w.postMessage({ cols: ds.cols, rows: ds.rows, sit: ds.sit || "", pct: ds.pct || "" });
+      let p = 0, enviouFim = false;
+      w.onmessage = m => {
+        const d = m.data;
+        if (d.tipo === "erro"){ fim(); falha(new Error(d.erro)); }
+        else if (d.tipo === "pronto"){ fim(); ok(d.blob); }
+        else if (p < ds.rows.length){ const parte = ds.rows.slice(p, p + lote); p += parte.length; prog(p / ds.rows.length); w.postMessage({ tipo: "lote", rows: parte }); }
+        else if (!enviouFim){ enviouFim = true; w.postMessage({ tipo: "fim" }); }
+      };
+      w.onerror = e => { e.preventDefault(); fim(); falha(new Error(e.message || "worker indisponível")); };
+      w.postMessage({ tipo: "ini", cols: ds.cols, sit: ds.sit || "", pct: ds.pct || "" });
     });
   }
-  // Monta o arquivo de um conjunto (planilha ou Parquet) e devolve o nome e os bytes
-  async function gerarArquivoXml(ds, fmt, base){
-    if (fmt !== "parquet" && window.Worker){
-      try { return { nome: base + ".xlsx", dados: await planilhaNoWorker(ds), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }; }
+  // Sem worker: o mesmo escritor na página, um lote por vez e devolvendo a vez à tela entre eles
+  function carregarScript(u){ return new Promise((ok, falha) => { const s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = () => falha(new Error("não carregou " + u)); document.head.appendChild(s); }); }
+  async function planilhaNaPagina(ds, lote, prog){
+    for (const u of FFLATE_URLS){ if (window.fflate) break; try { await carregarScript(u); } catch(e){} }
+    if (!window.fflate) throw new Error("biblioteca de compactação indisponível");
+    const escr = escritorXlsx(window.fflate, ds.cols, ds.sit || "", ds.pct || "");
+    lote = Math.max(200, Math.floor(lote / 6));   // na página, lotes menores: a tela respira entre um e outro
+    for (let p = 0; p < ds.rows.length; p += lote){ escr.lote(ds.rows.slice(p, p + lote)); prog(Math.min(1, (p + lote) / ds.rows.length)); await pausa(); }
+    return escr.fim();
+  }
+  async function gerarPlanilhaXml(ds, prog){
+    const lote = Math.max(1000, Math.floor(300000 / Math.max(1, ds.cols.length)));
+    if (window.Worker){
+      try { return await planilhaNoWorker(ds, lote, prog); }
       catch(e){ console.warn("planilha em segundo plano indisponível, gerando na página:", e); }
+    }
+    return planilhaNaPagina(ds, lote, prog);
+  }
+  // Monta o arquivo de um conjunto (planilha ou Parquet) e devolve o nome e os bytes
+  async function gerarArquivoXml(ds, fmt, base, prog = () => {}){
+    if (fmt !== "parquet"){
+      try { return { nome: base + ".xlsx", dados: await gerarPlanilhaXml(ds, prog), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }; }
+      catch(e){ console.warn("gravação em fluxo indisponível, usando a biblioteca de planilhas:", e); }
     }
     if (fmt === "parquet"){
       const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
@@ -5743,14 +5826,20 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     return { nome: base + ".xlsx", dados: XLSX.write(wb, { bookType: "xlsx", type: "array" }), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
   }
   const nomeBaseXml = ds => `${xmlNomeEmpresa() ? xmlNomeEmpresa() + " - " : ""}${ds.arquivo}`;
-  async function exportarXml(ds){
+  const xmlGerando = new Set();
+  async function exportarXml(ds, btn){
+    if (xmlGerando.has(ds)) return;
     const fmt = await perguntarFormatoXml(ds); if (!fmt) return;
+    const txt0 = btn ? btn.textContent : ""; xmlGerando.add(ds); if (btn) btn.disabled = true;
+    const prog = f => { if (btn) btn.textContent = `Gerando ${Math.round(f * 100)}%`; };
     try {
-      const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds));
+      prog(0);
+      const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds), prog);
       baixarArquivoXml(f.nome, f.dados, f.mime);
       logXml(`Exportado: ${f.nome} (${xmlN(ds.rows.length)} linhas).`, "log-sucesso");
       toast(`Arquivo gerado: ${f.nome}`);
     } catch(e){ logXml("Falha ao exportar: " + e.message, "log-erro"); toast("Não foi possível exportar. " + e.message); }
+    finally { xmlGerando.delete(ds); if (btn){ btn.disabled = false; btn.textContent = txt0; } }
   }
   // Em lote: todos os conjuntos de uma vez, num único .zip (o navegador costuma barrar vários downloads seguidos)
   let xmlExportandoTudo = false;
@@ -5765,9 +5854,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const zip = new JSZip(), usados = new Set();
       for (const [k, ds] of lista.entries()){
         btn.textContent = `Gerando ${k + 1} de ${lista.length}…`; await pausa();
-        const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds));
+        const f = await gerarArquivoXml(ds, fmt, nomeBaseXml(ds), p => { btn.textContent = `Gerando ${k + 1} de ${lista.length} · ${Math.round(p * 100)}%`; });
         let nome = f.nome, n = 2; while (usados.has(nome)) nome = f.nome.replace(/(\.\w+)$/, ` (${n++})$1`);
-        usados.add(nome); zip.file(nome, f.dados);
+        usados.add(nome); zip.file(nome, f.dados, /\.xlsx$/.test(nome) ? { compression: "STORE" } : {});   // o .xlsx já vem compactado
       }
       btn.textContent = "Compactando…"; await pausa();
       const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 3 } });
@@ -5793,7 +5882,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     } finally { xmlIndo = false; btn.disabled = false; }
   }
   $("xmlParaRubricas").addEventListener("click", seguirParaRubricas);
-  $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i]); });
+  $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i], b); });
   renderXml();
 
   /* ---------- Diagnóstico PRO ---------- */
