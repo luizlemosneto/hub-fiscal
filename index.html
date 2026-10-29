@@ -5003,7 +5003,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           linhas.push({ per, nrEmp, estNr, lot: xTxt(l, "codLotacao"), rat, fap, ratAj, fpas: xTxt(l, "fpas"), terc: xTxt(l, "codTercs"), susp: xTxt(l, "codTercsSusp"), subst, bases, base });
         }
       }
-      xGuardarMaisRecente(estado.cs, [nome, nrEmp, indAp, per].join("|"), rank, { id, recibo, indAp, per, nrEmp, baseTotal, linhas }, estado);
+      // "Recibo" do S-5011 = número do recibo do arquivo base (nrRecArqBase, dentro de infoCS); `recibo` segue só para o controle de retificações
+      xGuardarMaisRecente(estado.cs, [nome, nrEmp, indAp, per].join("|"), rank, { id, recibo, recBase: xAcha(ev, "nrRecArqBase"), indAp, per, nrEmp, baseTotal, linhas }, estado);
       return;
     }
 
@@ -5137,7 +5138,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     // 4) S-5011 (com as bases por tipo, para você conferir)
     const nomesBase = [...new Set(css.flatMap(c => c.linhas.flatMap(l => Object.keys(l.bases))))].sort();
-    const csRaw = []; css.forEach(c => c.linhas.forEach(l => csRaw.push({ per: l.per, est: l.estNr, row: [xCompOut(l.per), xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recibo || ""] })));
+    const csRaw = []; css.forEach(c => c.linhas.forEach(l => csRaw.push({ per: l.per, est: l.estNr, row: [xCompOut(l.per), xCnpj(l.nrEmp), estado.emps.get(l.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.rat, l.fap, l.ratAj, l.fpas, l.terc, l.susp, l.subst, xMoeda(l.base), ...nomesBase.map(n => xMoeda(l.bases[n] || 0)), c.id, c.recBase || c.recibo || ""] })));
     csRaw.sort((a, b) => xPerOrd(a.per).localeCompare(xPerOrd(b.per)) || a.est.localeCompare(b.est));
     const cs = csRaw.map(x => x.row);
     if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
