@@ -2559,7 +2559,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     // Antes do rolo: um pincel preto circula o total (uma volta e meia, pontas finas), o fundo cai em breu e a tela dá zoom no valor
     function pincelGiz(w, h){
-      const cx = w / 2, cy = h / 2, rx = w / 2 + 26, ry = h / 2 + 16, rot = -2.5 * Math.PI / 180, N = 260, W = 1.5;
+      const cx = w / 2, cy = h / 2, rx = w * .61 + 6, ry = h * .61 + 4, rot = -2.5 * Math.PI / 180, N = 260, W = 1.5;
       // começa em cima à esquerda, dá a volta inteira e passa do ponto, saindo para fora em cima à direita
       const t0 = -2.75, t1 = -2.75 + 2 * Math.PI + 2.5, pts = [];
       for (let i = 0; i <= N; i++){
