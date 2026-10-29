@@ -988,7 +988,7 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 /* O rolo: a fita escapa e toma a tela; um clique rasga tudo */
 .rolo{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--bg) 35%,transparent);animation:escurece .5s ease both}
 @keyframes escurece{from{background:transparent}}
-.tira{position:absolute;top:var(--y,-30px);left:var(--x);width:var(--w,150px);height:var(--h,125vh);transform-origin:50% 0;transform:translateX(-50%) rotate(var(--r));
+.tira{position:absolute;top:var(--y,-30px);left:var(--x);width:var(--w,150px);height:var(--h,125vh);overflow:hidden;background:#FFFFFF;transform-origin:50% 0;transform:translateX(-50%) rotate(var(--r));
   clip-path:inset(0 0 100% 0);animation:desenrola 1.7s var(--ease) var(--d) forwards}
 .tira ol{list-style:none;margin:0;height:100%;padding:16px 14px;background:#FFFFFF;color:#333333;font:500 .72rem/1.7 ui-monospace,Menlo,Consolas,monospace;
   box-shadow:0 18px 40px -20px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 21px,rgba(0,0,0,.035) 21px 22px)}
@@ -1003,19 +1003,17 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .rolo.despenca .tira{clip-path:none;animation:despenca .62s cubic-bezier(.25,1.35,.4,1) var(--d) backwards}
 .rolo.despenca.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards}
 @keyframes despenca{from{transform:translateX(-50%) translateY(-150vh) rotate(calc(var(--r) * -3))}}
-/* A nota da carga tributária, no mesmo traço do convite, apontando para as notas */
-.dica-carga{position:absolute;right:max(3vw,24px);top:16vh;width:250px;z-index:5;pointer-events:none;color:#3A3A3C;text-align:left;animation:sobe .6s var(--ease) .55s backwards}
-.dica-carga::before{content:"";position:absolute;inset:-46px -40px -30px -46px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,#FFFFFF 62%,rgba(255,255,255,0));filter:blur(4px)}
-.dica-carga p{margin:0;font:500 1.45rem/1.12 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;transform:rotate(-3deg);transform-origin:0 0;
-  text-shadow:0 0 3px #FFFFFF,0 0 8px #FFFFFF,0 0 14px #FFFFFF,0 0 22px #FFFFFF}
-.dica-carga p b{font-weight:700;color:#000000}
-.dica-carga p em{font-style:normal;color:var(--ios-laranja)}
-.dica-carga small{display:block;margin-top:4px;font-size:1.1rem;color:#636366}
-.dica-carga svg{display:block;width:104px;height:56px;margin:4px 0 0 18px;overflow:visible;transform:scaleX(-1);filter:drop-shadow(0 0 3px #FFFFFF) drop-shadow(0 0 6px #FFFFFF)}
-.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .7s var(--ease) 1s forwards}
-.dica-carga .ponta{animation-delay:1.6s;animation-duration:.35s}
-.rolo.rasga .dica-carga{opacity:0;transition:opacity .25s}
-@media (max-width:700px){.dica-carga{display:none}}
+/* A nota da carga tributária: mesmo traço e seta do convite, à direita da máquina, só depois que as notas somem */
+.dica-carga{position:absolute;right:-56px;top:24px;width:214px;text-align:left;color:var(--muted);z-index:4;pointer-events:none;display:none}
+.maq-cena.carga .dica-carga{display:block;animation:sobe .9s var(--ease) backwards}
+.dica-carga p{margin:0;font:500 1.22rem/1.12 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:rotate(-3deg);transform-origin:0 100%}
+.dica-carga small{display:block;margin-top:3px;font-size:1.02rem}
+.dica-carga svg{display:block;width:96px;height:52px;margin:2px 0 0 26px;overflow:visible;transform:scaleX(-1) rotate(-8deg)}
+.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .9s var(--ease) .5s forwards}
+.dica-carga .ponta{animation-delay:1.25s;animation-duration:.4s}
+.maq-cena.carga .dica-carga svg{animation:balanceio-esq 2.6s ease-in-out 1.8s infinite}
+@keyframes balanceio-esq{50%{transform:scaleX(-1) rotate(-8deg) translateX(5px)}}
+@media (max-width:900px){.dica-carga{display:none!important}}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
@@ -2415,6 +2413,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="dica-brinque" aria-hidden="true"><span>Simule o seu holerite</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path class="rabisco" pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     </div>
     
+    <div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br>20% INSS patronal<br>+ RAT × FAP (0,5% a 6%)<br>+ 5,8% terceiros<br>= até ~32% a mais<small>e reflete em férias, 13º e DSR</small></p><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     <div class="maq">
       <div class="fita"><span class="fita-curva" aria-hidden="true"></span><ol aria-live="polite"></ol></div>
       <svg class="maq-mao tras" viewBox="-80 0 460 460" aria-hidden="true">
@@ -2594,9 +2593,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const ROTULOS = ["HOLERITE", "HOLERITE", "INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
     const linhaFake = i => i % 9 === 8 ? `<li class="tot"><span>${fmtCalc(Math.random() * 900000 + 10000)}</span><b>*</b></li>`
       : `<li><span>${ROTULOS[Math.floor(Math.random() * ROTULOS.length)]}</span><span>${fmtCalc(Math.random() * 90000)}</span></li>`;
-    // O que a empresa paga além do salário (sobre a folha): INSS patronal, RAT ajustado pelo FAP e terceiros
-    const DICA_CARGA = `<div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br><b>20%</b> INSS patronal<br>+ <b>RAT × FAP</b> (0,5% a 6%)<br>+ <b>5,8%</b> terceiros<br>= <em>até ~32% a mais</em><small>e reflete em férias, 13º e DSR</small></p>
-      <svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>`;
     function desenrolar(despenca){
       rolando = true;
       const minhas = [...lista.querySelectorAll("li")].map(li => li.outerHTML).join("");
@@ -2612,16 +2608,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         if (despenca && i === meio) minha = t; else html += t;
       }
       // a fita com os seus holerites cai por cima de todas
-      ov.innerHTML = html + minha + (despenca ? DICA_CARGA : "");
+      ov.innerHTML = html + minha;
       document.body.appendChild(ov);
-      // Se ninguém clicar, a fita se rasga sozinha em 5 segundos
+      // Se ninguém clicar, em 3 segundos a fita já se rasgou e sumiu; depois que some, aparece a nota da carga
       let sozinha = 0;
       const fechar = () => {
         if (ov.classList.contains("rasga")) return;
         clearTimeout(sozinha); ov.classList.add("rasga");
-        setTimeout(() => { ov.remove(); rolando = false; impressas = 0; iguais = 0; }, reduzMov ? 0 : 950);
+        setTimeout(() => { ov.remove(); rolando = false; impressas = 0; iguais = 0; if (despenca || reduzMov) cena.classList.add("carga"); }, reduzMov ? 0 : 950);
       };
-      sozinha = setTimeout(fechar, reduzMov ? 2500 : 5000);
+      sozinha = setTimeout(fechar, 2050);
       ov.addEventListener("click", fechar, { once: true });
       document.addEventListener("keydown", function sai(e){ if (e.key === "Escape"){ document.removeEventListener("keydown", sai); if (ov.isConnected) fechar(); } });
     }
