@@ -66,6 +66,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .brand{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:10px}
 .brand i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 16px -6px var(--glow);display:inline-block}
 .nav-right{display:flex;gap:8px;align-items:center}
+.tema-btn{width:40px;height:40px;padding:0!important;display:inline-grid;place-items:center}
+.tema-btn svg{width:20px;height:20px;animation:tema-gira .45s var(--ease)}
+@keyframes tema-gira{from{transform:rotate(-90deg) scale(.6);opacity:0}}
 .ghost-btn{background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 15px;font:500 .9rem var(--body);cursor:pointer;transition:color .2s,border-color .2s,transform .25s var(--ease)}
 .ghost-btn:hover{color:var(--ink);border-color:var(--muted)}
 .ghost-btn.back:hover{transform:translateX(-3px)}
@@ -973,17 +976,21 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 @keyframes gira{from{transform:rotate(11deg)}to{transform:rotate(11deg) rotateY(1080deg)}}
 .moedas:focus-visible,.moeda-pe:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:4px;border-radius:12px}
 
-/* Convite: uma frase discreta e uma seta desenhada à mão apontando a calculadora */
-.dica-brinque{position:absolute;left:17px;top:76px;width:150px;text-align:center;color:var(--muted);z-index:4;pointer-events:none;transition:opacity .5s var(--ease);animation:sobe 1s var(--ease) 1.2s backwards}
-.dica-brinque span{display:block;font:500 1.32rem/1.1 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:translateX(-46px) rotate(-4deg);transform-origin:0 100%}
-.dica-brinque svg{display:block;width:104px;height:56px;margin:2px auto 0;overflow:visible}
-.dica-brinque path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .9s var(--ease) 1.6s forwards}
-.dica-brinque .ponta{animation-delay:2.35s;animation-duration:.4s}
-.dica-brinque svg{animation:balanceio 2.6s ease-in-out 2.8s infinite}
+/* À direita da máquina, um lugar para as notas à mão: primeiro o convite, depois da chuva a nota da carga.
+   Mesmo traço (letra de mão, cinza) e a mesma seta desenhada apontando para a máquina. */
+.dica-lado{position:relative;flex:none;align-self:flex-start;width:190px;height:300px;margin:14px 0 0 -55px;color:var(--muted);z-index:4;pointer-events:none}
+.dica-lado svg{display:block;width:96px;height:52px;margin:18px 0 0 -30px;overflow:visible;transform:scaleX(-1) rotate(-8deg)}
+.dica-lado path{stroke-dasharray:1;stroke-dashoffset:1}
 @keyframes traca{to{stroke-dashoffset:0}}
-@keyframes balanceio{50%{transform:translateX(5px)}}
+@keyframes balanceio-esq{50%{transform:scaleX(-1) rotate(-8deg) translateX(5px)}}
+.dica-brinque{position:absolute;left:0;top:118px;text-align:left;transition:opacity .5s var(--ease);animation:sobe 1s var(--ease) 1.2s backwards}
+.dica-brinque span{display:block;font:500 1.32rem/1.1 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:rotate(-4deg);transform-origin:0 100%;white-space:nowrap}
+.dica-brinque path{animation:traca .9s var(--ease) 1.6s forwards}
+.dica-brinque .ponta{animation-delay:2.35s;animation-duration:.4s}
+.dica-brinque svg{animation:balanceio-esq 2.6s ease-in-out 2.8s infinite}
 .maq-cena.jogou .dica-brinque{opacity:0}
-@media (max-width:900px){.dica-brinque{display:none}}
+@media (max-width:1060px){.dica-lado{display:none}}
+.rub-maq .dica-lado{display:none}
 
 /* O rolo: a fita escapa e toma a tela; um clique rasga tudo */
 .rolo{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--bg) 35%,transparent);animation:escurece .5s ease both}
@@ -1003,20 +1010,16 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .rolo.despenca .tira{clip-path:none;animation:despenca .62s cubic-bezier(.25,1.35,.4,1) var(--d) backwards}
 .rolo.despenca.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards}
 @keyframes despenca{from{transform:translateX(-50%) translateY(-150vh) rotate(calc(var(--r) * -3))}}
-/* A nota da carga tributária: mesmo traço e seta do convite, à direita da máquina, só depois que as notas somem */
-.dica-carga{position:relative;flex:none;align-self:flex-start;width:190px;margin:14px 0 0 -55px;text-align:left;color:var(--muted);z-index:4;pointer-events:none;visibility:hidden}
+/* A nota da carga: só depois que as notas somem */
+.dica-carga{position:absolute;left:0;top:0;width:190px;text-align:left;visibility:hidden}
 .maq-cena.carga .dica-carga{visibility:visible;animation:sobe .9s var(--ease) backwards}
 .dica-carga p{margin:0;font:500 1.22rem/1.12 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:rotate(-3deg);transform-origin:0 100%}
 .dica-carga small{display:block;margin-top:3px;font-size:1.02rem}
-.dica-carga svg{display:block;width:96px;height:52px;margin:18px 0 0 -30px;overflow:visible;transform:scaleX(-1) rotate(-8deg)}
-.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1}
 .maq-cena.carga .dica-carga path{animation:traca .9s var(--ease) .5s forwards}
 .maq-cena.carga .dica-carga .ponta{animation-delay:1.25s;animation-duration:.4s}
 .maq-cena.carga .dica-carga svg{animation:balanceio-esq 2.6s ease-in-out 1.8s infinite}
-@keyframes balanceio-esq{50%{transform:scaleX(-1) rotate(-8deg) translateX(5px)}}
-/* Sem espaço para ela ao lado da máquina (telas menores e a coluna da tela de Rubricas), ela não entra */
+/* Sem espaço para o texto longo ao lado da máquina, ela não entra */
 @media (max-width:1280px){.dica-carga{display:none}}
-.rub-maq .dica-carga{display:none}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
@@ -1148,7 +1151,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     </div>
     <div class="nav-right">
       <button class="ghost-btn back" id="backBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5"/><path d="M11 18l-6-6 6-6"/></svg><span>Voltar ao menu</span></button>
-      <button class="ghost-btn" id="themeBtn" type="button">Tema escuro</button>
+      <button class="ghost-btn tema-btn" id="themeBtn" type="button" aria-label="Tema escuro" title="Tema escuro"></button>
     </div>
   </nav>
 
@@ -1846,7 +1849,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const root = document.documentElement;
   const themeBtn = document.getElementById("themeBtn");
   const isDark = () => { const t = root.getAttribute("data-theme"); return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; };
-  const syncThemeBtn = () => { themeBtn.textContent = isDark() ? "Tema claro" : "Tema escuro"; };
+  // O botão mostra o tema para onde vai: a nuvem leva ao escuro, o sol volta ao claro (só as silhuetas)
+  const ICONE_SOL = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/><g stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6M5.1 5.1l1.8 1.8M17.1 17.1l1.8 1.8M5.1 18.9l1.8-1.8M17.1 6.9l1.8-1.8"/></g></svg>';
+  const ICONE_NUVEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.8 19.2h10.6a4.3 4.3 0 0 0 .7-8.54 5.9 5.9 0 0 0-11.2-1.2A4.9 4.9 0 0 0 6.8 19.2z"/></svg>';
+  const syncThemeBtn = () => {
+    const rotulo = isDark() ? "Tema claro" : "Tema escuro";
+    themeBtn.innerHTML = isDark() ? ICONE_SOL : ICONE_NUVEM; themeBtn.setAttribute("aria-label", rotulo); themeBtn.title = rotulo;
+  };
   try { const s = localStorage.getItem("darf-theme"); if (s) root.setAttribute("data-theme", s); } catch(e){}
   syncThemeBtn();
   themeBtn.addEventListener("click", () => {
@@ -2413,7 +2422,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     <div class="moedas-area">
       <button class="moedas" type="button" aria-label="Empilhar uma moeda"></button>
       <button class="moeda-pe" type="button" aria-label="Girar a moeda"></button>
-      <div class="dica-brinque" aria-hidden="true"><span>Simule o seu holerite</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path class="rabisco" pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     </div>
     
     <div class="maq">
@@ -2453,7 +2461,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           <g fill="#fff" opacity=".45"><ellipse cx="-10" cy="233" rx="7" ry="3"/><ellipse cx="-12" cy="266" rx="7" ry="3"/><ellipse cx="-11" cy="300" rx="7" ry="3"/><ellipse cx="-8" cy="332" rx="6" ry="2.5"/><ellipse cx="230" cy="214" rx="8" ry="3" transform="rotate(-38 230 214)"/></g>
         </svg>
     </div>
-    <div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br>20% INSS patronal<br>+ RAT × FAP (0,5% a 6%)<br>+ 5,8% terceiros<br>= até ~32% a mais<small>e reflete em férias, 13º e DSR</small></p><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>`;
+    <div class="dica-lado" aria-hidden="true">
+      <div class="dica-brinque"><span>Simule o seu holerite</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
+      <div class="dica-carga"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br>20% INSS patronal<br>+ RAT × FAP (0,5% a 6%)<br>+ 5,8% terceiros<br>= até ~32% a mais<small>e reflete em férias, 13º e DSR</small></p><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
+    </div>`;
   const fmtCalc = n => Math.abs(n) >= 1e13 ? n.toExponential(4).replace(".", ",") : n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   // Número digitado do jeito que aparece no visor: 1.250,5
   function fmtEntrada(t){
