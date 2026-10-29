@@ -802,190 +802,233 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 @keyframes caiCifrao{0%{transform:translateY(0) rotate(0deg) scale(.8);opacity:0}10%{opacity:1}100%{transform:translateY(120vh) rotate(360deg) scale(1.5);opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
-<style id="swiss">
+<style id="pastel">
 /* ===================================================================
-   Swiss: grade rígida, tipografia grotesca, papel, preto e vermelho de sinal.
+   Paleta da calculadora do iPhone: preto, cinzas do sistema e laranja.
+   Os cartões ficam cinza e ganham a cor do módulo quando o mouse passa.
    Fica por último para valer sobre o tema anterior em todos os módulos.
    =================================================================== */
 :root{
-  --bg:#F2F1EC; --surface:#FFFFFF; --surface-2:#F2F1EC;
-  --ink:#0B0B0B; --muted:#6A6963; --line:#D6D4CC; --rule:#0B0B0B;
-  --accent:#E3241B; --accent-2:#E3241B; --accent-ink:#FFFFFF; --accent-soft:#FBE3E0;
-  --glow:transparent;
-  --warn:#8F5400; --warn-soft:#F6EBD6; --err:#B3261E; --err-soft:#F8E0DC;
+  --ios-preto:#000000; --ios-grafite:#1C1C1E; --ios-tecla:#333333; --ios-cinza:#A5A5A5; --ios-laranja:#FF9F0A;
+  --bg:#F2F2F7; --surface:#FFFFFF; --surface-2:#E5E5EA;
+  --ink:#1C1C1E; --muted:#8E8E93; --line:#D1D1D6;
+  --accent:#FF9F0A; --accent-2:#FF9F0A; --accent-ink:#FFFFFF; --accent-soft:#FFF1DC;
+  --glow:rgba(255,159,10,.28);
+  --warn:#1C1C1E; --warn-soft:#FFEBCC; --err:#000000; --err-soft:#FFD9A3;
   --display:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
   --body:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
-  --ease:cubic-bezier(.2,.7,.1,1);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --r-lg:24px; --r-md:16px;
+  /* cor de cada módulo, que aparece no mouse (terrosas, sem cair no pastel) */
+  --c-rubricas:#1C1C1E; --c-xml:#FF9F0A; --c-darf:#A5A5A5; --c-perdcomp:#333333; --c-base:#FF9F0A;
+  --c-esocial:#A5A5A5; --c-dctfweb:#333333; --c-diagnostico:#FF9F0A;
+  /* só o Rubricas usa várias cores (a análise dele tem riscos coloridos) */
+  --r1:#5F6F3E; --r2:#C3962A; --r3:#CF6E2B; --r4:#2F6B73; --r5:#3F7D55; --r6:#7A4B7E; --r7:#44598A;
+  --g1:#E5E5EA; --g2:#D1D1D6; --g3:#EBEBF0;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0C0C0B; --surface:#151514; --surface-2:#1C1C1A;
-    --ink:#F2F1EC; --muted:#9C9A92; --line:#2E2D2A; --rule:#F2F1EC;
-    --accent:#FF3B2F; --accent-2:#FF3B2F; --accent-ink:#0C0C0B; --accent-soft:#3A1715;
-    --glow:transparent; --warn:#E8B45E; --warn-soft:#33270F; --err:#FF7B6E; --err-soft:#3A1916;
+    --bg:#000000; --surface:#1C1C1E; --surface-2:#2C2C2E; --ink:#FFFFFF; --muted:#8E8E93; --line:#38383A;
+    --accent:#FF9F0A; --accent-2:#FF9F0A; --accent-ink:#FFFFFF; --accent-soft:#3A2A10; --glow:rgba(255,159,10,.25);
+    --warn:#FFFFFF; --warn-soft:#3A2A10; --err:#FF9F0A; --err-soft:#3A2A10;
+    --g1:#1C1C1E; --g2:#2C2C2E; --g3:#242426; --c-rubricas:#333333;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0C0C0B; --surface:#151514; --surface-2:#1C1C1A;
-  --ink:#F2F1EC; --muted:#9C9A92; --line:#2E2D2A; --rule:#F2F1EC;
-  --accent:#FF3B2F; --accent-2:#FF3B2F; --accent-ink:#0C0C0B; --accent-soft:#3A1715;
-  --glow:transparent; --warn:#E8B45E; --warn-soft:#33270F; --err:#FF7B6E; --err-soft:#3A1916;
+  --bg:#000000; --surface:#1C1C1E; --surface-2:#2C2C2E; --ink:#FFFFFF; --muted:#8E8E93; --line:#38383A;
+  --accent:#FF9F0A; --accent-2:#FF9F0A; --accent-ink:#FFFFFF; --accent-soft:#3A2A10; --glow:rgba(255,159,10,.25);
+  --warn:#FFFFFF; --warn-soft:#3A2A10; --err:#FF9F0A; --err-soft:#3A2A10;
+  --g1:#1C1C1E; --g2:#2C2C2E; --g3:#242426; --c-rubricas:#333333;
 }
+/* Dentro de cada módulo, a cor dele vira o destaque da página */
+body[data-mod="rubricas"]{--accent:var(--ios-tecla)}
+body[data-mod="xml"]{--accent:var(--c-xml)}
+body[data-mod="darf"]{--accent:var(--c-darf)}
+body[data-mod="perdcomp"]{--accent:var(--c-perdcomp)}
+body[data-mod="base"]{--accent:var(--c-base)}
+body[data-mod="esocial"]{--accent:var(--c-esocial)}
+body[data-mod="dctfweb"]{--accent:var(--c-dctfweb)}
+body[data-mod="diagnostico"]{--accent:var(--c-diagnostico)}
+body[data-mod]:not([data-mod="home"]){--accent-2:var(--accent);--accent-ink:#FFFFFF;
+  --accent-soft:color-mix(in srgb,var(--accent) 13%,var(--surface));--glow:color-mix(in srgb,var(--accent) 30%,transparent)}
+body[data-mod="darf"],body[data-mod="esocial"]{--accent-ink:#000000}
+body[data-mod="rubricas"]{--accent-ink:#FFFFFF}
 
-body{background:var(--bg);letter-spacing:-.006em;font-feature-settings:"cv11","ss01","tnum" 0}
+body{background:var(--bg);letter-spacing:-.005em}
 .aurora{display:none}
 .wrap{max-width:1240px}
 
-/* Sem cantos arredondados nem sombras: tudo é grade (menos o que é ponto ou ícone redondo) */
-.wrap *:not(.spinner):not(.risco):not(.info):not(.acao-x):not(.tema-x):not(input):not(.fchips .chip button){border-radius:0!important}
-:where(.stub,.drop,.mod,.kpi,.tablebox,.painel,.btn,.ghost-btn,.tbtn,.pick,.badge,.chip-arq,.seg,.seg button,.inp,.mini,.tp,.bulk,.xml-aviso,
-  .fmt-opt,.passos span,.slot-tag,.rodar,.toast,.chip,select,textarea,input[type=text],input[type=search],input[type=number],dialog,
-  details.how > summary,.progress,.prog-track,.prog-fill,.prog-shine,.how,.opcoes,.modo,.steps li,.fchips .chip){border-radius:0!important}
-:where(.mod,.stub,.kpi,.tablebox,.painel,.btn,.pick,.chip-arq,.fmt-opt,.tbtn,.ghost-btn,.seg button,.rodar){box-shadow:none!important}
-
 /* Tipografia */
-h1{font-family:var(--display);font-weight:800;font-size:clamp(3rem,8.2vw,6.6rem);line-height:.88;letter-spacing:-.055em;
-  background:none;-webkit-text-fill-color:currentColor;color:var(--ink);animation:none}
-.lede{color:var(--muted);font-size:1.08rem;line-height:1.45;max-width:48ch}
-h2.sec{font-weight:700;font-size:1.05rem;letter-spacing:.02em;text-transform:uppercase}
-.sec-head{border-bottom:2px solid var(--rule);padding-bottom:10px;margin-bottom:0}
-.sec-head .hint{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+h1{font-family:var(--display);font-weight:600;letter-spacing:-.05em;line-height:.95;background:none;-webkit-text-fill-color:currentColor;color:var(--ink);animation:none}
+.lede{color:var(--muted);font-size:1.05rem;line-height:1.5}
+h2.sec{font-weight:600;letter-spacing:-.02em}
 
-/* Topo: marca e navegação */
-.topnav{border-bottom:2px solid var(--rule);padding-bottom:16px;margin-bottom:clamp(28px,5vw,56px)}
-.brand{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;font-size:1rem;letter-spacing:-.01em;text-transform:none;gap:10px}
-.brand::before{content:"";width:14px;height:14px;background:var(--accent);flex:none}
-.ghost-btn,.ghost-btn.back{background:transparent;border:1px solid var(--rule);color:var(--ink);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;backdrop-filter:none}
-.ghost-btn:hover,.ghost-btn.back:hover{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:none}
-.ghost-btn.back svg{width:14px;height:14px}
-.ghost-btn.back:hover svg{transform:translateX(-3px)}
+/* Topo */
+.topnav{margin-bottom:clamp(20px,4vw,40px)}
+.brand{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:600;font-size:1rem;letter-spacing:-.02em;gap:10px}
+.brand::before{content:"";width:12px;height:12px;border-radius:50%;flex:none;background:var(--ios-laranja)}
+.ghost-btn,.ghost-btn.back{border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:500}
+.ghost-btn.back:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 
-/* ===== Página inicial: índice em grade numerada ===== */
-#viewHome > h1,#viewHome > .lede{text-align:left;margin-inline:0}
-#viewHome > .lede{margin-top:20px}
-.home-cols{grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:0;border-top:2px solid var(--rule);margin-top:clamp(32px,5vw,56px)}
-.home-side{top:16px}
-.mods{counter-reset:mod;gap:1px;background:var(--line);border-left:1px solid var(--line);margin-top:0}
-.mod,#viewHome .mod{counter-increment:mod;background:var(--surface);border:0;align-items:flex-start;text-align:left;
-  padding:58px 26px 22px;min-height:230px;gap:6px;transform:none!important;animation:swissIn .5s var(--ease) calc(var(--i,0) * 50ms) backwards;transition:background .18s,color .18s}
-@keyframes swissIn{from{opacity:0}}
+/* ===== Abertura: texto grande que entra em movimento + calculadora de verdade ===== */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:clamp(24px,4vw,56px);align-items:center;margin-bottom:clamp(28px,5vw,56px)}
+.hero-kicker{margin:0 0 18px;font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hero-h1{font-size:clamp(2.8rem,6.2vw,5.6rem);line-height:.92;letter-spacing:-.055em;margin:0}
+.hero-h1 .w{display:inline-block;animation:sobe 1s var(--ease) calc(var(--i,0) * 90ms + 80ms) backwards}
+.hero-h1 .w.cor{color:var(--muted)}
+@keyframes sobe{from{opacity:0;transform:translateY(.45em) rotate(2deg);filter:blur(6px)}}
+.hero .lede{margin-top:22px;max-width:44ch;animation:sobe 1s var(--ease) .45s backwards}
+.hero-dica{margin:18px 0 0;font-size:.86rem;color:var(--muted);animation:sobe 1s var(--ease) .55s backwards}
+.hero-dica kbd{font:500 .8rem var(--body);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ios-cinza);color:#000}
+
+.maq-cena{position:relative;height:680px;display:flex;align-items:flex-end;justify-content:center;animation:sobe 1.1s var(--ease) .25s backwards}
+.maq{position:relative;width:290px;z-index:2}
+.maq-corpo{position:relative;background:var(--ios-preto);border-radius:40px;padding:26px 18px 18px;box-shadow:0 40px 70px -40px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.08)}
+.maq-boca{position:absolute;left:50%;top:-5px;width:196px;height:10px;transform:translateX(-50%);border-radius:6px;background:var(--ios-tecla)}
+.maq-visor{display:block;margin:30px 6px 14px;padding:0;background:none;color:#FFFFFF;text-align:right;
+  font:300 3.1rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.maq-visor.pulsa{animation:pulsa .3s var(--ease)}
+@keyframes pulsa{40%{opacity:.55}}
+.maq-teclas{display:grid;grid-template-columns:repeat(4,58px);gap:12px;justify-content:center}
+.maq-teclas button{width:58px;height:58px;border:0;border-radius:50%;background:var(--ios-tecla);color:#FFFFFF;font:400 1.55rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;cursor:pointer;
+  transition:filter .12s,background .2s,color .2s,transform .12s var(--ease)}
+.maq-teclas button:hover{filter:brightness(1.18)}
+.maq-teclas button:active,.maq-teclas button.aperta{filter:brightness(1.6);transform:scale(.95)}
+.maq-teclas button.fn{background:var(--ios-cinza);color:#000000;font-size:1.25rem;font-weight:500}
+.maq-teclas button.op,.maq-teclas button.igual{background:var(--ios-laranja);color:#FFFFFF;font-size:1.8rem}
+.maq-teclas button.op.ativa{background:#FFFFFF;color:var(--ios-laranja)}
+.maq-teclas button.zero{width:auto;grid-column:span 2;border-radius:29px;text-align:left;padding-left:22px}
+.maq-teclas button:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:3px}
+
+/* A fita sai pela boca da máquina e sobe enquanto você imprime */
+.fita{position:absolute;left:50%;bottom:calc(100% - 4px);width:180px;transform:translateX(-50%);z-index:-1;max-height:190px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;
+  -webkit-mask-image:linear-gradient(to top,#000 70%,transparent);mask-image:linear-gradient(to top,#000 70%,transparent)}
+.fita ol{flex:none;list-style:none;margin:0;padding:10px 14px 14px;background:#FFFFFF;color:#333333;font:500 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  border-radius:4px 4px 0 0;box-shadow:0 0 0 1px rgba(0,0,0,.05);min-height:22px;
+  background-image:repeating-linear-gradient(transparent 0 19px,rgba(0,0,0,.035) 19px 20px)}
+.fita li{display:flex;justify-content:space-between;gap:10px;animation:imprime .38s var(--ease)}
+.fita li b{font-weight:700;color:#A5A5A5}
+.fita li.tot{font-weight:800;border-top:1px dashed #A5A5A5;margin-top:3px;padding-top:2px;color:#000000}
+.fita li.tot b{color:var(--ios-laranja)}
+@keyframes imprime{from{opacity:0;transform:translateY(12px)}}
+
+/* Moedas: clique e elas empilham */
+.moedas{position:absolute;left:4%;bottom:0;width:86px;height:240px;border:0;background:none;cursor:pointer;z-index:3;padding:0}
+.moeda{position:absolute;left:8px;width:70px;height:22px;border-radius:50%;bottom:calc(var(--n) * 9px);
+  background:radial-gradient(ellipse at 50% 35%,#FFFFFF,#A5A5A5 62%);box-shadow:0 3px 0 #333333,inset 0 0 0 2px rgba(255,255,255,.35)}
+.moeda.cai{animation:cai .55s cubic-bezier(.3,1.4,.5,1) backwards}
+@keyframes cai{from{transform:translateY(-200px) rotate(-30deg);opacity:0}}
+.moedas:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:12px}
+.moedas .rotulo{position:absolute;left:0;right:0;bottom:-26px;font-size:.72rem;color:var(--muted);text-align:center;white-space:nowrap}
+
+/* O rolo: a fita escapa e toma a tela; um clique rasga tudo */
+.rolo{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--bg) 35%,transparent);animation:escurece .5s ease both}
+@keyframes escurece{from{background:transparent}}
+.tira{position:absolute;top:-30px;left:var(--x);width:var(--w,150px);height:125vh;transform-origin:50% 0;transform:translateX(-50%) rotate(var(--r));
+  clip-path:inset(0 0 100% 0);animation:desenrola 1.7s var(--ease) var(--d) forwards}
+.tira ol{list-style:none;margin:0;height:100%;padding:16px 14px;background:#FFFFFF;color:#333333;font:500 .72rem/1.7 ui-monospace,Menlo,Consolas,monospace;
+  box-shadow:0 18px 40px -20px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 21px,rgba(0,0,0,.035) 21px 22px)}
+.tira li{display:flex;justify-content:space-between;gap:8px;white-space:nowrap}
+.tira li.tot{font-weight:800;border-top:1px dashed #A5A5A5;color:#000000}
+@keyframes desenrola{to{clip-path:inset(0 0 0 0)}}
+.rolo-dica{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600;font-size:.86rem;
+  animation:sobe .6s var(--ease) 1.6s backwards;white-space:nowrap}
+.rolo.rasga{background:transparent;transition:background .6s}
+.rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
+.rolo.rasga .rolo-dica{opacity:0;transition:opacity .2s}
+@keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
+@media (prefers-reduced-motion: reduce){
+  .hero-h1 .w,.hero .lede,.hero-dica,.maq-cena,.fita li,.moeda.cai{animation:none}
+  .tira{animation:none;clip-path:none}.rolo.rasga .tira{animation:none;opacity:0}
+}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.maq-cena{height:680px}}
+
+/* ===== Cartões dos módulos: cinza por padrão, a cor do módulo no mouse ===== */
+#viewHome > h1,#viewHome > .lede{text-align:left}
+.home-cols{gap:14px;margin-top:0;grid-template-columns:minmax(220px,290px) minmax(0,1fr)}
+.mods{gap:14px;background:none;border:0}
+.mod{--cor:#6E6C66;--cor-ink:#FFFFFF}
+.mod,#viewHome .mod{background:var(--base,var(--g1));border:0;border-radius:var(--r-lg);align-items:flex-start;text-align:left;
+  padding:24px 24px 22px;min-height:220px;gap:6px;box-shadow:none;animation:cardIn .8s var(--ease) calc(var(--i,0) * 70ms + 200ms) backwards;
+  transform:none;transition:background .35s var(--ease),color .35s,transform .45s var(--ease)}
 .mod::before{display:none}
-.mod::after{content:counter(mod,decimal-leading-zero);position:absolute;top:22px;left:26px;right:auto;font-size:.78rem;font-weight:600;letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums}
-.mod .sigla,#viewHome .mod .sigla{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;letter-spacing:-.05em;font-size:clamp(2rem,3.4vw,2.8rem);line-height:.95;margin:0 0 auto}
-.mod h2,#viewHome .mod h2{font-size:1rem;font-weight:700;letter-spacing:-.005em;margin:26px 0 0}
-.mod p,#viewHome .mod p{font-size:.86rem;line-height:1.45;color:var(--muted);margin:0;max-width:44ch}
-.mod .abrir,#viewHome .mod .abrir{color:var(--ink);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:14px;justify-content:flex-start}
-.mod .abrir span[aria-hidden]{font-size:0}
-.mod .abrir span[aria-hidden]::after{content:"→";font-size:.95rem;letter-spacing:0}
-.mod:hover,.mod:focus-visible{background:var(--ink);outline:none}
-.mod:hover .sigla,.mod:hover h2,.mod:hover .abrir,.mod:focus-visible .sigla,.mod:focus-visible h2,.mod:focus-visible .abrir{color:var(--bg)}
-.mod:hover p,.mod:hover::after,.mod:focus-visible p{color:color-mix(in srgb,var(--bg) 70%,transparent)}
-.mod:hover .passos span{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
-.mods.escolheu .mod:not(.escolhido){opacity:.25;transform:none}
-.mods.escolheu .mod.escolhido{background:var(--accent)}
+.mod::after{content:"+";position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:var(--cor);color:var(--cor-ink);font:500 1.3rem/1 var(--body);transition:transform .45s var(--ease),background .35s,color .35s}
+.mod .sigla,#viewHome .mod .sigla{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:600;letter-spacing:-.05em;font-size:clamp(2rem,3.2vw,2.6rem);line-height:1;margin:0 0 auto;transition:color .35s}
+.mod h2,#viewHome .mod h2{font-weight:500;font-size:1.15rem;letter-spacing:-.02em;margin:28px 0 0;transition:color .35s}
+.mod p,#viewHome .mod p{font-size:.86rem;color:var(--muted);margin:0;max-width:46ch;transition:color .35s}
+.mod .abrir,#viewHome .mod .abrir{color:var(--ink);font-size:.82rem;font-weight:600;justify-content:flex-start;margin-top:12px;transition:color .35s}
+.mod .passos{justify-content:flex-start!important}
+.mod .passos span{background:transparent;border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);color:var(--ink);font-size:.72rem;transition:color .35s,border-color .35s}
+.mod:hover,.mod:focus-visible,#viewHome .mod:hover,#viewHome .mod:focus-visible{background:var(--cor);transform:translateY(-4px);outline:none;box-shadow:0 26px 50px -30px var(--cor)}
+.mod:hover::after,.mod:focus-visible::after{background:var(--cor-ink);color:var(--cor);transform:rotate(90deg)}
+.mod:hover :is(.sigla,h2,.abrir),.mod:focus-visible :is(.sigla,h2,.abrir),#viewHome .mod:hover :is(.sigla,h2,.abrir){color:var(--cor-ink)}
+.mod:hover p,.mod:focus-visible p,#viewHome .mod:hover p{color:color-mix(in srgb,var(--cor-ink) 78%,transparent)}
+.mod:hover .passos span{color:var(--cor-ink);border-color:color-mix(in srgb,var(--cor-ink) 40%,transparent)}
+.mods.escolheu .mod.escolhido{background:var(--cor);transform:scale(1.02)}
 
-/* Rubricas: destaque assimétrico em duas colunas */
-#viewHome .mod.hero-card{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);justify-items:start;align-items:end;gap:6px 40px;padding:58px 30px 26px;min-height:300px}
-#viewHome .mod.hero-card .sigla{grid-row:1/6;align-self:end;font-size:clamp(3.2rem,8vw,6.4rem);letter-spacing:-.06em}
-#viewHome .mod.hero-card h2{margin:0;font-size:1.25rem}
-.mod .passos{justify-content:flex-start!important;gap:6px}
-.mod .passos span{background:transparent;border:1px solid var(--line);color:var(--ink);font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px}
+/* Cada um com sua cor e um cinza diferente de fundo */
+.mod[data-go="xml"]{--cor:var(--c-xml);--base:var(--g2)}
+.mod[data-go="darf"]{--cor:var(--c-darf);--cor-ink:#000000;--base:var(--g2)}
+.mod[data-go="perdcomp"]{--cor:var(--c-perdcomp);--base:var(--g1)}
+.mod[data-go="base"]{--cor:var(--c-base);--base:var(--g3)}
+.mod[data-go="esocial"]{--cor:var(--c-esocial);--cor-ink:#000000;--base:var(--g1)}
+.mod[data-go="dctfweb"]{--cor:var(--c-dctfweb);--base:var(--g3)}
+.mod[data-go="diagnostico"]{--cor:var(--c-diagnostico);--base:var(--g2)}
 
-/* XML: bloco vermelho de sinal na coluna da esquerda */
-.mod.hero-xml,#viewHome .mod.hero-xml{background:var(--accent);color:var(--accent-ink);border:0;justify-content:flex-end;align-items:flex-start;text-align:left;padding:58px 26px 24px}
-.mod.hero-xml::after{content:"Novo";top:22px;left:26px;right:auto;color:var(--accent-ink);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-.mod.hero-xml .novo{display:none}
-.mod.hero-xml .sigla,#viewHome .mod.hero-xml .sigla{color:var(--accent-ink);font-size:clamp(4rem,9vw,6.4rem);letter-spacing:-.07em;margin:0 0 auto}
-.mod.hero-xml h2,#viewHome .mod.hero-xml h2{color:var(--accent-ink);font-size:1.15rem;margin-top:32px}
-.mod.hero-xml p,#viewHome .mod.hero-xml p{color:color-mix(in srgb,var(--accent-ink) 82%,transparent)}
-.mod.hero-xml .abrir,#viewHome .mod.hero-xml .abrir{color:var(--accent-ink)}
-.mod.hero-xml .passos span{background:transparent;color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent-ink) 45%,transparent)}
-.mod.hero-xml:hover,#viewHome .mod.hero-xml:hover{background:var(--ink)}
-.mod.hero-xml:hover .sigla,.mod.hero-xml:hover h2,.mod.hero-xml:hover .abrir{color:var(--bg)}
-.home-side{align-self:stretch}
-.home-side .mod.hero-xml{height:100%;min-height:520px}
-@media (max-width:900px){.home-cols{grid-template-columns:1fr}.home-side .mod.hero-xml{min-height:0}.mods{border-left:0}}
+/* Rubricas: cinza bem escuro de cara; no mouse, as cores de todos os módulos (a análise usa várias) */
+#viewHome .mod.hero-card{--cor:var(--ios-preto);--base:var(--ios-grafite);color:#FFFFFF;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);justify-items:start;align-items:end;gap:6px 40px;padding:30px 30px 26px;min-height:280px;overflow:hidden}
+#viewHome .mod.hero-card :is(.sigla,h2,.abrir){color:#F3F2EF}
+#viewHome .mod.hero-card p{color:rgba(243,242,239,.7)}
+#viewHome .mod.hero-card .passos span{background:transparent;color:#F3F2EF;border-color:rgba(243,242,239,.25)}
+#viewHome .mod.hero-card .sigla{grid-row:1/6;align-self:end;font-size:clamp(3rem,7.4vw,6rem);letter-spacing:-.06em}
+#viewHome .mod.hero-card h2{margin:0}
+#viewHome .mod.hero-card::after{background:conic-gradient(var(--r1) 0 14%,var(--r2) 0 28%,var(--r3) 0 43%,var(--r4) 0 57%,var(--r5) 0 71%,var(--r6) 0 86%,var(--r7) 0);color:#fff}
+#viewHome .mod.hero-card::before{display:block;content:"";position:absolute;left:0;right:0;bottom:0;height:6px;opacity:0;transform:scaleX(.2);transform-origin:0 50%;
+  transition:transform .6s var(--ease),opacity .3s;background-image:linear-gradient(90deg,var(--r1) 0 14%,var(--r2) 0 28%,var(--r3) 0 43%,var(--r4) 0 57%,var(--r5) 0 71%,var(--r6) 0 86%,var(--r7) 0)}
+#viewHome .mod.hero-card:hover::before{opacity:1;transform:none}
+:root[data-theme="dark"] #viewHome .mod.hero-card{--base:var(--ios-tecla)}
 @media (max-width:760px){#viewHome .mod.hero-card{grid-template-columns:1fr}#viewHome .mod.hero-card .sigla{grid-row:auto}}
 
-/* ===== Páginas dos módulos ===== */
-.mod-head{border-bottom:0;padding-bottom:0;margin-bottom:34px}
-.mod-head .lede{margin-top:18px}
-.stub{background:var(--surface);border:1px solid var(--rule)}
+/* XML: cinza com selo musgo; vira musgo no mouse */
+.mod.hero-xml,#viewHome .mod.hero-xml{background:var(--g2);color:var(--ink);justify-content:flex-end;padding:24px 24px 22px;min-height:100%}
+.home-side{top:16px;align-self:stretch}
+.home-side .mod.hero-xml{height:100%;min-height:480px}
+.mod.hero-xml .novo{display:inline-block;position:absolute;top:22px;left:24px;right:auto;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 10px;border-radius:999px;background:var(--c-xml);color:#fff;transition:background .35s,color .35s}
+.mod.hero-xml:hover .novo{background:#000;color:var(--ios-laranja)}
+.mod.hero-xml .sigla,#viewHome .mod.hero-xml .sigla{font-size:clamp(3.6rem,7vw,5.4rem);letter-spacing:-.06em;margin:0 0 auto;padding-top:40px}
+.mod.hero-xml h2,#viewHome .mod.hero-xml h2{margin-top:24px}
+@media (max-width:900px){.home-side .mod.hero-xml{min-height:0}}
+
+/* ===== Páginas dos módulos: mesmas formas suaves, cor do módulo nos destaques ===== */
+.stub{border-radius:var(--r-lg);border:1px solid var(--line)}
 .stub::before{display:none}
-.stub::after{border-radius:0}
-.drop{padding:30px clamp(20px,3vw,36px) 28px}
-.drop .big{color:var(--ink);font-weight:800;letter-spacing:-.03em;font-size:clamp(1.4rem,2.6vw,2rem)}
-.drop .slot-tag,#rubStub .drop .slot-tag{background:var(--ink);color:var(--bg);font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px}
-.drop.feito .slot-tag{background:var(--accent);color:var(--accent-ink)}
-.slots .drop + .drop{border-left:1px solid var(--line)}
-.stub.over .drop{background:var(--accent-soft)}
-.drop .pick,#rubStub .drop .pick,.pick-row .pick{background:var(--ink);color:var(--bg);font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 18px;box-shadow:none;transform:none}
-.drop .pick:hover,.pick-row .pick:hover{background:var(--accent);color:var(--accent-ink);transform:none;box-shadow:none}
-.pick-row .pick.sec{background:transparent;color:var(--ink);outline:1px solid var(--rule);outline-offset:-1px}
-.pick-row .pick.sec:hover{background:var(--ink);color:var(--bg)}
-.drop .slot-file{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-.progress{border-top:1px solid var(--line);background:var(--surface)}
-.prog-pct{font-weight:800;letter-spacing:-.05em}
-.prog-track{height:4px;background:var(--line)}
+.drop .slot-tag{border-radius:999px}
+.kpi{border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line)}
+.kpi b{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:600;letter-spacing:-.04em}
+.tablebox{border-radius:var(--r-md)}
+.painel{border-radius:var(--r-md)}
+.btn,.tbtn,.pick{border-radius:999px}
 .prog-fill{background:var(--accent)}
-.prog-shine{display:none}
-
-/* Botões */
-.btn{border-radius:0;font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;border:1px solid var(--rule);background:transparent;color:var(--ink)}
-.btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:none}
-.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);transform:none}
-.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
-.btn.ghost:hover{color:var(--accent);background:transparent}
-.tbtn{border:1px solid var(--rule);background:transparent;font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.tbtn:hover{background:var(--ink);color:var(--bg)}
-.tbtn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.seg{border:1px solid var(--rule);background:transparent;padding:0;gap:0}
-.seg button{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.chip-arq{background:var(--surface);border:1px solid var(--rule)}
-.chip-arq .ico{border-radius:0!important;background:var(--ink);color:var(--bg)}
-.inp{border:1px solid var(--rule)}
-.inp:focus{outline:2px solid var(--accent);outline-offset:0}
-
-/* Números grandes, sem caixas */
-.kpis{gap:0 28px;margin-top:34px}
-.kpi{background:transparent;border:0;border-top:2px solid var(--rule);padding:12px 0 0}
-.kpi:hover{transform:none}
-.kpi small{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
-.kpi b{background:none;-webkit-text-fill-color:currentColor;color:var(--ink);font-weight:800;font-size:clamp(2.2rem,4vw,3.4rem);letter-spacing:-.06em;line-height:1;margin-top:10px}
-
-/* Tabelas */
-.tablebox{border:0;border-top:0;background:var(--surface)}
-th{background:var(--surface);color:var(--ink);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
-td{border-bottom:1px solid var(--line)}
-tbody tr:hover td{background:var(--surface-2)}
-.badge{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--surface-2);color:var(--ink)}
-.badge.ok{background:var(--ink);color:var(--bg)}
-.badge.run{background:var(--accent);color:var(--accent-ink)}
-.badge.err{background:var(--accent);color:var(--accent-ink)}
-
-/* Blocos de apoio */
-details.how > summary{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:6px 0}
-details.how > summary::before{border-radius:0!important;background:var(--ink);color:var(--bg)}
-.painel{border:0;border-top:2px solid var(--rule);background:transparent}
-.painel h3,.painel-h h3{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-.hub-log{background:var(--surface)}
-.rodar{border:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:transparent;padding-inline:0}
-.xml-aviso{border:0;border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink)}
-.xml-tab .btn{padding:8px 14px}
-.toast{background:var(--ink);color:var(--bg);font-weight:600}
-#xmlFmt{border:2px solid var(--rule);box-shadow:none}
-#xmlFmt::backdrop{background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:none}
-.fmt-in h3{font-weight:800;letter-spacing:-.04em;font-size:1.5rem}
-.fmt-opt{border:1px solid var(--rule);background:transparent}
-.fmt-opt b{font-weight:800;letter-spacing:-.02em}
-.fmt-opt:hover,.fmt-opt:focus-visible{background:var(--ink);color:var(--bg);transform:none;box-shadow:none}
-.fmt-opt:hover span,.fmt-opt:focus-visible span{color:color-mix(in srgb,var(--bg) 75%,transparent)}
-.rodape{font-weight:500;text-transform:uppercase;letter-spacing:.14em;text-align:left;border-top:1px solid var(--line);margin-top:64px;padding-top:16px}
 .topbar i{background:var(--accent);box-shadow:none}
-:focus-visible{outline-color:var(--accent)}
-@media (prefers-reduced-motion: reduce){.mod,#viewHome .mod{animation:none}}
+.xml-aviso{border-radius:var(--r-md)}
+.rodape{text-align:left;font-weight:400;letter-spacing:.06em}
+
+/* Anotações técnicas em volta da máquina (linhas de cota, como num desenho de museu) */
+.nota{position:absolute;z-index:4;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;
+  animation:aparece .8s var(--ease) var(--d,1s) backwards;pointer-events:none}
+.nota b{display:block;font-weight:600;color:var(--ink);letter-spacing:.04em}
+.nota::before{content:"";position:absolute;top:50%;width:var(--l,60px);height:1px;background:color-mix(in srgb,var(--ink) 35%,transparent)}
+.nota::after{content:"";position:absolute;top:calc(50% - 3px);width:7px;height:7px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 45%,transparent);background:var(--bg)}
+.nota.esq{text-align:right}
+.nota.esq::before{left:calc(100% + 10px)}.nota.esq::after{left:calc(100% + 10px + var(--l,60px))}
+.nota.dir::before{right:calc(100% + 10px)}.nota.dir::after{right:calc(100% + 10px + var(--l,60px))}
+@keyframes aparece{from{opacity:0;transform:translateY(6px)}}
+.hero-meta{display:flex;gap:28px;margin-top:30px;padding-top:16px;border-top:1px solid var(--line);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);animation:sobe 1s var(--ease) .65s backwards}
+.hero-meta b{display:block;font-size:1.4rem;letter-spacing:-.03em;text-transform:none;color:var(--ink);font-weight:600}
+@media (max-width:1100px){.nota{display:none}}
+@media (prefers-reduced-motion: reduce){.nota,.hero-meta{animation:none}}
 </style>
 </head>
 <body>
@@ -1005,8 +1048,36 @@ details.how > summary::before{border-radius:0!important;background:var(--ink);co
 
   <!-- Página inicial -->
   <main id="viewHome">
-    <h1>Hub Fiscal & Previdenciário</h1>
-    <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
+    <section class="hero" id="hero">
+      <div class="hero-txt">
+        <p class="hero-kicker">Tributação · Previdência · eSocial</p>
+        <h1 class="hero-h1"><span class="w" style="--i:0">Hub</span> <span class="w" style="--i:1">Fiscal</span> <span class="w cor" style="--i:2">&amp;</span><br><span class="w" style="--i:3">Previdenciário</span></h1>
+        <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
+        <p class="hero-dica">A calculadora funciona: digite, some e veja sair na fita. Aperte <kbd>Σ</kbd> para imprimir o total geral.</p>
+        <div class="hero-meta"><span><b>8</b>módulos</span><span><b>XML</b>eSocial completo</span><span><b>xlsx · parquet</b>exportação</span></div>
+      </div>
+      <div class="maq-cena" aria-label="Calculadora de mesa interativa">
+        <span class="nota esq" style="right:calc(50% + 140px);top:96px;--l:40px;--d:1.1s"><b>Fita</b>57 mm · imprime cada conta</span>
+        <span class="nota dir" style="left:calc(50% + 176px);bottom:386px;--l:38px;--d:1.25s"><b>Visor</b>12 dígitos</span>
+        <span class="nota dir" style="left:calc(50% + 176px);bottom:318px;--l:38px;--d:1.4s"><b>Σ ÷ × − +</b>Σ imprime o total geral</span>
+        <span class="nota esq" style="right:calc(50% + 236px);bottom:150px;--l:20px;--d:1.55s"><b>Moedas</b>clique para empilhar</span>
+        <button class="moedas" id="moedas" type="button" aria-label="Empilhar moedas"></button>
+        <div class="maq">
+          <div class="fita" id="fita"><ol id="fitaLinhas" aria-live="polite"><li><span>0,00</span><b>T</b></li></ol></div>
+          <div class="maq-corpo">
+            <div class="maq-boca" aria-hidden="true"></div>
+            <output class="maq-visor" id="maqVisor" aria-live="polite">0,00</output>
+            <div class="maq-teclas" id="maqTeclas">
+              <button type="button" data-k="C" class="fn">C</button><button type="button" data-k="⌫" class="fn" aria-label="Apagar">⌫</button><button type="button" data-k="Σ" class="fn" aria-label="Total geral: imprime tudo">Σ</button><button type="button" data-k="÷" class="op">÷</button>
+              <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" data-k="×" class="op">×</button>
+              <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" data-k="−" class="op">−</button>
+              <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="+" class="op">+</button>
+              <button type="button" data-k="0" class="zero">0</button><button type="button" data-k=",">,</button><button type="button" data-k="=" class="igual">=</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     <div class="home-cols">
     <aside class="home-side">
       <a class="mod hero-xml" href="#xml" data-go="xml">
@@ -2191,6 +2262,7 @@ details.how > summary::before{border-radius:0!important;background:var(--ink);co
     const trocar = () => {
       if (token !== navToken) return;     // uma navegação mais nova tomou o lugar
       vista = v;
+      document.body.dataset.mod = v;
       busca.value = "";
       viewHome.hidden = v !== "home";
       viewMod.hidden = !MODULOS[v];
@@ -2238,6 +2310,86 @@ details.how > summary::before{border-radius:0!important;background:var(--ink);co
   }));
   $("brand").addEventListener("click", e => { e.preventDefault(); irPara("home", true); });
   $("backBtn").addEventListener("click", () => irPara("home", true));
+
+  /* ---------- Início: calculadora com fita, moedas e o rolo que toma a tela ---------- */
+  (() => {
+    const visor = $("maqVisor"), lista = $("fitaLinhas"), teclas = $("maqTeclas"), moedas = $("moedas");
+    if (!visor) return;
+    const fmt = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    let entrada = "", acc = null, op = null, impressas = 0, rolando = false;
+    const num = () => entrada ? parseFloat(entrada.replace(/\./g, "").replace(",", ".")) || 0 : 0;
+    const calc = (a, o, b) => o === "+" ? a + b : o === "−" ? a - b : o === "×" ? a * b : o === "÷" ? (b ? a / b : 0) : b;
+    function mostrar(v){ visor.textContent = typeof v === "number" ? fmt(v) : v; visor.classList.remove("pulsa"); void visor.offsetWidth; visor.classList.add("pulsa"); }
+    function imprimir(txt, sinal, total){
+      const li = document.createElement("li"); if (total) li.className = "tot";
+      li.innerHTML = `<span>${esc(txt)}</span><b>${esc(sinal)}</b>`;
+      lista.appendChild(li); while (lista.children.length > 11) lista.firstElementChild.remove();
+      impressas++;
+      if (impressas >= 16 && !rolando) desenrolar();    // a fita ficou grande demais e escapa
+    }
+    const acende = k => teclas.querySelectorAll("button.op").forEach(b => b.classList.toggle("ativa", b.dataset.k === k));
+    function tecla(k){
+      if (rolando) return;
+      acende("+−×÷".includes(k) ? k : null);
+      if (/^\d+$/.test(k)){ if (entrada.replace(/\D/g, "").length < 12){ entrada = (entrada === "0" ? "" : entrada) + k; } mostrar(entrada || "0"); return; }
+      if (k === ","){ if (!entrada.includes(",")) entrada = (entrada || "0") + ","; mostrar(entrada); return; }
+      if (k === "⌫"){ entrada = entrada.slice(0, -1); mostrar(entrada || "0"); return; }
+      if (k === "C"){ entrada = ""; acc = null; op = null; imprimir("0,00", "C"); mostrar(0); return; }
+      if ("+−×÷".includes(k)){
+        if (entrada === "" && acc !== null){ op = k; return; }
+        const v = num(); acc = acc === null ? v : calc(acc, op, v);
+        imprimir(fmt(v), k); op = k; entrada = ""; mostrar(acc); return;
+      }
+      if (k === "=" || k === "Σ"){
+        if (entrada !== "" || acc === null){ const v = num(); imprimir(fmt(v), op === "×" || op === "÷" ? "=" : (op || "+")); acc = acc === null ? v : calc(acc, op || "+", v); }
+        imprimir(fmt(acc), "*", true); mostrar(acc); entrada = ""; op = null; acc = null;
+        if (k === "Σ") desenrolar();
+      }
+    }
+    teclas.addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) tecla(b.dataset.k); });
+    // Teclado também funciona enquanto você está no início
+    const MAPA = { "*": "×", "x": "×", "/": "÷", "-": "−", "+": "+", "Enter": "=", "=": "=", "Backspace": "⌫", "Escape": "C", ",": ",", ".": ",", "s": "Σ", "S": "Σ" };
+    document.addEventListener("keydown", e => {
+      if (vista !== "home" || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      const k = /^\d$/.test(e.key) ? e.key : MAPA[e.key]; if (!k) return;
+      e.preventDefault(); tecla(k);
+      const b = teclas.querySelector(`button[data-k="${k}"]`); if (b){ b.classList.add("aperta"); setTimeout(() => b.classList.remove("aperta"), 120); }
+    });
+
+    // Moedas: cada clique empilha uma; na décima segunda, a pilha volta ao começo
+    let nMoedas = 0;
+    const poeMoeda = cai => { const m = document.createElement("span"); m.className = "moeda" + (cai ? " cai" : ""); m.style.setProperty("--n", nMoedas++); moedas.appendChild(m); };
+    for (let i = 0; i < 4; i++) poeMoeda(false);
+    moedas.addEventListener("click", () => {
+      if (nMoedas >= 12){ moedas.innerHTML = ""; nMoedas = 0; for (let i = 0; i < 4; i++) poeMoeda(true); return; }
+      poeMoeda(true);
+    });
+
+    // O rolo: a fita escapa da máquina e toma a tela; um clique rasga tudo
+    const ROTULOS = ["INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
+    function linhaFake(i){
+      if (i % 9 === 8) return `<li class="tot"><span>${fmt(Math.random() * 900000 + 10000)}</span><b>*</b></li>`;
+      const r = ROTULOS[Math.floor(Math.random() * ROTULOS.length)];
+      return `<li><span>${r}</span><span>${fmt(Math.random() * 90000)}</span></li>`;
+    }
+    function desenrolar(){
+      rolando = true;
+      const minhas = [...lista.querySelectorAll("li")].map(li => li.outerHTML).join("");
+      const ov = document.createElement("div"); ov.className = "rolo"; ov.setAttribute("role", "button"); ov.setAttribute("aria-label", "Clique para rasgar a fita");
+      const n = Math.max(4, Math.min(9, Math.round(innerWidth / 190)));
+      let html = "";
+      for (let i = 0; i < n; i++){
+        const x = ((i + .5) / n) * 100 + (Math.random() * 6 - 3), r = (Math.random() * 8 - 4).toFixed(1), w = 175 + Math.round(Math.random() * 35);
+        let ls = i === Math.floor(n / 2) ? minhas : ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + i);
+        html += `<div class="tira" style="--x:${x}%;--r:${r}deg;--w:${w}px;--d:${(i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
+      }
+      ov.innerHTML = html + '<span class="rolo-dica">Clique para rasgar a fita</span>';
+      document.body.appendChild(ov);
+      const fechar = () => { ov.classList.add("rasga"); setTimeout(() => { ov.remove(); rolando = false; impressas = 0; }, reduzMov ? 0 : 950); };
+      ov.addEventListener("click", fechar, { once: true });
+      document.addEventListener("keydown", function esc(e){ if (e.key === "Escape"){ document.removeEventListener("keydown", esc); if (ov.isConnected) fechar(); } });
+    }
+  })();
 
   // Luz que segue o mouse (cards e área de envio)
   document.querySelectorAll(".mod").forEach(el => {
