@@ -5020,11 +5020,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           let perRef = ""; for (let a = el.parentNode; a && a !== dm; a = a.parentNode){ if (a.localName === "idePeriodo"){ perRef = xTxt(a, "perRef"); break; } }
           const estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
           const perApur = ind === "2" ? dt.slice(0, 4) : dt.slice(0, 7);
+          const grau = xTxt(el, "infoAgNocivo/grauExp"), dmId = xTxt(dm, "ideDmDev");
           for (const v of xDesc(el, ["detVerbas", "itensRemun"]))
-            linhas.push({ per: perRef || perApur, perApur, ind, estNr, lot, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), val: xNum(xTxt(v, "vrRubr")) });
+            linhas.push({ per: perRef || perApur, perApur, ind, estNr, lot, dmId, grau, cod: xTxt(v, "codRubr"), tab: xTxt(v, "ideTabRubr"), qtd: xTxt(v, "qtdRubr"), fator: xTxt(v, "fatorRubr"), unit: xTxt(v, "vrUnit"), val: xNum(xTxt(v, "vrRubr")) });
         }
       }
-      if (linhas.length) xGuardarMaisRecente(estado.resc, [nome, nrEmp, cpf, mat, dt].join("|"), rank, { id, recibo, nome, cpf, dt, cat, nrEmp, linhas }, estado);
+      const extra = { nis: xDig(xAcha(ev, "nisTrab")), mat, mtv: xAcha(ev, "mtvDeslig"), api: xAcha(ev, "indPagtoAPI"), pens: xAcha(ev, "pensAlim"), cump: xAcha(ev, "indCumprParc"), indRetif: xTxt(ev, "ideEvento/indRetif"), nrRetif: nrRetif, dh: env.dh };
+      if (linhas.length) xGuardarMaisRecente(estado.resc, [nome, nrEmp, cpf, mat, dt].join("|"), rank, { id, recibo, nome, cpf, dt, cat, nrEmp, extra, linhas }, estado);
     }
 
     // Eventos que também alimentam o cruzamento (e continuam saindo como tabela achatada)
@@ -5129,7 +5131,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     // 1b) O S-1200 em si, uma linha por rubrica de cada trabalhador (válidos = recibo mais recente).
     //     É daqui que a conferência soma: o valor dela é, linha a linha, o que está nesta tabela
-    const s1200 = [];
+    const s1200 = [], porLot = new Map();
+    const lotAcc = (nrEmp, ind, per, est, lot) => { const k = [nrEmp, ind, per, est, String(lot).trim()].join("|"); if (!porLot.has(k)) porLot.set(k, { rem: 0, resc: 0, base: null }); return porLot.get(k); };
     remuns.forEach(e => {
       if (!e.linhas.length) return;
       const chaveRem = [e.nrEmp, e.indAp, e.perEv].join("|");
@@ -5139,7 +5142,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       e.linhas.forEach(l => {
         const r = rubDe(l.cod, l.tab, l.per);
         const entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
-        if (entra === "Sim") acc.rem += l.val;
+        if (entra === "Sim"){ acc.rem += l.val; lotAcc(e.nrEmp, e.indAp, e.perEv, l.estNr, l.lot).rem += l.val; }
         else if (entra === "Sem S-1010") acc.semTab += l.val;
         else { const k = `${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
         acc.total += l.val;
@@ -5161,15 +5164,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         if (!somaResc.has(chave)) somaResc.set(chave, { rem: 0, fora: new Map() });
         const acc = somaResc.get(chave), r = rubDe(l.cod, l.tab, l.per);
         const entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
-        if (entra === "Sim") acc.rem += l.val;
+        if (entra === "Sim"){ acc.rem += l.val; lotAcc(e.nrEmp, l.ind, l.perApur, l.estNr, l.lot).resc += l.val; }
         else if (entra === "Não"){ const k = `Rescisão · ${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
-        s2299.push([xCompOut(l.perApur), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, e.cpf, t.nome || "", "S-2299", e.dt, l.ind, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
+        const x = e.extra, dh = x.dh || "", dhOut = dh.length >= 14 ? `${dh.slice(6, 8)}/${dh.slice(4, 6)}/${dh.slice(0, 4)} ${dh.slice(8, 10)}:${dh.slice(10, 12)}:${dh.slice(12, 14)}` : "";
+        s2299.push([xCompOut(l.perApur), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, e.cpf, x.nis, x.mat, t.nome || "", x.mtv, e.dt, x.api, x.pens, x.cump, x.indRetif, x.nrRetif, l.dmId, l.ind, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.qtd === "" ? "" : xNum(l.qtd), l.fator === "" ? "" : xNum(l.fator), l.unit === "" ? "" : xNum(l.unit), l.val, l.grau, e.id, e.recibo || "", dhOut]);
       });
     });
     s2299.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[5].localeCompare(y[5]));
     if (s2299.length) conjuntos.push({ id: "s2299", titulo: "S-2299 · Verbas rescisórias", sub: "Uma linha por rubrica, só o mais recente de cada desligamento. A Conferência soma daqui as linhas com “Entra na base” = Sim",
-      cols: ["Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "CPF Trabalhador", "Nome Trabalhador", "Evento", "Data Desligamento", "Indicador Apuração", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
-      rows: s2299, num: new Set(["Vlr Rubrica"]), arquivo: "S-2299 Verbas rescisorias" });
+      cols: ["Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "CPF Trabalhador", "NIS Trabalhador", "Matrícula", "Nome Trabalhador", "Motivo Desligamento", "Data Desligamento", "Indicador Pagamento API", "Pensão Alimentícia", "Indicador Cumprimento Aviso", "Indicador Retificação", "Recibo Retificado", "Id Demonstrativo", "Indicador Apuração", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Qtd Rubrica", "Fator Rubrica", "Vlr Unitário Rubrica", "Vlr Rubrica", "Grau Exposição Agente Nocivo", "Id Evento", "Recibo", "Data Recepção"],
+      rows: s2299, num: new Set(["Qtd Rubrica", "Fator Rubrica", "Vlr Unitário Rubrica", "Vlr Rubrica"]), arquivo: "S-2299 Verbas rescisorias" });
 
     // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
@@ -5191,6 +5195,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299) × S-5011", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
       rows: conf, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
+
+    // 2b) A mesma conferência por estabelecimento e lotação: mostra em qual lotação a diferença aparece
+    css.forEach(c => c.linhas.forEach(l => { const a = lotAcc(l.nrEmp, c.indAp, c.per, l.estNr, l.lot); a.base = (a.base || 0) + l.base; }));
+    const confLot = [...porLot].map(([k, v]) => { const [nrEmp, indAp, per, est, lot] = k.split("|"), tot = xMoeda(v.rem + v.resc), base = v.base === null ? "" : xMoeda(v.base), dif = base === "" ? "" : xMoeda(tot - base);
+      return [estado.emps.get(nrEmp.slice(0, 8)) || "", xCnpj(nrEmp), per, indAp === "2" ? "13º salário" : "Mensal", xCnpj(est), lot, xMoeda(v.rem), xMoeda(v.resc), tot, base, dif, base === "" ? "Sem S-5011" : Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"]; });
+    confLot.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[4].localeCompare(y[4]) || String(x[5]).localeCompare(String(y[5])));
+    confLot.forEach(r => { r[2] = xCompOut(r[2]); });
+    if (confLot.length) conjuntos.push({ id: "conferenciaLot", titulo: "Conferência por estabelecimento e lotação", sub: "S-1200 + S-2299 contra o S-5011, em cada estabelecimento e lotação (para achar onde a diferença está)",
+      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Número Inscrição Estabelecimento", "Código Lotação", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação"],
+      rows: confLot, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença"]), arquivo: "Conferencia por estabelecimento e lotacao" });
 
     // 3) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
