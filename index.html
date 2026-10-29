@@ -1004,16 +1004,19 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .rolo.despenca.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards}
 @keyframes despenca{from{transform:translateX(-50%) translateY(-150vh) rotate(calc(var(--r) * -3))}}
 /* A nota da carga tributária: mesmo traço e seta do convite, à direita da máquina, só depois que as notas somem */
-.dica-carga{position:absolute;right:-56px;top:24px;width:214px;text-align:left;color:var(--muted);z-index:4;pointer-events:none;display:none}
-.maq-cena.carga .dica-carga{display:block;animation:sobe .9s var(--ease) backwards}
+.dica-carga{position:relative;flex:none;align-self:flex-start;width:190px;margin:64px 0 0 -55px;text-align:left;color:var(--muted);z-index:4;pointer-events:none;visibility:hidden}
+.maq-cena.carga .dica-carga{visibility:visible;animation:sobe .9s var(--ease) backwards}
 .dica-carga p{margin:0;font:500 1.22rem/1.12 "Caveat","Segoe Script","Bradley Hand","Comic Sans MS",cursive;letter-spacing:0;transform:rotate(-3deg);transform-origin:0 100%}
 .dica-carga small{display:block;margin-top:3px;font-size:1.02rem}
-.dica-carga svg{display:block;width:96px;height:52px;margin:2px 0 0 26px;overflow:visible;transform:scaleX(-1) rotate(-8deg)}
-.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1;animation:traca .9s var(--ease) .5s forwards}
-.dica-carga .ponta{animation-delay:1.25s;animation-duration:.4s}
+.dica-carga svg{display:block;width:96px;height:52px;margin:2px 0 0 -6px;overflow:visible;transform:scaleX(-1) rotate(-8deg)}
+.dica-carga path{stroke-dasharray:1;stroke-dashoffset:1}
+.maq-cena.carga .dica-carga path{animation:traca .9s var(--ease) .5s forwards}
+.maq-cena.carga .dica-carga .ponta{animation-delay:1.25s;animation-duration:.4s}
 .maq-cena.carga .dica-carga svg{animation:balanceio-esq 2.6s ease-in-out 1.8s infinite}
 @keyframes balanceio-esq{50%{transform:scaleX(-1) rotate(-8deg) translateX(5px)}}
-@media (max-width:900px){.dica-carga{display:none!important}}
+/* Sem espaço para ela ao lado da máquina (telas menores e a coluna da tela de Rubricas), ela não entra */
+@media (max-width:1280px){.dica-carga{display:none}}
+.rub-maq .dica-carga{display:none}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
@@ -2413,7 +2416,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="dica-brinque" aria-hidden="true"><span>Simule o seu holerite</span><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path class="rabisco" pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     </div>
     
-    <div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br>20% INSS patronal<br>+ RAT × FAP (0,5% a 6%)<br>+ 5,8% terceiros<br>= até ~32% a mais<small>e reflete em férias, 13º e DSR</small></p><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>
     <div class="maq">
       <div class="fita"><span class="fita-curva" aria-hidden="true"></span><ol aria-live="polite"></ol></div>
       <svg class="maq-mao tras" viewBox="-80 0 460 460" aria-hidden="true">
@@ -2450,7 +2452,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           </g>
           <g fill="#fff" opacity=".45"><ellipse cx="-10" cy="233" rx="7" ry="3"/><ellipse cx="-12" cy="266" rx="7" ry="3"/><ellipse cx="-11" cy="300" rx="7" ry="3"/><ellipse cx="-8" cy="332" rx="6" ry="2.5"/><ellipse cx="230" cy="214" rx="8" ry="3" transform="rotate(-38 230 214)"/></g>
         </svg>
-    </div>`;
+    </div>
+    <div class="dica-carga" aria-hidden="true"><p>sobre cada salário pago,<br>a empresa ainda recolhe:<br>20% INSS patronal<br>+ RAT × FAP (0,5% a 6%)<br>+ 5,8% terceiros<br>= até ~32% a mais<small>e reflete em férias, 13º e DSR</small></p><svg viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M4 4C14 34 56 54 98 30"/><path class="ponta" pathLength="1" d="M91 41L98 30L85 31"/></svg></div>`;
   const fmtCalc = n => Math.abs(n) >= 1e13 ? n.toExponential(4).replace(".", ",") : n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   // Número digitado do jeito que aparece no visor: 1.250,5
   function fmtEntrada(t){
@@ -2597,15 +2600,23 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       rolando = true;
       const minhas = [...lista.querySelectorAll("li")].map(li => li.outerHTML).join("");
       const ov = document.createElement("div"); ov.className = "rolo" + (despenca ? " despenca" : ""); ov.setAttribute("role", "button"); ov.setAttribute("aria-label", "Rasgar a fita");
-      const n = Math.max(4, Math.min(9, Math.round(innerWidth / 190))) + (despenca ? 5 : 0), meio = Math.floor(n / 2);
+      const base = Math.max(4, Math.min(9, Math.round(innerWidth / 190)));
+      const tira = (x, r, w, y, h, d, ls) => `<div class="tira" style="--x:${x.toFixed(1)}%;--r:${r.toFixed(1)}deg;--w:${w}px;--y:${y.toFixed(0)}px;--h:${h.toFixed(0)}vh;--d:${d.toFixed(2)}s"><ol>${ls}</ol></div>`;
+      const linhas = k => { let ls = ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + k); return ls; };
       let html = "", minha = "";
-      for (let i = 0; i < n; i++){
-        let x = ((i + .5) / n) * 100 + (Math.random() * 6 - 3), r = Math.random() * 8 - 4, w = 175 + Math.round(Math.random() * 35), y = -30, h = 125;
-        // Na chuva, as notas caem jogadas: tortas, sobrepostas, umas mais altas, outras curtas
-        if (despenca && i !== meio){ x = Math.random() * 104 - 2; r = (Math.random() - .5) * (Math.random() < .3 ? 70 : 30); y = -40 - Math.random() * 260; h = 70 + Math.random() * 70; }
-        let ls = i === meio ? minhas : ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + i);
-        const t = `<div class="tira" style="--x:${x.toFixed(1)}%;--r:${r.toFixed(1)}deg;--w:${w}px;--y:${y.toFixed(0)}px;--h:${h.toFixed(0)}vh;--d:${(despenca ? Math.random() * .22 : i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
-        if (despenca && i === meio) minha = t; else html += t;
+      if (!despenca){
+        for (let i = 0; i < base; i++)
+          html += tira(((i + .5) / base) * 100 + (Math.random() * 6 - 3), Math.random() * 8 - 4, 175 + Math.round(Math.random() * 35), -30, 125, i * .09, (i === Math.floor(base / 2) ? minhas : "") + linhas(i));
+      } else {
+        // 1) a base: tiras lado a lado, sobrepostas e quase retas, cobrindo a tela inteira (sem brecha)
+        const passo = 130, n = Math.ceil(innerWidth / passo) + 2;
+        for (let i = 0; i < n; i++)
+          html += tira(((i - .5) * passo / innerWidth) * 100, (Math.random() - .5) * 5, passo + 120, -40 - Math.random() * 40, 140, Math.random() * .2, linhas(i));
+        // 2) por cima, tiras jogadas: tortas, umas mais altas, outras curtas
+        for (let i = 0; i < 8; i++)
+          html += tira(Math.random() * 100, (Math.random() - .5) * (Math.random() < .35 ? 70 : 30), 175 + Math.round(Math.random() * 35), -40 - Math.random() * 260, 70 + Math.random() * 70, .05 + Math.random() * .2, linhas(i + 7));
+        // 3) a fita com os seus holerites cai por cima de todas
+        minha = tira(50, Math.random() * 6 - 3, 200, -30, 130, .12, minhas + linhas(3));
       }
       // a fita com os seus holerites cai por cima de todas
       ov.innerHTML = html + minha;
