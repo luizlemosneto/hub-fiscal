@@ -186,13 +186,17 @@ h2.sec{font-family:var(--display);font-weight:700;font-size:1.45rem;letter-spaci
 .badge.err{background:var(--err-soft);color:var(--err)}
 .badge.run{color:var(--ink)}
 .field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
-.field input{width:100%;font:500 1rem var(--body);color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.field input{width:100%;height:42px;box-sizing:border-box;font:500 1rem var(--body);color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:0 12px}
+/* o valor e os botões têm a mesma altura dos campos e ficam centralizados com eles */
+.file .stat,.file .actions{height:42px;display:flex;align-items:center}
+.file .stat{flex-direction:column;justify-content:center;text-align:center;line-height:1.15;padding:0 6px}
 .field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
 .field input.bad{border-color:var(--warn)}
-.stat{text-align:right;white-space:nowrap}
+.stat{text-align:center;white-space:nowrap}
 .stat b{display:block;font-family:var(--display);font-size:1.15rem;font-variant-numeric:tabular-nums}
 .stat small{color:var(--muted);font-size:.8rem}
-.actions{display:flex;gap:8px}
+.actions{display:flex;gap:8px;align-items:center}
+.file .actions .btn{height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 18px}
 .btn{font:600 .9rem var(--body);border-radius:999px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);white-space:nowrap;transition:transform .2s var(--ease),box-shadow .2s,border-color .2s}
 .btn:hover{border-color:var(--ink)}
 .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);border-color:transparent;box-shadow:0 10px 22px -12px var(--glow)}
@@ -755,8 +759,9 @@ details.how[open] > ol > li:nth-child(n+6){animation-delay:.25s}
 
 @media (max-width:760px){
   .file{grid-template-columns:1fr 1fr}
-  .stat{text-align:left}
+  .stat,.file .stat{text-align:left;align-items:flex-start;height:auto;padding:0}
   .actions{grid-column:1/-1}
+  .file .actions .btn{flex:1}
 }
 /* ===== Início: cartões menores ===== */
 .mods{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
@@ -2080,7 +2085,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         }
       }
     }
-    return (empresa || "EMPRESA_SEM_NOME").replace(/[\\/*?:"<>|]/g, "").trim();
+    return (empresa || "EMPRESA SEM NOME").replace(/[\\/*?:"<>|]/g, "").trim();
   }
   function detectarCnpj(paginas, nomeBase){
     const texto = paginas.join("\n");
@@ -2408,7 +2413,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       celulasTela: r => [r.periodo.texto, r.cnpj || "—", r.empresa, r.codigo, r.documento, r.multa ? brl.format(r.multa) : "", r.juros ? brl.format(r.juros) : "", brl.format(r.principal)],
       chave: r => [up(r.empresa), r.cnpj, r.documento, r.periodo.texto, r.codigo, r.multa.toFixed(2), r.juros.toFixed(2), r.principal.toFixed(2)].join("\u0001"),
       excel: {
-        aba: "DARF", arquivo: e => `${e} - DARFS EXTRAIDAS.xlsx`, consolidado: "DARFS EXTRAIDAS - CONSOLIDADO",
+        aba: "DARF", arquivo: e => nomeArqEmp(e, "DARFs Extraídas"), consolidado: "DARFs Extraídas",
         cab: ["Período de Apuração - DARF","CNPJ Matriz - DARF","Empresa - DARF","Código de Receita - DARF","Nº do Documento | Retenção","Multa","Juros","Valor Principal"],
         larguras: [26,20,34,24,28,10,10,16],
         linha: r => [dataCel(r.periodo), txt(r.cnpj), txt(r.empresa), txt(r.codigo), txt(r.documento), numOuVazio(r.multa), numOuVazio(r.juros), num(r.principal)]
@@ -2432,7 +2437,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       celulasTela: r => [r.empresa, r.periodo.texto, r.tipo, r.numero, r.guia || "", brl.format(r.valor)],
       chave: r => [r.periodo.texto, up(r.tipo), r.numero, r.guia, r.valor.toFixed(2), up(r.empresa), r.cnpj].join("\u0001"),
       excel: {
-        aba: "PERDCOMP", arquivo: e => `${e} - PERDCOMPS EXTRAIDAS.xlsx`, consolidado: "PERDCOMPS EXTRAIDAS - CONSOLIDADO",
+        aba: "PERDCOMP", arquivo: e => nomeArqEmp(e, "PERDCOMPs Extraídas"), consolidado: "PERDCOMPs Extraídas",
         cab: ["Empresa - PERDCOMP","Período de Apuração - PERDCOMP","Tipo","Número","Guia","Valor"],
         larguras: [34,30,34,32,12,16],
         linha: r => [txt(r.empresa), dataCel(r.periodo), txt(r.tipo), txt(r.numero), txt(r.guia), num(r.valor)]
@@ -2459,7 +2464,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       chave: r => [r.periodo.texto, up(r.empresa), r.cnpj].join("\u0001"),
       agrega: true,
       excel: {
-        aba: "Base de Calculo", arquivo: e => `${e} - BASE DE CALCULO.xlsx`, consolidado: "BASE DE CALCULO - CONSOLIDADO",
+        aba: "Base de Calculo", arquivo: e => nomeArqEmp(e, "Base de Cálculo"), consolidado: "Base de Cálculo",
         cab: ["Competência","Empresa","Raiz","Matriz","Base de Cálculo"],
         larguras: [14,36,12,18,20],
         linha: r => [dataCel(r.periodo), txt(r.empresa), txt(r.raiz || "-"), txt(r.cnpj), num(r.base, "#,##0.00")]
@@ -3065,7 +3070,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     border: { bottom: { style: "thin", color: { rgb: "A6A6A6" } } }
   };
   const ESTILO_CEL = { font: { name: "Calibri", sz: 11 }, alignment: { horizontal: "center" } };
-  const limpaNome = s => (s || "EMPRESA_SEM_NOME").replace(/[\\/*?:"<>|]/g, "").trim() || "EMPRESA_SEM_NOME";
+  const limpaNome = s => String(s || "").replace(/[\\/*?:"<>|]/g, "").replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+  // Nome do arquivo: "Empresa - O que exportou" (sem data); sem empresa, ou com mais de uma, só o nome do que foi exportado
+  function nomeArqEmp(emp, base){ const e = limpaNome(emp); return (e && !/^EMPRESA SEM NOME$/i.test(e) ? e + " - " : "") + base + ".xlsx"; }
 
   function montarAba(mod, linhas){
     const { cab, larguras, linha } = mod.excel;
@@ -3107,8 +3114,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const porEmpresa = new Map();
     for (const r of todas){ const k = mod.agrega ? up(r.empresa) : up(r.empresa) + "|" + r.cnpj; if (!porEmpresa.has(k)) porEmpresa.set(k, []); porEmpresa.get(k).push(r); }
     if (porEmpresa.size > 1) for (const linhas of porEmpresa.values()) XLSX.utils.book_append_sheet(wb, montarAba(mod, linhas), nomeAba(linhas[0].empresa, usados));
-    const d = new Date(), p = n => String(n).padStart(2, "0");
-    salvarArquivo(`${mod.excel.consolidado} ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.xlsx`, gerar(wb));
+    // uma só empresa nos dados: o nome dela abre o arquivo; mais de uma: só o nome do que foi exportado
+    salvarArquivo(nomeArqEmp(porEmpresa.size === 1 ? todas[0].empresa : "", mod.excel.consolidado), gerar(wb));
   }
 
   /* ================= Módulo Rubricas ================= */
