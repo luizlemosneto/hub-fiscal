@@ -1535,6 +1535,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       <div class="sec-head">
         <h2 class="sec">Arquivos</h2>
         <span class="hint">Confira o nome e o CNPJ de cada empresa</span>
+        <div class="seg" id="baseModo" role="group" aria-label="Cálculo" style="margin:0 0 0 auto" hidden><button type="button" data-m="base" aria-pressed="true">Base de cálculo</button><button type="button" data-m="oe" aria-pressed="false">Outras Entidades (20 salários mínimos)</button></div>
       </div>
       <ul class="files" id="fileList"></ul>
     </section>
@@ -1683,6 +1684,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <h2 class="sec">O que dá para exportar</h2>
         <span class="hint" id="xmlResumo">Aguardando arquivos</span>
         <button class="btn ghost" type="button" id="xmlExportarTudo" hidden>Exportar todos (ZIP)</button>
+        <button class="btn-vai" type="button" id="xmlParaBases" hidden><span>Seguir para Bases</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button class="btn-vai" type="button" id="xmlParaRubricas" hidden><span>Seguir para Rubricas</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="tablebox">
@@ -2283,7 +2285,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
 
   async function processarBase(file, aoProgredir){
-    let cm1, cm2, cm3, cm4, cm5, cm6, cm7, cm8, cm9, cm10, cm11, cmNome;
+    let cm1, cm2, cm3, cm4, cm5, cm6, cm7, cm8, cm9, cm10, cm11, cmNome, cmFpas, cmOE, cmTerc, cmSusp;
     const mapMat = new Map(), rcRef = new Set(), mapRc = new Map();
     let fl5001 = []; let gIdx = 0;
     const vistos5001 = new Set(); let dup5001 = 0;
@@ -2299,7 +2301,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       cm9 = locColEso(cols, ["TIPO VLR APURACAO CONTRIBUICAO","TPVALOR"]); cm10 = locColEso(cols, ["CATEGORIA"]); cm11 = locColEso(cols, ["IND13","IND 13","DECIMO TERCEIRO"]);
       // Só para dar nome a cada CNPJ, se o arquivo tiver essa coluna (não muda o cálculo)
       cmNome = locColEso(cols, ["RAZAO SOCIAL","NOME EMPRESARIAL","NOME EMPREGADOR","NOME EMPRESA","NOME ESTABELECIMENTO"]);
-      return [cm1,cm2,cm3,cm4,cm5,cm6,cm7,cm8,cm9,cm10,cm11,cmNome].filter(Boolean);
+      // Para Outras Entidades: FPAS e código de OE da lotação (o S-5001 gerado no módulo XML já traz)
+      cmFpas = locColEstEso(cols, ["FPAS"]) || locColEso(cols, ["FPAS"]); cmOE = locColEstEso(cols, ["Código OE","Codigo OE"]);
+      cmTerc = locColEso(cols, ["CODIGO TERCEIROS","COD TERCEIROS","CODTERCS"], ["SUSP"]); cmSusp = locColEso(cols, ["TERCEIROS SUSPENSO","CODTERCSSUSP"]);
+      return [cm1,cm2,cm3,cm4,cm5,cm6,cm7,cm8,cm9,cm10,cm11,cmNome,cmFpas,cmOE,cmTerc,cmSusp].filter(Boolean);
     }, rws => {
       for (let r of rws){
         const c = limpCPFEso(r[cm3]); if (!c) continue;
@@ -2321,7 +2326,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         if (vistos5001.has(chDup)){ dup5001++; continue; }
         vistos5001.add(chDup);
         const kT = `${c}_${p}`, rcS = mapRc.get(kT); if (!rcS || cmpRecEso(rc, rcS.r) >= 0) mapRc.set(kT, { id: gIdx, r: rc });
-        fl5001.push({ id: gIdx++, p, c, iL, lt, vR, vN, rc });
+        const fpas = cmFpas ? (parseInt(String(r[cmFpas] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
+        const oe = cmOE && String(r[cmOE] ?? "").trim() !== "" ? (parseInt(r[cmOE], 10) || 0) : cmTerc ? Math.max(0, (parseInt(r[cmTerc], 10) || 0) - (cmSusp ? (parseInt(r[cmSusp], 10) || 0) : 0)) : 0;
+        fl5001.push({ id: gIdx++, p, c, iL, lt, vR, vN, rc, fpas, oe });
       }
     }, aoProgredir);
     vistos5001.clear();
@@ -2334,14 +2341,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       if (cm2 && r.rc !== mapRc.get(`${r.c}_${r.p}`).r) continue;
       const b = rcRef.has(`${r.rc}_${r.c}_${r.p}`) ? r.vR : r.vN;
       const k = `${r.p}_${r.iL}_${r.lt}_${r.c}`;
-      if (!mapGrp.has(k)) mapGrp.set(k, { p: r.p, iL: r.iL, c: r.c, lt: r.lt, rm: 0 });
+      if (!mapGrp.has(k)) mapGrp.set(k, { p: r.p, iL: r.iL, c: r.c, lt: r.lt, fpas: r.fpas, oe: r.oe, rm: 0 });
       mapGrp.get(k).rm += b;
     }
     fl5001 = null;
 
     // Janela do script: últimos 5 anos até 2 meses atrás
     const hj = new Date(), dtP = new Date(hj.getFullYear() - 5, hj.getMonth(), 1), dtL = new Date(hj.getFullYear(), hj.getMonth() - 2, 1);
-    const porCompIns = new Map(); let foraJanela = 0;
+    const porCompIns = new Map(), porOE = new Map(); let foraJanela = 0;
     mapGrp.forEach(i => {
       let inc = false;
       if (i.p.startsWith("13/")){ const d = new Date(parseInt(i.p.split("/")[1]), 11, 1); inc = (d >= dtP && d <= dtL); }
@@ -2349,6 +2356,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       if (!inc){ foraJanela++; return; }
       const k = i.p + "|" + i.iL;
       porCompIns.set(k, (porCompIns.get(k) || 0) + i.rm);
+      const kOE = [i.p, i.iL, i.fpas, i.oe].join("|");
+      porOE.set(kOE, (porOE.get(kOE) || 0) + i.rm);
     });
     // Mantém competência x inscrição; o agrupamento final (estabelecimento ou matriz) é feito depois
     const brutos = [...porCompIns.entries()].map(([k, rm]) => { const j = k.indexOf("|"); return { p: k.slice(0, j), iL: k.slice(j + 1), rm }; });
@@ -2359,7 +2368,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     notas.push(`${qtdIns} CNPJ${qtdIns === 1 ? "" : "s"} de estabelecimento em ${qtdRaiz} empresa${qtdRaiz === 1 ? "" : "s"}. ${linhasLidas.toLocaleString("pt-BR")} linhas lidas, ${dup5001.toLocaleString("pt-BR")} duplicada${dup5001 === 1 ? "" : "s"} descartada${dup5001 === 1 ? "" : "s"}. Janela: ${String(dtP.getMonth()+1).padStart(2,"0")}/${dtP.getFullYear()} a ${String(dtL.getMonth()+1).padStart(2,"0")}/${dtL.getFullYear()}.`);
     const avisos = [];
     if (!cm2) avisos.push("Coluna de recibo não encontrada: retificações foram somadas às originais.");
-    return { brutos, nomes: Object.fromEntries(nomesIns), notas, avisos };
+    const temOE = !!cmFpas && !!(cmOE || cmTerc);
+    const brutosOE = temOE ? [...porOE.entries()].map(([k, rm]) => { const [p, iL, fpas, oe] = k.split("|"); return { p, iL, fpas: +fpas, oe: +oe, rm }; }) : null;
+    return { brutos, brutosOE, nomes: Object.fromEntries(nomesIns), notas, avisos };
   }
 
   // Agrupa competência x matriz: filiais com a mesma raiz (8 dígitos) somam no CNPJ da matriz.
@@ -2375,6 +2386,19 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const g = m.get(k); g.base += b.rm; if (!g.nome && nomes[b.iL]) g.nome = nomes[b.iL];
     }
     return [...m.values()].sort((a, b) => (ordemPeriodo(a.periodo) - ordemPeriodo(b.periodo)) || a.cnpj.localeCompare(b.cnpj));
+  }
+
+  // Outras Entidades: competência x matriz (ou CNO) x FPAS x código de OE. A redução dos 20 salários mínimos
+  // e os reflexos são calculados depois de juntar todos os arquivos (veja MOD_BASE_OE.finalizar)
+  function agruparBaseOE(brutosOE, nomes){
+    const m = new Map();
+    for (const b of brutosOE || []){
+      const ehCnpj = b.iL.length === 14, raiz = ehCnpj ? b.iL.slice(0, 8) : "-", cnpj = ehCnpj ? cnpjMatriz(raiz) : b.iL;
+      const k = [b.p, cnpj, b.fpas, b.oe].join("|");
+      if (!m.has(k)) m.set(k, { periodo: normPeriodo(b.p), raiz, cnpj, nome: nomes[cnpj] || nomes[b.iL] || "", fpas: b.fpas, oe: b.oe, base: 0 });
+      const g = m.get(k); g.base += b.rm; if (!g.nome && nomes[b.iL]) g.nome = nomes[b.iL];
+    }
+    return [...m.values()];
   }
 
   /* ================= Definição dos módulos ================= */
@@ -2451,7 +2475,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         "Só entram as competências da janela do script: dos últimos 5 anos até 2 meses atrás.",
         "Depois, soma tudo por competência. Competências ficam como data 01/mm/aaaa e o 13º como 13/aaaa.",
         "O CNPJ de cada linha vem da inscrição da lotação do trabalhador. Matriz e filiais com a mesma raiz (8 primeiros dígitos) são somadas no CNPJ da matriz (raiz + 0001 + dígitos verificadores).",
-        "O nome vem da coluna de razão social, se o arquivo tiver; senão, do nome do arquivo (trecho antes do “ -”)."
+        "O nome vem da coluna de razão social, se o arquivo tiver; senão, do nome do arquivo (trecho antes do “ -”).",
+        "Outras Entidades (20 salários mínimos): as bases são separadas por competência, matriz (ou CNO), FPAS e código de outras entidades. De cada uma sai o limite de 20 salários mínimos vigentes no ano; o que sobra é multiplicado pela alíquota de parafiscais e pela de Sistema S (tabela FPAS + código, a mesma das Rubricas). Os dois reflexos somados são o crédito de Outras Entidades.",
+        "Para isso o arquivo precisa trazer FPAS e código de OE por lotação. O S-5001 gerado no módulo XML (lido junto com o S-5011) já vem assim."
       ],
       vazio: "Nenhum S-5001 enviado ainda.",
       contagem: n => `${n} competência${n === 1 ? "" : "s"}`, rotuloValor: "base total",
@@ -2468,6 +2494,30 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       }
     }
   };
+
+  // Base de cálculo x Outras Entidades (20 salários mínimos): o mesmo módulo e os mesmos arquivos, outra visão
+  let baseOE = false;
+  const MOD_BASE_OE = {
+    nome: "Outras Entidades (20 salários mínimos)",
+    colunas: ["Período de Apuração","Empresa","CNPJ Matriz ou CNO","FPAS","Código de OE","Remunerações (Base de Cálculo)","Reflexo paraf.","Reflexo Sistema S"], numericas: [5,6,7],
+    valor: r => r.reflParaf + r.reflSisS,
+    celulasTela: r => [r.periodo.texto, r.empresa, r.cnpj || "—", r.fpas || "-", r.oe, brl.format(r.base), brl.format(r.reflParaf), brl.format(r.reflSisS)],
+    chave: r => [r.periodo.texto, up(r.empresa), r.cnpj, r.fpas, r.oe].join("\u0001"),
+    agrega: true,
+    // base de cada linha menos 20 salários mínimos do ano da competência; o que sobra x parafiscais e x Sistema S
+    finalizar: r => {
+      const sm = salariosMinimos[+String(r.periodo.texto).slice(-4)] || 0, red = Math.max(0, r.base - 20 * sm), d = dividirOE(0, r.fpas, r.oe);
+      return { ...r, baseRed: red, origemOE: sm ? d.origem : "sem-sm", reflParaf: sm ? Math.round(red * d.paraf) / 100 : 0, reflSisS: sm ? Math.round(red * d.sisS) / 100 : 0 };
+    },
+    excel: {
+      aba: "Outras Entidades", arquivo: e => nomeArqEmp(e, "Outras Entidades (20 SM)"), consolidado: "Outras Entidades (20 SM)",
+      cab: ["Período de Apuração","Empresa","CNPJ Matriz ou CNO","FPAS","Código de OE","Remunerações (Base de Cálculo)","Reflexo paraf.","Reflexo Sistema S"],
+      larguras: [16,36,20,8,13,28,16,18],
+      linha: r => [dataCel(r.periodo), txt(r.empresa), txt(r.cnpj), txt(r.fpas || "-"), txt(r.oe), num(r.base, "#,##0.00"), num(r.reflParaf, "#,##0.00"), num(r.reflSisS, "#,##0.00")]
+    }
+  };
+  const modDe = tipo => tipo === "base" && baseOE ? MOD_BASE_OE : MODULOS[tipo];
+  const regsDe = a => a.tipo === "base" && baseOE ? (a.registrosOE || []) : a.registros;
 
   /* ================= Estado e navegação ================= */
   const estado = { arquivos: [] }; // {id, nome, tamanho, tipo, empresa, cnpj, registros, status, erro, notas, avisos}
@@ -2885,6 +2935,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     await processarFila(novos);
   }
 
+  // Arquivo que chega de outro módulo (o S-5001 do XML): substitui o envio anterior de mesmo nome
+  function enviarParaBase(f){
+    estado.arquivos = estado.arquivos.filter(a => !(a.modulo === "base" && a.nome === f.name && a.status !== "lendo"));
+    const a = { id: ++seq, nome: f.name, tamanho: f.size, file: f, modulo: "base", tipo: "base", empresa: "", cnpj: "", registros: [], status: ocupado ? "fila" : "lendo", erro: "", notas: [], avisos: [] };
+    estado.arquivos.push(a); render();
+    if (!ocupado) processarFila([a]);
+  }
+
   async function processarFila(lote){
     ocupado = true;
     progresso.iniciar(lote.length);
@@ -2899,6 +2957,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           const r = await processarBase(a.file, (frac, feito, tt) => progresso.parte(k, frac, a.nome, `${feito.toLocaleString("pt-BR")} de ${tt.toLocaleString("pt-BR")} linhas`));
           a.brutos = r.brutos; a.nomes = r.nomes; a.notas = r.notas; a.avisos = r.avisos;
           a.registros = agruparBase(a.brutos, a.nomes);
+          a.registrosOE = r.brutosOE ? agruparBaseOE(r.brutosOE, r.nomes) : null;
         } else {
           const paginas = await extrairPaginas(await a.file.arrayBuffer(), (n, tt) => progresso.parte(k, n / tt, a.nome, `página ${n} de ${tt}`));
           a.empresa = detectarEmpresa(paginas, nomeBase);
@@ -2931,17 +2990,17 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const linhaCompleta = (a, r) => a.tipo === "base" ? { ...r, empresa: r.nome || a.empresa } : { ...r, empresa: a.empresa, cnpj: a.cnpj };
   let duplicadasRemovidas = 0;
   function linhasDe(tipo){
-    const mod = MODULOS[tipo];
+    const mod = modDe(tipo);
     const out = [];
     for (const a of estado.arquivos){
       if (a.tipo !== tipo) continue;
-      for (const r of a.registros) out.push(linhaCompleta(a, r));
+      for (const r of regsDe(a)) out.push(linhaCompleta(a, r));
     }
     if (mod.agrega){
       const mapa = new Map();
       for (const r of out){ const k = mod.chave(r); if (mapa.has(k)) mapa.get(k).base += r.base; else mapa.set(k, { ...r }); }
       if (tipo === vista) duplicadasRemovidas = 0;
-      return [...mapa.values()].sort((a, b) => (ordemPeriodo(a.periodo) - ordemPeriodo(b.periodo)) || up(a.empresa).localeCompare(up(b.empresa)) || a.cnpj.localeCompare(b.cnpj));
+      return [...mapa.values()].map(mod.finalizar || (r => r)).sort((a, b) => (ordemPeriodo(a.periodo) - ordemPeriodo(b.periodo)) || up(a.empresa).localeCompare(up(b.empresa)) || a.cnpj.localeCompare(b.cnpj) || (a.fpas || 0) - (b.fpas || 0) || (a.oe || 0) - (b.oe || 0));
     }
     const unicas = semDuplicadas(out, mod.chave);
     if (tipo === vista) duplicadasRemovidas = out.length - unicas.length;
@@ -2962,7 +3021,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("panelEmpty").hidden = arqs.length > 0;
     $("panelEmpty").textContent = mod.vazio;
     $("filesSec").hidden = arqs.length === 0;
-    $("tableTitle").textContent = `Registros de ${mod.nome}`;
+    $("tableTitle").textContent = `Registros de ${modDe(vista).nome}`;
+    $("baseModo").hidden = vista !== "base";
 
     const ativo = document.activeElement;
     const foco = ativo && ativo.dataset && ativo.dataset.k ? { k: ativo.dataset.k, id: ativo.dataset.id, s: ativo.selectionStart } : null;
@@ -3011,7 +3071,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
   function renderTabela(){
     if (!MODULOS[vista]) return;
-    const mod = MODULOS[vista];
+    const mod = modDe(vista);
     const todas = linhasDe(vista);
     $("tableSec").hidden = todas.length === 0;
     if (!todas.length) return;
@@ -3057,6 +3117,18 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     estado.arquivos = estado.arquivos.filter(a => a.tipo !== vista && a.modulo !== vista); busca.value = ""; render();
   });
   $("dlAll").addEventListener("click", baixarConsolidado);
+  $("baseModo").addEventListener("click", e => {
+    const b = e.target.closest("button[data-m]"); if (!b) return;
+    baseOE = b.dataset.m === "oe";
+    $("baseModo").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    busca.value = ""; render();
+    if (!baseOE) return;
+    const arqs = estado.arquivos.filter(a => a.tipo === "base" && a.status === "ok");
+    if (arqs.length && !arqs.some(a => a.registrosOE)){ toast("Estes arquivos não trazem FPAS e código de OE. Use o S-5001 gerado no módulo XML (lido junto com o S-5011)."); return; }
+    const linhas = linhasDe("base"), pend = linhas.filter(r => r.origemOE === "pendente").length, semSm = linhas.filter(r => r.origemOE === "sem-sm").length;
+    if (pend) toast(`${pend} linha${pend > 1 ? "s" : ""} com FPAS e código de OE sem alíquota na tabela: reflexos zerados. Informe as alíquotas no módulo Rubricas.`);
+    else if (semSm) toast(`${semSm} linha${semSm > 1 ? "s" : ""} de ano sem salário mínimo cadastrado: reflexos zerados.`);
+  });
 
 
   /* ================= Excel ================= */
@@ -3096,13 +3168,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const gerar = wb => XLSX.write(wb, { bookType: "xlsx", type: "array" });
 
   function baixarArquivo(a){
-    const mod = MODULOS[a.tipo];
+    const mod = modDe(a.tipo);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, montarAba(mod, a.registros.map(r => linhaCompleta(a, r))), mod.excel.aba);
+    XLSX.utils.book_append_sheet(wb, montarAba(mod, regsDe(a).map(r => linhaCompleta(a, r)).map(mod.finalizar || (r => r))), mod.excel.aba);
     salvarArquivo(mod.excel.arquivo(limpaNome(a.empresa)), gerar(wb));
   }
   function baixarConsolidado(){
-    const mod = MODULOS[vista];
+    const mod = modDe(vista);
     const todas = linhasDe(vista);
     if (!todas.length) return;
     const wb = XLSX.utils.book_new();
@@ -5097,7 +5169,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const xRank = (id, dh) => dh || (id.length >= 37 ? id.slice(18, 32) : id);
 
   function xNovoEstado(){
-    return { lidos: new Map(), ids: new Set(), descartados: 0, rubricas: [], remun: new Map(), cs: new Map(), outros: new Map(), invalidos: 0, arquivos: 0,
+    return { lidos: new Map(), ids: new Set(), descartados: 0, rubricas: [], remun: new Map(), cs: new Map(), outros: new Map(), bases: new Map(), invalidos: 0, arquivos: 0,
       fech: new Map(), reabre: new Map(), trab: new Map(), emps: new Map(), retificados: new Set(), porRecibo: 0, resc: new Map() };
   }
 
@@ -5219,11 +5291,25 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       }
     }
 
-    // Demais eventos: tabela achatada. S-5001 vale o mais recente de cada CPF e competência; os outros só perdem repetições exatas
+    // S-5001: uma linha por estabelecimento/lotação, categoria e tipo de valor (vale o mais recente de cada CPF e competência)
+    if (nome === "evtBasesTrab"){
+      const cpf = xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), linhas = [];
+      for (const el of xDesc(ev, ["ideEstabLot"])){
+        const estTp = xTxt(el, "tpInsc"), estNr = xDig(xTxt(el, "nrInsc")), lot = xTxt(el, "codLotacao");
+        for (const ci of xDesc(el, ["infoCategIncid"])){
+          const mat = xTxt(ci, "matricula"), cat = xTxt(ci, "codCateg");
+          for (const b of xDesc(ci, ["infoBaseCS"])) linhas.push({ estTp, estNr, lot, mat, cat, ind13: xTxt(b, "ind13"), tp: xTxt(b, "tpValor"), val: xNum(xTxt(b, "valor")) });
+        }
+      }
+      xGuardarMaisRecente(estado.bases, [nome, nrEmp, cpf, indAp, per].join("|"), rank, { id, recibo, recBase: xTxt(ev, "ideEvento/nrRecArqBase"), indAp, per, nrEmp, cpf, linhas }, estado);
+      return;
+    }
+
+    // Demais eventos: tabela achatada; só perdem repetições exatas
     const linhas = []; xAchatar(ev, { "Id do evento": id }, linhas);
     if (!estado.outros.has(nome)) estado.outros.set(nome, new Map());
     const mapa = estado.outros.get(nome);
-    const chave = nome === "evtBasesTrab" ? [nome, nrEmp, xDig(xTxt(ev, "ideTrabalhador/cpfTrab")), indAp, per].join("|") : (id || nome + "|" + mapa.size);
+    const chave = id || nome + "|" + mapa.size;
     xGuardarMaisRecente(mapa, chave, rank, { id, recibo, linhas }, estado);
   }
 
@@ -5481,6 +5567,18 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (cs.length) conjuntos.push({ id: "s5011", titulo: "S-5011 · Alíquotas e bases por lotação", sub: "Mais recente de cada competência", cols: ["Período", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Substituição Contribuição Previdenciária Patronal", "Base CP Total", ...nomesBase, "Id Evento", "Recibo"],
       rows: cs, num: new Set(["Alíquota RAT Estabelecimento", "FAP Estabelecimento", "RAT Ajustado Estabelecimento", "Base CP Total", ...nomesBase]), arquivo: "S-5011 Aliquotas e bases" });
 
+    // 4b) S-5001 pronto para o módulo Bases: FPAS e código de outras entidades vêm do S-5011 da mesma lotação
+    const bs = []; [...estado.bases.values()].filter(vivo).forEach(b => b.linhas.forEach(l => {
+      const c = csDe(l.estNr, b.per, l.lot), oe = c && c.terc !== "" ? Math.max(0, (parseInt(c.terc, 10) || 0) - (parseInt(c.susp, 10) || 0)) : "";
+      bs.push({ per: b.per, est: l.estNr, cpf: b.cpf, row: [xCompOut(b.per), b.indAp === "2" ? "13º salário" : "Mensal", xCnpj(b.nrEmp), estado.emps.get(b.nrEmp.slice(0, 8)) || "", b.cpf, (estado.trab.get(b.cpf) || {}).nome || "",
+        l.mat, l.cat, l.estTp === "4" ? "CNO" : l.estTp === "1" ? "CNPJ" : l.estTp, xCnpj(l.estNr), l.lot, l.ind13, l.tp, xMoeda(l.val), c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", oe, b.recBase, b.id] });
+    }));
+    bs.sort((a, b) => xPerOrd(a.per).localeCompare(xPerOrd(b.per)) || a.est.localeCompare(b.est) || a.cpf.localeCompare(b.cpf));
+    if (bs.length) conjuntos.push({ id: "s5001", titulo: "S-5001 · Bases por trabalhador", sub: "Mais recente de cada CPF e competência, com FPAS e código de outras entidades do S-5011 da lotação. É o arquivo que o módulo Bases lê",
+      cols: ["Período Apuração", "Indicador Apuração", "Número Inscrição", "Razão Social", "CPF Trabalhador", "Nome Trabalhador", "Matrícula", "Código Categoria", "Tipo Inscrição Lotação", "Número Inscrição Lotação", "Código Lotação Tributária",
+        "Indicativo 13º (ind13)", "Tipo Vlr Apuração Contribuição", "Vlr Base Cálculo", "FPAS", "Código Terceiros", "Código Terceiros Suspenso", "Código OE", "Recibo Arquivo Base", "Id Evento"],
+      rows: bs.map(x => x.row), num: new Set(["Vlr Base Cálculo"]), arquivo: "S-5001 Bases por trabalhador" });
+
     // 5) Demais eventos
     for (const [nome, mapa] of estado.outros){
       const linhas = []; mapa.forEach(m => { if (vivo(m)) m.linhas.forEach(l => linhas.push(l)); });
@@ -5522,6 +5620,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       : '<tr><td colspan="4" class="empty">Envie os XMLs para ver o que dá para exportar.</td></tr>';
     $("xmlExportarTudo").hidden = !xmlRes.conjuntos.length;
     $("xmlParaRubricas").hidden = !xmlRes.conjuntos.some(c => c.id === "cruzamento");
+    $("xmlParaBases").hidden = !xmlRes.conjuntos.some(c => c.id === "s5001");
     $("xmlResumo").textContent = xmlRes.conjuntos.length ? `${xmlRes.conjuntos.length} conjunto${xmlRes.conjuntos.length === 1 ? "" : "s"}` : "Aguardando arquivos";
   }
 
@@ -5684,10 +5783,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const RUIM = /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g;
     const esc = s => { s = String(s); if (s.length > 32767) s = s.slice(0, 32767); return s.replace(RUIM, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
     const letra = n => { let s = ""; for (n++; n > 0; n = (n - 1) / 26 | 0) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
-    const celula = (v, s) => {
+    // cada célula leva a posição (A1, B1…): sem ela, uma célula vazia faria as seguintes "andarem" para a esquerda
+    const letras = cols.map((_, i) => letra(i));
+    const celula = (v, s, ref) => {
       if (v == null || v === "") return "";
-      if (typeof v === "number") return Number.isFinite(v) ? `<c s="${s}"><v>${v}</v></c>` : "";
-      const t = esc(v); return `<c s="${s}" t="inlineStr"><is><t${/^\s|\s$/.test(t) ? ' xml:space="preserve"' : ""}>${t}</t></is></c>`;
+      if (typeof v === "number") return Number.isFinite(v) ? `<c r="${ref}" s="${s}"><v>${v}</v></c>` : "";
+      const t = esc(v); return `<c r="${ref}" s="${s}" t="inlineStr"><is><t${/^\s|\s$/.test(t) ? ' xml:space="preserve"' : ""}>${t}</t></is></c>`;
     };
     let folha = null, nFolhas = 0, linhaNaFolha = 0;
     const abrir = amostra => {
@@ -5698,7 +5799,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       folha.push(enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
         + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>'
         + `<cols>${larg.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(Math.max(w + 3, 10), 60)}" customWidth="1"/>`).join("")}</cols><sheetData>`
-        + `<row r="1">${cols.map(c => celula(c, 1)).join("")}</row>`));
+        + `<row r="1">${cols.map((c, i) => celula(c, 1, letras[i] + 1)).join("")}</row>`));
     };
     const fechar = () => { folha.push(enc.encode(`</sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`), true); folha = null; };
     return {
@@ -5711,7 +5812,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
             const r = rows[i]; linhaNaFolha++; let x = `<row r="${linhaNaFolha}">`;
             for (let c = 0; c < cols.length; c++){
               const v = r[c];
-              x += c === si && corSit[v] ? celula(v, corSit[v]) : c === ci && typeof v === "number" ? celula(v, Math.abs(v) > 0.05 ? 7 : Math.abs(v) >= 0.01 ? 6 : 5) : celula(v, 1);
+              const ref = letras[c] + linhaNaFolha;
+              x += c === si && corSit[v] ? celula(v, corSit[v], ref) : c === ci && typeof v === "number" ? celula(v, Math.abs(v) > 0.05 ? 7 : Math.abs(v) >= 0.01 ? 6 : 5, ref) : celula(v, 1, ref);
             }
             txt += x + "</row>";
             if (txt.length > 1 << 20){ folha.push(enc.encode(txt)); txt = ""; }
@@ -5882,6 +5984,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     } finally { xmlIndo = false; btn.disabled = false; }
   }
   $("xmlParaRubricas").addEventListener("click", seguirParaRubricas);
+  // O S-5001 vai direto para o módulo Bases, como se fosse um arquivo enviado lá
+  function seguirParaBases(){
+    const ds = xmlRes.conjuntos.find(c => c.id === "s5001"); if (!ds || xmlLendo) return;
+    const emp = xmlNomeEmpresa();
+    enviarParaBase({ name: `${emp ? emp + " - " : ""}S-5001 (XML).xlsx`, size: ds.rows.length, __ds: ds });
+    irPara("base", true);
+  }
+  $("xmlParaBases").addEventListener("click", seguirParaBases);
   $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i], b); });
   renderXml();
 
