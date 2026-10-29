@@ -4427,8 +4427,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     XLSX.utils.book_append_sheet(wb, abaDeCelulas(["FPAS","Código OE","Alíquota no arquivo (%)","Sistema S (%)","Parafiscais (%)","Origem da divisão","Lançamentos"], [10,12,22,16,16,26,14], oeL), "Outras Entidades");
 
     const empresas = [...new Set(out.map(x => x.empresa))];
-    const d = new Date(), p2 = n => String(n).padStart(2, "0");
-    const nome = empresas.length === 1 && empresas[0] !== "-" ? `${limpaNome(empresas[0])} - MAPEAMENTO DE RUBRICAS.xlsx` : `MAPEAMENTO DE RUBRICAS ${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}.xlsx`;
+    const d = new Date(), p2 = n => String(n).padStart(2, "0"), mesAno = `(${d.getFullYear()}.${p2(d.getMonth() + 1)})`;
+    const nome = empresas.length === 1 && empresas[0] !== "-" ? `${limpaNome(empresas[0])} - Análise Previdenciária - ${mesAno}.xlsx` : `Análise Previdenciária - ${mesAno}.xlsx`;
     salvarArquivo(nome, gerar(wb));
     const nPendOE = [...rub.dados.info.oe.values()].filter(o => o.origem === "pendente").length;
     if (nPendOE) setTimeout(() => toast(`Atenção: ${nPendOE} combinaç${nPendOE === 1 ? "ão" : "ões"} de OE ficaram sem alíquota e saíram zeradas.`), 2200);
@@ -5199,7 +5199,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const fechPer = (nrEmp, per) => { const k = nrEmp + "|" + per; if (!estado._fc) estado._fc = new Map(); if (!estado._fc.has(k)) estado._fc.set(k, fechamento(nrEmp, per)); return estado._fc.get(k); };
 
     // 1) Cruzamento de eventos: S-1200 + S-1010 + S-5011 + S-1299 + S-2200/S-2299
-    const faltam = new Set(); let semCS = 0; const emp = [];
+    const faltam = new Set(); let semCS = 0; const emp = [], empChave = [];
     const somaRem = new Map();   // empregador|apuração|competência -> remuneração do S-1200
     remuns.forEach(e => {
       if (!e.linhas.length) return;
@@ -5208,12 +5208,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const r = rubDe(l.cod, l.tab, l.per);
         if (!r) faltam.add(l.cod + "|" + l.tab);
         const c = csDe(l.estNr, l.per, l.lot); if (!c) semCS++;
+        empChave.push([e.nrEmp, e.indAp, e.perEv, l.estNr].join("|"));
         emp.push([xCompOut(l.per), r ? xTp(r) : "", r ? r.incCP : "", r ? r.nat : "", r ? r.desc : "", l.cod, l.tab, l.val, r ? "Válido" : "Corrompido",
           xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, l.cat, e.cpf, t.nome || "", t.adm || "", t.deslig || "", e.indAp, e.indRetif, e.id, e.recibo || "",
           c ? c.rat : "", c ? c.fap : "", c ? c.ratAj : "", l.grau || "", xAn(l.grau), c ? c.fpas : "", c ? c.terc : "", c ? c.susp : "", c ? c.subst : "", fechPer(e.nrEmp, e.perEv)]);
       });
     });
-    if (emp.length) conjuntos.push({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299", cols: XML_COL_RUBRICAS, rows: emp, num: XML_NUM, arquivo: "Cruzamento de eventos" });
 
     // 1b) O S-1200 em si, uma linha por rubrica de cada trabalhador (válidos = recibo mais recente).
     //     É daqui que a conferência soma: o valor dela é, linha a linha, o que está nesta tabela
@@ -5333,6 +5333,29 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Número Inscrição Estabelecimento", "Código Lotação", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação"],
       rows: confLot, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença"]), arquivo: "Conferencia por estabelecimento e lotacao" });
 
+    // 2d) Conferência por competência e estabelecimento: só segue para a análise (cruzamento) o que está Válido ou Válido com Ressalvas
+    const porEstab = new Map();
+    porLot.forEach((v, k) => { const [nrEmp, ind, per, est] = k.split("|"), k4 = [nrEmp, ind, per, est].join("|"); if (!porEstab.has(k4)) porEstab.set(k4, { tot: 0, base: 0, temBase: false });
+      const a = porEstab.get(k4); a.tot += v.rem + v.resc; if (v.base !== null){ a.base += v.base; a.temBase = true; } });
+    const sitEst = k => { const a = porEstab.get(k); return !a || !a.temBase ? "Sem S-5011" : xSituacao(xMoeda(a.tot - a.base), xMoeda(a.base)); };
+    const pctEst = k => { const a = porEstab.get(k); return a && a.temBase && a.base ? (a.tot - a.base) / a.base : "-"; };
+    const semValidacao = css.length === 0;   // sem nenhum S-5011 não há como validar: o cruzamento segue completo
+    const okEst = k => semValidacao || ["Válido", "Válido com Ressalvas"].includes(sitEst(k));
+    const linhasEst = new Map(); empChave.forEach(k => linhasEst.set(k, (linhasEst.get(k) || 0) + 1));
+    const empOk = [], empFora = [];
+    emp.forEach((r, i) => { if (okEst(empChave[i])) empOk.push(r); else empFora.push([...r, sitEst(empChave[i]), pctEst(empChave[i])]); });
+    const confEst = [...porEstab].map(([k, a]) => { const [nrEmp, ind, per, est] = k.split("|"), n = linhasEst.get(k) || 0, st = a.temBase ? sitEst(k) : "Sem S-5011", base = a.temBase ? xMoeda(a.base) : 0, tot = xMoeda(a.tot);
+      return [estado.emps.get(nrEmp.slice(0, 8)) || "-", xCnpj(nrEmp), per, ind === "2" ? "13º salário" : "Mensal", xCnpj(est), tot, base, a.temBase ? xMoeda(tot - base) : 0, st, pctEst(k), n, !n ? "-" : okEst(k) ? "Sim" : "Não"]; });
+    confEst.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[4].localeCompare(y[4]));
+    confEst.forEach(r => { r[2] = xCompOut(r[2]); });
+    if (confEst.length) conjuntos.push({ id: "conferenciaEst", titulo: "Conferência por competência e estabelecimento", sub: "É esta a conferência que decide o que entra na análise: só segue o que está Válido ou Válido com Ressalvas",
+      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Número Inscrição Estabelecimento", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Divergência (%)", "Linhas no cruzamento", "Entra na análise"],
+      rows: confEst, pct: "Divergência (%)", sit: "Situação", num: new Set(["Total S-1200 + S-2299", "Base S-5011", "Diferença", "Divergência (%)", "Linhas no cruzamento"]), arquivo: "Conferencia por competencia e estabelecimento" });
+    const colsCruz = XML_COL_RUBRICAS.slice();
+    if (empOk.length) conjuntos.unshift({ id: "cruzamento", titulo: "Cruzamento de eventos (para o módulo Rubricas)", sub: semValidacao ? "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299 · sem S-5011 não foi possível validar: todas as linhas seguem" : "S-1200 com S-1010, S-5011, S-1299 e S-2200/S-2299 · só competência + estabelecimento Válido ou Válido com Ressalvas", cols: colsCruz, rows: empOk, num: XML_NUM, arquivo: "Cruzamento de eventos" });
+    if (empFora.length) conjuntos.splice(empOk.length ? 1 : 0, 0, { id: "cruzamentoFora", titulo: "Cruzamento de eventos · Excluídas (inválidas)", sub: "Linhas que ficaram de fora da análise: a competência + estabelecimento não está Válido nem Válido com Ressalvas",
+      cols: [...colsCruz, "Situação (competência + estabelecimento)", "Divergência (%)"], rows: empFora, pct: "Divergência (%)", num: new Set([...XML_NUM, "Divergência (%)"]), arquivo: "Cruzamento de eventos excluidas" });
+
     // 2c) Cruzamento do S-5011: as bases segregadas por competência, estabelecimento, código de outras entidades, substituição patronal, grau de exposição, FAP e RAT, apontando divergências de códigos entre as lotações
     const BASE_GRAU = { vrBcCp00: "1", vrBcCp15: "2", vrBcCp20: "3", vrBcCp25: "4" };
     const attrs = l => [l.fpas, l.terc, l.susp, l.subst, l.fap, l.rat, l.ratAj].join("|");
@@ -5381,7 +5404,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const [cod, desc] = XML_EVT[nome] || [nome, nome];
       conjuntos.push({ id: nome, titulo: `${cod} · ${desc}`, sub: "Tabela achatada do evento", cols, rows, num, arquivo: `${cod} ${desc}` });
     }
-    return { conjuntos, faltam: faltam.size, semCS, divergencias, comparadas: conf.length };
+    return { conjuntos, faltam: faltam.size, semCS, divergencias, comparadas: conf.length, excluidas: empFora.length, semValidacao };
   }
 
   /* ---------- XML eSocial: tela, exportação em planilha ou Parquet ---------- */
@@ -5396,6 +5419,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
     if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} inválida(s) ou sem S-5011: divergência acima de 5% entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299) × S-5011”)`);
+    if (xmlRes.excluidas) avisos.push(`${xmlN(xmlRes.excluidas)} linha${xmlRes.excluidas === 1 ? "" : "s"} do cruzamento ${xmlRes.excluidas === 1 ? "ficou" : "ficaram"} de fora da análise: a competência + estabelecimento ${xmlRes.excluidas === 1 ? "dela não está" : "delas não estão"} Válido nem Válido com Ressalvas (veja “Cruzamento de eventos · Excluídas”)`);
+    if (xmlRes.semValidacao && xmlRes.conjuntos.some(c => c.id === "cruzamento")) avisos.push("Sem S-5011 nos arquivos, nenhuma competência pôde ser validada: o cruzamento segue completo");
     if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
@@ -5530,8 +5555,51 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const nome = xmlEstado.emps.get([...raizes][0]) || "";
     return nome.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
   }
+  /* A planilha é montada num Web Worker (em segundo plano), para a tela não congelar em arquivos grandes.
+     Se o worker não puder rodar, cai no caminho antigo (na própria página). */
+  function corpoWorkerPlanilha(){
+    importScripts("https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js");
+    const LIM = 1000000, LIM_ESTILO = 1500000;
+    const tamanho = v => v == null ? 0 : typeof v === "number" ? v.toLocaleString("pt-BR", { maximumFractionDigits: 2 }).length : String(v).length;
+    self.onmessage = e => {
+      try {
+        const { cols, rows, sit, pct } = e.data, wb = XLSX.utils.book_new();
+        for (let p = 0, n = 1; p < Math.max(rows.length, 1); p += LIM, n++){
+          const parte = rows.slice(p, p + LIM), ws = XLSX.utils.aoa_to_sheet([cols, ...parte]);
+          const larg = cols.map(c => tamanho(c)), estilar = (parte.length + 1) * cols.length <= LIM_ESTILO;
+          const si = sit ? cols.indexOf(sit) : -1, ci = pct ? cols.indexOf(pct) : -1, cor = { "Válido": "1E8E3E", "Válido com Ressalvas": "B26A00", "Inválido": "C00000" };
+          const centro = { alignment: { horizontal: "center", vertical: "center" } };
+          for (let r = 0; r <= parte.length; r++) for (let c = 0; c < cols.length; c++){
+            const cel = ws[XLSX.utils.encode_cell({ r, c })]; if (!cel) continue;
+            if (r > 0) larg[c] = Math.max(larg[c], tamanho(cel.v));
+            let s = centro;
+            if (r > 0 && c === si && cor[cel.v]) s = { ...centro, font: { bold: true, color: { rgb: cor[cel.v] } } };
+            else if (r > 0 && c === ci && typeof cel.v === "number"){ cel.z = "0.00%"; s = { ...centro, font: { bold: true, color: { rgb: Math.abs(cel.v) > 0.05 ? "C00000" : Math.abs(cel.v) >= 0.01 ? "B26A00" : "1E8E3E" } } }; }
+            if (estilar) cel.s = s;
+          }
+          ws["!cols"] = larg.map(w => ({ wch: Math.min(Math.max(w + 3, 10), 60) }));
+          XLSX.utils.book_append_sheet(wb, ws, n === 1 ? "Dados" : "Dados " + n);
+        }
+        const dados = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        self.postMessage({ ok: true, dados }, [dados]);
+      } catch(err){ self.postMessage({ ok: false, erro: String(err && err.message || err) }); }
+    };
+  }
+  function planilhaNoWorker(ds){
+    return new Promise((ok, falha) => {
+      let w; try { w = new Worker(URL.createObjectURL(new Blob([`(${corpoWorkerPlanilha.toString()})()`], { type: "text/javascript" }))); } catch(e){ falha(e); return; }
+      const fim = () => { try { w.terminate(); } catch(e){} };
+      w.onmessage = m => { fim(); m.data.ok ? ok(m.data.dados) : falha(new Error(m.data.erro)); };
+      w.onerror = e => { fim(); falha(new Error(e.message || "worker indisponível")); };
+      w.postMessage({ cols: ds.cols, rows: ds.rows, sit: ds.sit || "", pct: ds.pct || "" });
+    });
+  }
   // Monta o arquivo de um conjunto (planilha ou Parquet) e devolve o nome e os bytes
   async function gerarArquivoXml(ds, fmt, base){
+    if (fmt !== "parquet" && window.Worker){
+      try { return { nome: base + ".xlsx", dados: await planilhaNoWorker(ds), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }; }
+      catch(e){ console.warn("planilha em segundo plano indisponível, gerando na página:", e); }
+    }
     if (fmt === "parquet"){
       const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
       const columnData = ds.cols.map((n, i) => {
@@ -5618,6 +5686,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (rub.lendo){ toast("As Rubricas ainda estão lendo um arquivo. Aguarde um instante."); return; }
     xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
     const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
+    xmlEstado.emps.forEach((nome, raiz) => { if (nome && !rub.empresas.has(raiz)) rub.empresas.set(raiz, nome); });   // o nome da empresa (S-1000) segue junto
     const tela = elDaVista(vista), r = btn.getBoundingClientRect();
     try {
       if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
