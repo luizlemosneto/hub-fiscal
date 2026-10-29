@@ -960,13 +960,18 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .tira li.tot{font-weight:800;border-top:1px solid #D1D1D6;color:#000000}
 .tira li b{color:#A5A5A5}
 @keyframes desenrola{to{clip-path:inset(0 0 0 0)}}
+/* No tremor do zoom as tiras despencam de uma vez, tortas, quicando no lugar */
+.rolo.despenca{animation-duration:.25s}
+.rolo.despenca .tira{clip-path:none;animation:despenca .62s cubic-bezier(.25,1.35,.4,1) var(--d) backwards}
+.rolo.despenca.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes despenca{from{transform:translateX(-50%) translateY(-135vh) rotate(calc(var(--r) * -5))}}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 /* O valor circulado a pincel preto, o fundo em breu, o brilho e o zoom */
 .giz{position:fixed;inset:0;z-index:92;pointer-events:none;--giz-brilho:rgba(199,199,204,.9);--giz-breu:rgba(0,0,0,.62)}
 :root[data-theme="dark"] .giz{--giz-brilho:rgba(209,209,214,.95);--giz-breu:rgba(235,235,240,.6)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .giz{--giz-brilho:rgba(209,209,214,.95);--giz-breu:rgba(235,235,240,.6)}}
-.giz-fundo{position:absolute;inset:0;opacity:0;background:var(--giz-breu);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
+.giz-fundo{position:absolute;inset:-60px;opacity:0;background:var(--giz-breu);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
 .giz.escurece .giz-fundo{opacity:1}
 .giz-zoom{position:absolute;transform-origin:50% 50%;will-change:transform}
 .giz-fumaca{position:absolute;border-radius:50%;filter:blur(20px);opacity:.95;
@@ -2532,16 +2537,16 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const ROTULOS = ["INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
     const linhaFake = i => i % 9 === 8 ? `<li class="tot"><span>${fmtCalc(Math.random() * 900000 + 10000)}</span><b>*</b></li>`
       : `<li><span>${ROTULOS[Math.floor(Math.random() * ROTULOS.length)]}</span><span>${fmtCalc(Math.random() * 90000)}</span></li>`;
-    function desenrolar(){
+    function desenrolar(despenca){
       rolando = true;
       const minhas = [...lista.querySelectorAll("li")].map(li => li.outerHTML).join("");
-      const ov = document.createElement("div"); ov.className = "rolo"; ov.setAttribute("role", "button"); ov.setAttribute("aria-label", "Rasgar a fita");
+      const ov = document.createElement("div"); ov.className = "rolo" + (despenca ? " despenca" : ""); ov.setAttribute("role", "button"); ov.setAttribute("aria-label", "Rasgar a fita");
       const n = Math.max(4, Math.min(9, Math.round(innerWidth / 190)));
       let html = "";
       for (let i = 0; i < n; i++){
         const x = ((i + .5) / n) * 100 + (Math.random() * 6 - 3), r = (Math.random() * 8 - 4).toFixed(1), w = 175 + Math.round(Math.random() * 35);
         let ls = i === Math.floor(n / 2) ? minhas : ""; for (let j = 0; j < 60; j++) ls += linhaFake(j + i);
-        html += `<div class="tira" style="--x:${x}%;--r:${r}deg;--w:${w}px;--d:${(i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
+        html += `<div class="tira" style="--x:${x}%;--r:${r}deg;--w:${w}px;--d:${(despenca ? Math.random() * .22 : i * .09).toFixed(2)}s"><ol>${ls}</ol></div>`;
       }
       ov.innerHTML = html;
       document.body.appendChild(ov);
@@ -2596,17 +2601,25 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       // 1) o pincel circula o valor
       await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
       await espera(90);
-      // 2) zoom no valor: rápido e brusco, um tranco e para
+      // 2) zoom no valor: seco, de uma vez
       const alvo = Math.min(innerWidth * .6 / (w + mx * 2), innerHeight * .5 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
-      const em = (x, y, k) => ({ transform: `translate(${dx + x}px,${dy + y}px) scale(${alvo * k})` });
-      await zoom.animate([{ transform: "none" }, { ...em(0, 0, 1.14), offset: .5 }, { ...em(-14, 9, .96), offset: .62 }, { ...em(11, -7, 1.03), offset: .74 }, { ...em(-6, 4, .99), offset: .86 }, em(0, 0, 1)],
-        { duration: 340, easing: "cubic-bezier(.3,0,.1,1)", fill: "forwards" }).finished.catch(() => {});
-      await espera(1400);
-      // 3) some com calma e a fita toma a tela
-      zoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: "ease", fill: "forwards" });
-      const fundo = ov.querySelector(".giz-fundo"); fundo.style.transition = "opacity .6s ease"; fundo.style.opacity = "0";
-      desenrolar();
-      setTimeout(() => ov.remove(), 700);
+      const fim = `translate(${dx}px,${dy}px) scale(${alvo})`;
+      await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * 1.12})`, offset: .7 }, { transform: fim }],
+        { duration: 230, easing: "cubic-bezier(.5,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
+      // 3) o tremelique do desespero: tudo chacoalha e as notas despencam junto
+      desenrolar(true);
+      const rolo = document.querySelector(".rolo"), pagina = document.querySelector(".wrap"), tremor = [];
+      for (let i = 0, n = 16; i < n; i++){
+        const a = 26 * Math.pow(1 - i / n, 1.4), ang = (Math.random() - .5) * 3.2 * (1 - i / n);
+        tremor.push({ transform: `translate(${((Math.random() - .5) * 2 * a).toFixed(1)}px,${((Math.random() - .5) * 2 * a).toFixed(1)}px) rotate(${ang.toFixed(2)}deg)` });
+      }
+      tremor.push({ transform: "none" });
+      [ov, pagina, rolo].forEach(el => el && el.animate(tremor, { duration: 760, easing: "linear" }));
+      const fundo = ov.querySelector(".giz-fundo"); fundo.style.transition = "opacity .35s ease"; fundo.style.opacity = "0";
+      // 4) o número segura um instante no meio da bagunça e some
+      await espera(820);
+      zoom.animate([{ transform: fim, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * .9})`, opacity: 0 }], { duration: 260, easing: "ease-in", fill: "forwards" });
+      setTimeout(() => ov.remove(), 300);
     }
     imprimir("0,00", "T");
     return { apertar, demo, pararDemo };
