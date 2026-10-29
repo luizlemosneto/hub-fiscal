@@ -1849,6 +1849,43 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 (function(){
   "use strict";
 
+  /* ================= Planilhas: tudo centralizado e colunas já ajustadas (sem precisar do Alt+O C A) ================= */
+  (() => {
+    const LIM_ESTILO = 400000;   // acima disso só a largura é ajustada (centralizar célula a célula pesaria demais)
+    const tamanho = v => v == null ? 0 : typeof v === "number" ? v.toLocaleString("pt-BR", { maximumFractionDigits: 2 }).length : v instanceof Date ? 10 : String(v).split("\n").reduce((m, l) => Math.max(m, l.length), 0);
+    const largura = n => Math.min(Math.max(n + 3, 10), 60);
+    function ajustarSheetJS(wb){
+      for (const nome of wb.SheetNames || []){
+        const ws = wb.Sheets[nome]; if (!ws || !ws["!ref"]) continue;
+        const rg = XLSX.utils.decode_range(ws["!ref"]), larg = new Array(rg.e.c + 1).fill(0), chaves = Object.keys(ws).filter(k => k[0] !== "!");
+        const estilar = chaves.length <= LIM_ESTILO;
+        for (const k of chaves){
+          const c = ws[k], col = XLSX.utils.decode_cell(k).c; larg[col] = Math.max(larg[col], tamanho(c.v));
+          if (estilar) c.s = { ...(c.s || {}), alignment: { ...((c.s && c.s.alignment) || {}), horizontal: "center", vertical: "center" } };
+        }
+        ws["!cols"] = larg.map(n => ({ wch: largura(n) }));
+      }
+    }
+    function ajustarExcelJS(wb){
+      wb.eachSheet(ws => {
+        const larg = []; let n = 0;
+        ws.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => { n++; const v = cell.value, t = v && typeof v === "object" && !(v instanceof Date) ? (v.result ?? v.text ?? (v.richText ? v.richText.map(x => x.text).join("") : "")) : v; larg[cell.col] = Math.max(larg[cell.col] || 0, tamanho(t)); }));
+        const estilar = n <= LIM_ESTILO;
+        if (estilar) ws.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => { cell.alignment = { ...(cell.alignment || {}), horizontal: "center", vertical: "middle" }; }));
+        larg.forEach((w, i) => { if (w !== undefined) ws.getColumn(i).width = largura(w); });
+      });
+    }
+    try {
+      const w0 = XLSX.write, f0 = XLSX.writeFile;
+      XLSX.write = function(wb, o){ try { ajustarSheetJS(wb); } catch(e){ console.warn("ajuste da planilha:", e); } return w0.call(this, wb, o); };
+      XLSX.writeFile = function(wb, nome, o){ try { ajustarSheetJS(wb); } catch(e){ console.warn("ajuste da planilha:", e); } return f0.call(this, wb, nome, o); };
+    } catch(e){ console.warn(e); }
+    try {
+      const P = Object.getPrototypeOf(new ExcelJS.Workbook().xlsx), wb0 = P.writeBuffer;
+      P.writeBuffer = function(...a){ try { ajustarExcelJS(this.workbook); } catch(e){ console.warn("ajuste da planilha:", e); } return wb0.apply(this, a); };
+    } catch(e){ console.warn(e); }
+  })();
+
   /* ================= Tema ================= */
   const root = document.documentElement;
   const themeBtn = document.getElementById("themeBtn");
@@ -4892,6 +4929,11 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   const XML_AN = { "1": 0, "2": 12, "3": 9, "4": 6 };
   const xAn = g => g === "" || g === undefined ? "" : (XML_AN[String(g)] ?? 0);
   const XML_TOLERANCIA = 1;
+  // Situação pela divergência: menos de 1% = Válido, de 1% a 5% = Válido com Ressalvas, acima de 5% = Inválido
+  function xSituacao(dif, base){
+    const p = base ? Math.abs(dif / base) : (dif === 0 ? 0 : Infinity);
+    return p < 0.01 ? "Válido" : p <= 0.05 ? "Válido com Ressalvas" : "Inválido";
+  }
   const xFilhos = el => Array.from(el.children || []);
   const xDir = (el, nome) => (el && xFilhos(el).find(c => c.localName === nome)) || null;
   const xTxt = (el, caminho) => { let a = el; for (const n of caminho.split("/")){ a = xDir(a, n); if (!a) return ""; } return (a.textContent || "").trim(); };
@@ -5231,21 +5273,21 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const rem = a ? xMoeda(a.rem) : (rs ? 0 : null), resc = rs ? xMoeda(rs.rem) : 0, tot = rem === null ? null : xMoeda(rem + resc), base = b !== undefined ? xMoeda(b) : null;
       let sit, dif = null;
       if (tot === null) sit = "Só no S-5011"; else if (base === null) sit = "Sem S-5011";
-      else { dif = xMoeda(tot - base); sit = Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"; }
-      if (sit !== "Confere") divergencias++;
-            conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? "" : rem, resc, tot === null ? "" : tot, base === null ? "" : base, dif === null ? "" : dif, sit, fechPer(nrEmp, per),
-        a ? a.trabs.size : "", a ? xMoeda(a.semTab) : "", a ? xMoeda(a.total) : "", dif === null || !base ? "" : dif / base]);
+      else { dif = xMoeda(tot - base); sit = xSituacao(dif, base); }
+      if (sit !== "Válido" && sit !== "Válido com Ressalvas") divergencias++;
+            conf.push([estado.emps.get(nrEmp.slice(0, 8)) || "-", nrEmp, per, indAp === "2" ? "13º salário" : "Mensal", rem === null ? 0 : rem, resc, tot === null ? 0 : tot, base === null ? 0 : base, dif === null ? 0 : dif, sit, fechPer(nrEmp, per) || "-",
+        a ? a.trabs.size : "-", a ? xMoeda(a.semTab) : "-", a ? xMoeda(a.total) : 0, dif === null || !base ? "-" : dif / base]);
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
     conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
     if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299) × S-5011", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
       cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"],
-      rows: conf, pct: "Divergência (%)", num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
+      rows: conf, pct: "Divergência (%)", sit: "Situação", num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Divergência (%)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
 
     // 2b) A mesma conferência por estabelecimento e lotação: mostra em qual lotação a diferença aparece
     css.forEach(c => c.linhas.forEach(l => { const a = lotAcc(l.nrEmp, c.indAp, c.per, l.estNr, l.lot); a.base = (a.base || 0) + l.base; }));
     const confLot = [...porLot].map(([k, v]) => { const [nrEmp, indAp, per, est, lot] = k.split("|"), tot = xMoeda(v.rem + v.resc), base = v.base === null ? "" : xMoeda(v.base), dif = base === "" ? "" : xMoeda(tot - base);
-      return [estado.emps.get(nrEmp.slice(0, 8)) || "", xCnpj(nrEmp), per, indAp === "2" ? "13º salário" : "Mensal", xCnpj(est), lot, xMoeda(v.rem), xMoeda(v.resc), tot, base, dif, base === "" ? "Sem S-5011" : Math.abs(dif) <= XML_TOLERANCIA ? "Confere" : "Divergência"]; });
+      return [estado.emps.get(nrEmp.slice(0, 8)) || "", xCnpj(nrEmp), per, indAp === "2" ? "13º salário" : "Mensal", xCnpj(est), lot, xMoeda(v.rem), xMoeda(v.resc), tot, base, dif, base === "" ? "Sem S-5011" : xSituacao(dif, base)]; });
     confLot.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[4].localeCompare(y[4]) || String(x[5]).localeCompare(String(y[5])));
     confLot.forEach(r => { r[2] = xCompOut(r[2]); });
     if (confLot.length) conjuntos.push({ id: "conferenciaLot", titulo: "Conferência por estabelecimento e lotação", sub: "S-1200 + S-2299 contra o S-5011, em cada estabelecimento e lotação (para achar onde a diferença está)",
@@ -5314,7 +5356,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("xmlKArq").textContent = xmlN(xmlEstado.arquivos); $("xmlKEv").textContent = xmlN(evs);
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
-    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299) × S-5011”)`);
+    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} inválida(s) ou sem S-5011: divergência acima de 5% entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299) × S-5011”)`);
     if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
@@ -5446,7 +5488,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const { parquetWriteBuffer } = await importarModuloComFallback(["https://esm.sh/hyparquet-writer@0", "https://cdn.jsdelivr.net/npm/hyparquet-writer@0/+esm"]);
         const columnData = ds.cols.map((n, i) => {
           const nm = ds.num.has(n);
-          return { name: n, type: nm ? "DOUBLE" : "STRING", data: ds.rows.map(r => nm ? (r[i] === "" || r[i] == null ? null : Number(r[i])) : String(r[i] ?? "")) };
+          return { name: n, type: nm ? "DOUBLE" : "STRING", data: ds.rows.map(r => nm ? (r[i] === "" || r[i] == null || !Number.isFinite(Number(r[i])) ? null : Number(r[i])) : String(r[i] ?? "")) };
         });
         baixarArquivoXml(base + ".parquet", parquetWriteBuffer({ columnData }), "application/octet-stream");
       } else {
@@ -5454,10 +5496,14 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         for (let p = 0, n = 1; p < Math.max(ds.rows.length, 1); p += LIM, n++){
           const ws = XLSX.utils.aoa_to_sheet([ds.cols, ...ds.rows.slice(p, p + LIM)]);
           ws["!cols"] = ds.cols.map(c => ({ wch: Math.min(Math.max(c.length + 2, 12), 40) }));
-          if (ds.pct){ // % de divergência: letra vermelha acima de 5% ou abaixo de -5%, verde entre os dois
+          if (ds.sit){ // Situação: verde (Válido), âmbar (com Ressalvas) e vermelho (Inválido)
+            const si = ds.cols.indexOf(ds.sit), cor = { "Válido": "1E8E3E", "Válido com Ressalvas": "B26A00", "Inválido": "C00000" };
+            ds.rows.slice(p, p + LIM).forEach((r, i) => { const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: si })]; if (c && cor[r[si]]) c.s = { font: { bold: true, color: { rgb: cor[r[si]] } } }; });
+          }
+          if (ds.pct){ // % de divergência: vermelho acima de 5%, âmbar de 1% a 5%, verde abaixo de 1%
             const ci = ds.cols.indexOf(ds.pct);
             ds.rows.slice(p, p + LIM).forEach((r, i) => { const v = r[ci]; if (typeof v !== "number") return; const c = ws[XLSX.utils.encode_cell({ r: i + 1, c: ci })]; if (!c) return;
-              c.z = "0.00%"; c.s = { font: { bold: true, color: { rgb: Math.abs(v) > 0.05 ? "C00000" : "1E8E3E" } } }; });
+              c.z = "0.00%"; c.s = { font: { bold: true, color: { rgb: Math.abs(v) > 0.05 ? "C00000" : Math.abs(v) >= 0.01 ? "B26A00" : "1E8E3E" } } }; });
           }
           XLSX.utils.book_append_sheet(wb, ws, (n === 1 ? "Dados" : "Dados " + n));
         }
