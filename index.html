@@ -5779,30 +5779,18 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
   $("xmlExportarTudo").addEventListener("click", exportarTodosXml);
 
-  /* ---------- Do cruzamento direto para as Rubricas, com um esmaecimento suave ---------- */
-  function esmaecer(el, de, ate, ms, easing){
-    el.style.willChange = "opacity";
-    return el.animate([{ opacity: de }, { opacity: ate }], { duration: ms, easing, fill: "both" }).finished;
-  }
+  /* ---------- Do cruzamento direto para as Rubricas, com o mesmo movimento da navegação entre módulos ---------- */
   let xmlIndo = false;
-  async function seguirParaRubricas(){
+  function seguirParaRubricas(){
     const ds = xmlRes.conjuntos.find(c => c.id === "cruzamento"); if (!ds || xmlIndo || xmlLendo) return;
     if (rub.lendo){ toast("As Rubricas ainda estão lendo um arquivo. Aguarde um instante."); return; }
     xmlIndo = true; const btn = $("xmlParaRubricas"); btn.disabled = true;
     const emp = xmlNomeEmpresa(), arq = { name: `${emp ? emp + " - " : ""}Cruzamento de eventos (XML).xlsx`, size: ds.rows.length, __ds: ds };
     xmlEstado.emps.forEach((nome, raiz) => { if (nome && !rub.empresas.has(raiz)) rub.empresas.set(raiz, nome); });   // o nome da empresa (S-1000) segue junto
-    const tela = elDaVista(vista), limpa = el => { el.getAnimations().forEach(a => a.cancel()); el.style.willChange = ""; };
-    let nova = null;
     try {
-      if (reduzMov){ irPara("rubricas", true, true); carregarEventos(arq, [arq], false); return; }
-      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a tela esmaece
-      await esmaecer(tela, 1, 0, 220, "cubic-bezier(.4,0,1,1)");
-      irPara("rubricas", true, true);
-      limpa(tela);
-      nova = elDaVista("rubricas"); nova.classList.remove("page-in", "entra-dir", "entra-esq");
-      await esmaecer(nova, 0, 1, 320, "cubic-bezier(0,0,.2,1)");
-    } finally {
-      limpa(tela); if (nova) limpa(nova); xmlIndo = false; btn.disabled = false; }
+      carregarEventos(arq, [arq], false);   // já vai lendo enquanto a tela troca
+      irPara("rubricas", true);
+    } finally { xmlIndo = false; btn.disabled = false; }
   }
   $("xmlParaRubricas").addEventListener("click", seguirParaRubricas);
   $("xmlCorpo").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b && xmlRes.conjuntos[+b.dataset.i]) exportarXml(xmlRes.conjuntos[+b.dataset.i]); });
