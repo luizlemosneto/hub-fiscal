@@ -2285,7 +2285,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
 
   async function processarBase(file, aoProgredir){
-    let cm1, cm2, cm3, cm4, cm5, cm6, cm7, cm8, cm9, cm10, cm11, cmNome, cmFpas, cmOE, cmTerc, cmSusp;
+    let cm1, cm2, cm3, cm4, cm5, cm6, cm7, cm8, cm9, cm10, cm11, cmNome, cmFpas, cmOE, cmTerc, cmSusp, cmEmp;
     const mapMat = new Map(), rcRef = new Set(), mapRc = new Map();
     let fl5001 = []; let gIdx = 0;
     const vistos5001 = new Set(); let dup5001 = 0;
@@ -2304,7 +2304,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       // Para Outras Entidades: FPAS e código de OE da lotação (o S-5001 gerado no módulo XML já traz)
       cmFpas = locColEstEso(cols, ["FPAS"]) || locColEso(cols, ["FPAS"]); cmOE = locColEstEso(cols, ["Código OE","Codigo OE"]);
       cmTerc = locColEso(cols, ["CODIGO TERCEIROS","COD TERCEIROS","CODTERCS"], ["SUSP"]); cmSusp = locColEso(cols, ["TERCEIROS SUSPENSO","CODTERCSSUSP"]);
-      return [cm1,cm2,cm3,cm4,cm5,cm6,cm7,cm8,cm9,cm10,cm11,cmNome,cmFpas,cmOE,cmTerc,cmSusp].filter(Boolean);
+      // Empregador: a CNO (obra) não tem raiz própria, então a raiz vem da inscrição do empregador
+      cmEmp = locColEstEso(cols, ["Número Inscrição","Numero Inscricao","CNPJ Empregador","Inscrição Empregador"]) || locColEso(cols, ["INSCRICAO EMPREGADOR","CNPJ EMPREGADOR"]);
+      return [cm1,cm2,cm3,cm4,cm5,cm6,cm7,cm8,cm9,cm10,cm11,cmNome,cmFpas,cmOE,cmTerc,cmSusp,cmEmp].filter(Boolean);
     }, rws => {
       for (let r of rws){
         const c = limpCPFEso(r[cm3]); if (!c) continue;
@@ -2328,7 +2330,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const kT = `${c}_${p}`, rcS = mapRc.get(kT); if (!rcS || cmpRecEso(rc, rcS.r) >= 0) mapRc.set(kT, { id: gIdx, r: rc });
         const fpas = cmFpas ? (parseInt(String(r[cmFpas] ?? "").replace(/\D/g, ""), 10) || 0) : 0;
         const oe = cmOE && String(r[cmOE] ?? "").trim() !== "" ? (parseInt(r[cmOE], 10) || 0) : cmTerc ? Math.max(0, (parseInt(r[cmTerc], 10) || 0) - (cmSusp ? (parseInt(r[cmSusp], 10) || 0) : 0)) : 0;
-        fl5001.push({ id: gIdx++, p, c, iL, lt, vR, vN, rc, fpas, oe });
+        const re = cmEmp ? limpInsEso(r[cmEmp]).slice(0, 8) : "";
+        fl5001.push({ id: gIdx++, p, c, iL, lt, vR, vN, rc, fpas, oe, re });
       }
     }, aoProgredir);
     vistos5001.clear();
@@ -2341,7 +2344,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       if (cm2 && r.rc !== mapRc.get(`${r.c}_${r.p}`).r) continue;
       const b = rcRef.has(`${r.rc}_${r.c}_${r.p}`) ? r.vR : r.vN;
       const k = `${r.p}_${r.iL}_${r.lt}_${r.c}`;
-      if (!mapGrp.has(k)) mapGrp.set(k, { p: r.p, iL: r.iL, c: r.c, lt: r.lt, fpas: r.fpas, oe: r.oe, rm: 0 });
+      if (!mapGrp.has(k)) mapGrp.set(k, { p: r.p, iL: r.iL, c: r.c, lt: r.lt, fpas: r.fpas, oe: r.oe, re: r.re, rm: 0 });
       mapGrp.get(k).rm += b;
     }
     fl5001 = null;
@@ -2356,7 +2359,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       if (!inc){ foraJanela++; return; }
       const k = i.p + "|" + i.iL;
       porCompIns.set(k, (porCompIns.get(k) || 0) + i.rm);
-      const kOE = [i.p, i.iL, i.fpas, i.oe].join("|");
+      const kOE = [i.p, i.iL, i.fpas, i.oe, i.re].join("|");
       porOE.set(kOE, (porOE.get(kOE) || 0) + i.rm);
     });
     // Mantém competência x inscrição; o agrupamento final (estabelecimento ou matriz) é feito depois
@@ -2369,7 +2372,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const avisos = [];
     if (!cm2) avisos.push("Coluna de recibo não encontrada: retificações foram somadas às originais.");
     const temOE = !!cmFpas && !!(cmOE || cmTerc);
-    const brutosOE = temOE ? [...porOE.entries()].map(([k, rm]) => { const [p, iL, fpas, oe] = k.split("|"); return { p, iL, fpas: +fpas, oe: +oe, rm }; }) : null;
+    const brutosOE = temOE ? [...porOE.entries()].map(([k, rm]) => { const [p, iL, fpas, oe, re] = k.split("|"); return { p, iL, fpas: +fpas, oe: +oe, re, rm }; }) : null;
     return { brutos, brutosOE, nomes: Object.fromEntries(nomesIns), notas, avisos };
   }
 
@@ -2395,7 +2398,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     for (const b of brutosOE || []){
       const ehCnpj = b.iL.length === 14, raiz = ehCnpj ? b.iL.slice(0, 8) : "-", cnpj = ehCnpj ? cnpjMatriz(raiz) : b.iL;
       const k = [b.p, cnpj, b.fpas, b.oe].join("|");
-      if (!m.has(k)) m.set(k, { periodo: normPeriodo(b.p), raiz, cnpj, nome: nomes[cnpj] || nomes[b.iL] || "", fpas: b.fpas, oe: b.oe, base: 0 });
+      if (!m.has(k)) m.set(k, { periodo: normPeriodo(b.p), raiz, cnpj, raizEmp: ehCnpj ? raiz : (b.re || ""), nome: nomes[cnpj] || nomes[b.iL] || "", fpas: b.fpas, oe: b.oe, base: 0 });
       const g = m.get(k); g.base += b.rm; if (!g.nome && nomes[b.iL]) g.nome = nomes[b.iL];
     }
     return [...m.values()];
@@ -2477,6 +2480,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         "O CNPJ de cada linha vem da inscrição da lotação do trabalhador. Matriz e filiais com a mesma raiz (8 primeiros dígitos) são somadas no CNPJ da matriz (raiz + 0001 + dígitos verificadores).",
         "O nome vem da coluna de razão social, se o arquivo tiver; senão, do nome do arquivo (trecho antes do “ -”).",
         "Outras Entidades (20 salários mínimos): as bases são separadas por competência, matriz (ou CNO), FPAS e código de outras entidades. De cada uma sai o limite de 20 salários mínimos vigentes no ano; o que sobra é multiplicado pela alíquota de parafiscais e pela de Sistema S (tabela FPAS + código, a mesma das Rubricas). Os dois reflexos somados são o crédito de Outras Entidades.",
+        "Obra (CNO) da empresa entra junto com a matriz quando, na competência, tem o mesmo FPAS e código de OE da matriz; com FPAS ou código diferente, fica em linha própria.",
         "Para isso o arquivo precisa trazer FPAS e código de OE por lotação. O S-5001 gerado no módulo XML (lido junto com o S-5011) já vem assim."
       ],
       vazio: "Nenhum S-5001 enviado ainda.",
@@ -2504,6 +2508,15 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     celulasTela: r => [r.periodo.texto, r.empresa, r.cnpj || "—", r.fpas || "-", r.oe, brl.format(r.baseRed), brl.format(r.reflParaf), brl.format(r.reflSisS)],
     chave: r => [r.periodo.texto, up(r.empresa), r.cnpj, r.fpas, r.oe].join("\u0001"),
     agrega: true,
+    // CNO (obra) entra na matriz da mesma empresa quando, na competência, a matriz tem o mesmo FPAS e código de OE
+    juntar: rows => {
+      const mat = new Map(); rows.forEach(r => { if (r.raiz !== "-") mat.set([r.periodo.texto, r.raiz, r.fpas, r.oe].join("|"), r); });
+      return rows.filter(r => {
+        if (r.raiz !== "-" || !r.raizEmp) return true;
+        const m = mat.get([r.periodo.texto, r.raizEmp, r.fpas, r.oe].join("|")); if (!m) return true;
+        m.base += r.base; return false;
+      });
+    },
     // base de cada linha menos 20 salários mínimos do ano da competência; o que sobra (a coluna de remunerações) x parafiscais e x Sistema S
     finalizar: r => {
       const sm = salariosMinimos[+String(r.periodo.texto).slice(-4)] || 0, red = Math.max(0, r.base - 20 * sm), d = dividirOE(0, r.fpas, r.oe);
@@ -3000,7 +3013,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const mapa = new Map();
       for (const r of out){ const k = mod.chave(r); if (mapa.has(k)) mapa.get(k).base += r.base; else mapa.set(k, { ...r }); }
       if (tipo === vista) duplicadasRemovidas = 0;
-      return [...mapa.values()].map(mod.finalizar || (r => r)).sort((a, b) => (ordemPeriodo(a.periodo) - ordemPeriodo(b.periodo)) || up(a.empresa).localeCompare(up(b.empresa)) || a.cnpj.localeCompare(b.cnpj) || (a.fpas || 0) - (b.fpas || 0) || (a.oe || 0) - (b.oe || 0));
+      return (mod.juntar ? mod.juntar([...mapa.values()]) : [...mapa.values()]).map(mod.finalizar || (r => r)).sort((a, b) => (ordemPeriodo(a.periodo) - ordemPeriodo(b.periodo)) || up(a.empresa).localeCompare(up(b.empresa)) || a.cnpj.localeCompare(b.cnpj) || (a.fpas || 0) - (b.fpas || 0) || (a.oe || 0) - (b.oe || 0));
     }
     const unicas = semDuplicadas(out, mod.chave);
     if (tipo === vista) duplicadasRemovidas = out.length - unicas.length;
@@ -3170,7 +3183,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   function baixarArquivo(a){
     const mod = modDe(a.tipo);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, montarAba(mod, regsDe(a).map(r => linhaCompleta(a, r)).map(mod.finalizar || (r => r))), mod.excel.aba);
+    const linhas = regsDe(a).map(r => ({ ...linhaCompleta(a, r) }));
+    XLSX.utils.book_append_sheet(wb, montarAba(mod, (mod.juntar ? mod.juntar(linhas) : linhas).map(mod.finalizar || (r => r))), mod.excel.aba);
     salvarArquivo(mod.excel.arquivo(limpaNome(a.empresa)), gerar(wb));
   }
   function baixarConsolidado(){
