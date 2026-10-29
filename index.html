@@ -2559,7 +2559,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     // Antes do rolo: um pincel preto circula o total (uma volta e meia, pontas finas), o fundo cai em breu e a tela dá zoom no valor
     function pincelGiz(w, h){
-      const cx = w / 2, cy = h / 2, rx = w / 2 + 26, ry = h / 2 + 16, rot = -2.5 * Math.PI / 180, N = 260, W = 2.8;
+      const cx = w / 2, cy = h / 2, rx = w / 2 + 26, ry = h / 2 + 16, rot = -2.5 * Math.PI / 180, N = 260, W = 1.5;
       // começa em cima à esquerda, dá a volta inteira e passa do ponto, saindo para fora em cima à direita
       const t0 = -2.75, t1 = -2.75 + 2 * Math.PI + 2.5, pts = [];
       for (let i = 0; i <= N; i++){
@@ -2595,11 +2595,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       await espera(60); ov.classList.add("escurece");
       // 1) o pincel circula o valor
       await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
-      await espera(200);
-      // 2) zoom no valor
+      await espera(90);
+      // 2) zoom no valor: rápido e brusco, um tranco e para
       const alvo = Math.min(innerWidth * .6 / (w + mx * 2), innerHeight * .5 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
-      await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo})` }],
-        { duration: 900, easing: "cubic-bezier(.7,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
+      const em = (x, y, k) => ({ transform: `translate(${dx + x}px,${dy + y}px) scale(${alvo * k})` });
+      await zoom.animate([{ transform: "none" }, { ...em(0, 0, 1.14), offset: .5 }, { ...em(-14, 9, .96), offset: .62 }, { ...em(11, -7, 1.03), offset: .74 }, { ...em(-6, 4, .99), offset: .86 }, em(0, 0, 1)],
+        { duration: 340, easing: "cubic-bezier(.3,0,.1,1)", fill: "forwards" }).finished.catch(() => {});
       await espera(1400);
       // 3) some com calma e a fita toma a tela
       zoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: "ease", fill: "forwards" });
