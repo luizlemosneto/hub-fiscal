@@ -963,13 +963,16 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
 /* O valor circulado a pincel preto, o fundo em breu, o brilho e o zoom */
-.giz{position:fixed;inset:0;z-index:92;pointer-events:none;--giz-brilho:rgba(174,174,178,.8)}
+.giz{position:fixed;inset:0;z-index:92;pointer-events:none;--giz-brilho:rgba(199,199,204,.9)}
 :root[data-theme="dark"] .giz{--giz-brilho:rgba(255,255,255,.85)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .giz{--giz-brilho:rgba(255,255,255,.85)}}
 .giz-fundo{position:absolute;inset:0;opacity:0;background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
 .giz.escurece .giz-fundo{opacity:1}
 .giz-zoom{position:absolute;transform-origin:50% 50%;will-change:transform}
-.giz-papel{position:absolute;background:#FFFFFF;border-radius:3px;box-shadow:0 0 18px 2px var(--giz-brilho)}
+.giz-fumaca{position:absolute;border-radius:50%;filter:blur(14px);opacity:.95;
+  background:radial-gradient(ellipse 42% 48% at 34% 46%,var(--giz-brilho),transparent 100%),radial-gradient(ellipse 40% 44% at 66% 56%,var(--giz-brilho),transparent 100%),radial-gradient(ellipse 52% 50% at 50% 50%,var(--giz-brilho),transparent 100%);
+  animation:fumaca 3.2s ease-in-out infinite alternate}
+@keyframes fumaca{to{transform:scale(1.07,.95) rotate(3deg);opacity:.8}}
 .giz-valor{position:relative;display:block;text-align:center;white-space:nowrap;font:800 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   color:transparent;background:linear-gradient(105deg,#000 0,#000 40%,#8E8E93 47%,#D1D1D6 50%,#8E8E93 53%,#000 60%,#000 100%) 100% 0/260% 100%;-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(0 0 2px var(--giz-brilho));animation:brilho 1.7s linear infinite}
@@ -2579,7 +2582,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       const ov = document.createElement("div"); ov.className = "giz";
       ov.innerHTML = `<div class="giz-fundo"></div>
         <div class="giz-zoom" style="left:${r.left - 6}px;top:${r.top - 2}px;width:${w}px;height:${h}px">
-          <span class="giz-papel" style="left:${-mx}px;top:${-my}px;width:${w + mx * 2}px;height:${h + my * 2}px"></span>
+          <span class="giz-fumaca" style="left:${-mx}px;top:${-my}px;width:${w + mx * 2}px;height:${h + my * 2}px"></span>
           <span class="giz-valor" style="width:${w}px;height:${h}px;font-size:${getComputedStyle(sp).fontSize}">${esc(sp.textContent)}</span>
           <svg style="left:${-pad}px;top:${-pad}px" width="${w + pad * 2}" height="${h + pad * 2}" viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}">
             <mask id="mascaraPincel" maskUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${w + pad * 2}" height="${h + pad * 2}"><path class="rastro" d="${br.centro}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
