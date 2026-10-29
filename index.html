@@ -3406,7 +3406,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
             else if (!nome && /[A-Za-zÀ-ú]/.test(s)) nome = s;
           }
         }
-        if (cnpj && nome){ const rz = raizDe(cnpj); if (!mapa.has(rz)) mapa.set(rz, nome); }
+        if (cnpj && nome){ const rz = raizDe(cnpj); if (!mapa.has(rz)) mapa.set(rz, xDec(nome)); }
       }
       if (mapa.size) break;
     }
@@ -4974,11 +4974,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
   const xFilhos = el => Array.from(el.children || []);
   const xDir = (el, nome) => (el && xFilhos(el).find(c => c.localName === nome)) || null;
-  const xTxt = (el, caminho) => { let a = el; for (const n of caminho.split("/")){ a = xDir(a, n); if (!a) return ""; } return (a.textContent || "").trim(); };
+  const xDec = t => { let a = String(t ?? ""); for (let i = 0; i < 3 && a.includes("&"); i++){ const b = a.replace(/&(amp|lt|gt|quot|apos|#39|#x27);/gi, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'", "#x27": "'" }[e.toLowerCase()])); if (b === a) break; a = b; } return a; };
+  const xTxt = (el, caminho) => { let a = el; for (const n of caminho.split("/")){ a = xDir(a, n); if (!a) return ""; } return xDec((a.textContent || "").trim()); };
   const xDesc = (el, nomes, saida = []) => { for (const c of xFilhos(el)){ if (nomes.includes(c.localName)) saida.push(c); else xDesc(c, nomes, saida); } return saida; };
   const xDescRe = (el, re, saida = []) => { for (const c of xFilhos(el)){ if (re.test(c.localName)) saida.push(c); else xDescRe(c, re, saida); } return saida; };
   const xGrau = (v, topo) => { for (let a = v.parentNode; a && a.nodeType === 1; a = a.parentNode){ const g = xTxt(a, "infoAgNocivo/grauExp"); if (g) return g; if (a === topo) break; } return ""; };
-  const xAcha = (el, nome) => { const r = xDesc(el, [nome]); return r.length ? (r[0].textContent || "").trim() : ""; };
+  const xAcha = (el, nome) => { const r = xDesc(el, [nome]); return r.length ? xDec((r[0].textContent || "").trim()) : ""; };
   const xEventos = (el, saida = []) => { for (const c of xFilhos(el)){ if (/^evt[A-Z]/.test(c.localName)) saida.push(c); else xEventos(c, saida); } return saida; };
   const xNum = s => { const n = parseFloat(String(s ?? "").replace(",", ".")); return isNaN(n) ? 0 : n; };
   const xDig = s => String(s ?? "").replace(/\D/g, "");
@@ -5018,7 +5019,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   function xAchatar(el, herdado, linhas){
     const base = { ...herdado }, ramos = [], filhos = xFilhos(el);
     const poe = (pai, c) => {
-      const v = (c.textContent || "").trim(); let k = c.localName;
+      const v = xDec((c.textContent || "").trim()); let k = c.localName;
       if (k in base && (pai !== el || k in herdado)) k = pai.localName + "." + k;
       if (k in base) base[k] += " | " + v; else base[k] = v;
     };
