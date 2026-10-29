@@ -879,26 +879,50 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 
 /* A cena: moedas à esquerda, máquina e a fita saindo por cima */
 .maq-cena{position:relative;height:520px;display:flex;align-items:flex-end;justify-content:center;gap:22px;animation:sobe 1.1s var(--ease) .25s backwards}
-.maq{position:relative;width:268px;z-index:2;flex:none}
-.maq-corpo{position:relative;background:var(--ios-preto);border-radius:40px;padding:26px 18px 18px;box-shadow:0 40px 70px -40px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.08)}
-.maq-boca{position:absolute;left:50%;top:-5px;width:190px;height:10px;transform:translateX(-50%);border-radius:6px;background:var(--ios-tecla)}
-.maq-visor{display:block;height:3.4rem;margin:22px 6px 12px;padding:0;background:none;color:#FFFFFF;text-align:right;
-  font:300 3.1rem/1.1 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* A maquininha de cartão: corpo preto, tela cinza, teclas em relevo, o "entra" laranja; segura por uma mão de manga laranja */
+.maq{position:relative;width:236px;z-index:2;flex:none;margin:0 70px 44px 36px;transform:rotate(-7deg);transform-origin:50% 100%}
+.maq-corpo{position:relative;border-radius:30px 30px 40px 40px;padding:30px 16px 24px;
+  background:radial-gradient(120% 60% at 20% 0%,#3A3A3C 0,rgba(58,58,60,0) 55%),linear-gradient(165deg,#1C1C1E 0%,#0A0A0B 55%,#000000 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 2px 0 0 rgba(255,255,255,.05),inset -3px -8px 14px rgba(0,0,0,.7),0 0 0 1px #000000,
+    6px 10px 0 -2px #1C1C1E,0 44px 60px -28px rgba(0,0,0,.6)}
+.maq-corpo::before{content:"";position:absolute;left:24px;right:24px;top:-15px;height:40px;z-index:-1;border-radius:20px 20px 10px 10px;
+  background:linear-gradient(180deg,#48484A,#1C1C1E 70%);box-shadow:inset 0 2px 0 rgba(255,255,255,.18),0 -1px 0 #000000}
+.maq-corpo::after{content:"";position:absolute;left:50%;bottom:7px;width:132px;height:5px;margin-left:-66px;border-radius:3px;background:#000000;box-shadow:inset 0 1px 2px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.08)}
+.maq-boca{position:absolute;left:50%;top:-12px;width:164px;height:7px;transform:translateX(-50%);border-radius:4px;background:#000000;box-shadow:inset 0 1px 2px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.12)}
+.maq-tela{margin:4px 2px 12px;padding:9px 13px 7px;border-radius:14px;background:linear-gradient(180deg,#3A3A3C,#2C2C2E);
+  box-shadow:inset 0 0 0 3px #111112,inset 0 7px 14px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.1)}
+.maq-rotulo{display:flex;justify-content:space-between;font:600 .6rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:.12em;color:#8E8E93}
+.maq-rotulo b{color:var(--ios-laranja);font-weight:700}
+.maq-visor{display:block;height:2.9rem;margin:4px 0 0;padding:0;background:none;color:#FFFFFF;text-align:right;
+  font:300 2.5rem/1.15 "Inter","Helvetica Neue",system-ui,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .maq-visor.pulsa{animation:pulsa .3s var(--ease)}
 @keyframes pulsa{40%{opacity:.55}}
-.maq-teclas{display:grid;grid-template-columns:repeat(4,53px);gap:10px;justify-content:center}
-.maq-teclas button{width:53px;height:53px;border:0;border-radius:50%;background:var(--ios-tecla);color:#FFFFFF;font:400 1.55rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;cursor:pointer;
-  transition:filter .12s,background .2s,color .2s,transform .12s var(--ease)}
-.maq-teclas button:hover{filter:brightness(1.18)}
-.maq-teclas button:active,.maq-teclas button.aperta{filter:brightness(1.6);transform:scale(.94)}
-.maq-teclas button.fn{background:var(--ios-cinza);color:#000000;font-size:1.3rem;font-weight:500;letter-spacing:-.02em}
-.maq-teclas button.op{background:var(--ios-laranja);color:#FFFFFF;font-size:1.85rem}
-.maq-teclas button.op.ativa{background:#FFFFFF;color:var(--ios-laranja)}
-.maq-teclas button.zero{width:auto;grid-column:span 2;border-radius:27px;text-align:left;padding-left:22px}
+.maq-soft{display:flex;justify-content:center;gap:9px;margin:0 0 14px}
+.maq-soft i{width:36px;height:9px;border-radius:5px;background:linear-gradient(180deg,#8E8E93,#636366);box-shadow:0 2px 0 #2C2C2E,inset 0 1px 0 rgba(255,255,255,.3)}
+.maq-teclas{display:grid;grid-template-columns:repeat(3,44px) 46px;grid-auto-rows:38px;gap:11px 10px;justify-content:center}
+.maq-teclas button{border:0;border-radius:11px;cursor:pointer;color:#FFFFFF;font:500 1.15rem/1 "Inter","Helvetica Neue",system-ui,sans-serif;
+  background:linear-gradient(180deg,#48484A,#2C2C2E);box-shadow:0 4px 0 #0A0A0B,0 5px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:transform .08s,box-shadow .08s,filter .12s}
+.maq-teclas button:hover{filter:brightness(1.15)}
+.maq-teclas button:active,.maq-teclas button.aperta{transform:translateY(3px);box-shadow:0 1px 0 #0A0A0B,0 1px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
+.maq-teclas button.fn{background:linear-gradient(180deg,#C7C7CC,#8E8E93);color:#000000;font-size:1rem;font-weight:700;box-shadow:0 4px 0 #48484A,0 5px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.maq-teclas button.fn.corrige{background:linear-gradient(180deg,#8E8E93,#636366);color:#FFFFFF;box-shadow:0 4px 0 #2C2C2E,0 5px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.maq-teclas button.op{grid-row:span 2;background:linear-gradient(180deg,#FFB340,var(--ios-laranja) 60%,#F08A00);font-size:1.5rem;font-weight:700;
+  box-shadow:0 4px 0 #A35A00,0 5px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.maq-teclas button.fn:active,.maq-teclas button.fn.aperta,.maq-teclas button.op:active,.maq-teclas button.op.aperta{transform:translateY(3px);box-shadow:0 1px 0 #2C2C2E,inset 0 1px 0 rgba(255,255,255,.3)}
 .maq-teclas button:focus-visible{outline:2px solid var(--ios-laranja);outline-offset:3px}
+/* O cartão enfiado embaixo */
+.maq-cartao{position:absolute;left:50%;bottom:-46px;width:128px;height:60px;margin-left:-64px;z-index:-1;border-radius:0 0 8px 8px;
+  background:linear-gradient(160deg,#C7C7CC,#8E8E93);box-shadow:inset 0 -1px 0 rgba(0,0,0,.25),0 8px 12px -6px rgba(0,0,0,.4);
+  font:600 .5rem/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#48484A;padding:30px 0 0 12px;box-sizing:border-box}
+.maq-cartao::before{content:"";position:absolute;right:12px;top:24px;width:20px;height:14px;border-radius:3px;background:linear-gradient(135deg,#FFB340,var(--ios-laranja))}
+/* A mão: palma e manga atrás, dedos e polegar por cima */
+.maq-mao{position:absolute;left:-80px;top:0;width:460px;height:460px;overflow:visible;pointer-events:none}
+.maq-mao.tras{z-index:-2}
+.maq-mao.frente{z-index:3}
 
 /* A fita sai pela boca, sobe bastante e enrola na ponta; balança de leve */
-.fita{position:absolute;left:50%;bottom:calc(100% - 4px);width:180px;margin-left:-90px;z-index:-1;max-height:96px;min-height:84px;overflow:hidden;
+.fita{position:absolute;left:50%;bottom:calc(100% + 8px);width:156px;margin-left:-78px;z-index:-1;max-height:96px;min-height:84px;overflow:hidden;
   display:flex;flex-direction:column;justify-content:flex-end;transform-origin:50% 100%;animation:balanca 6s ease-in-out infinite}
 @keyframes balanca{50%{transform:rotate(-1.4deg) translateX(-3px)}}
 .fita-curva{position:absolute;left:0;right:0;top:0;height:30px;z-index:2;border-radius:0 0 50% 50% / 0 0 100% 100%;
@@ -967,23 +991,6 @@ h2.sec{font-weight:600;letter-spacing:-.02em}
 @keyframes despenca{from{transform:translateX(-50%) translateY(-135vh) rotate(calc(var(--r) * -5))}}
 .rolo.rasga{background:transparent;transition:background .6s}
 .rolo.rasga .tira{animation:rasga .9s cubic-bezier(.5,0,.75,0) forwards;clip-path:none}
-/* O valor circulado a pincel preto, o fundo em breu, o brilho e o zoom */
-.giz{position:fixed;inset:0;z-index:92;pointer-events:none;--giz-brilho:rgba(199,199,204,.9);--giz-breu:rgba(0,0,0,.62)}
-:root[data-theme="dark"] .giz{--giz-brilho:rgba(209,209,214,.95);--giz-breu:rgba(235,235,240,.6)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .giz{--giz-brilho:rgba(209,209,214,.95);--giz-breu:rgba(235,235,240,.6)}}
-.giz-fundo{position:absolute;inset:-60px;opacity:0;background:var(--giz-breu);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .6s var(--ease)}
-.giz.escurece .giz-fundo{opacity:1}
-.giz-zoom{position:absolute;transform-origin:50% 50%;will-change:transform}
-.giz-fumaca{position:absolute;border-radius:50%;filter:blur(20px);opacity:.95;
-  --f:color-mix(in srgb,var(--giz-brilho) 45%,transparent);
-  background:radial-gradient(ellipse 46% 52% at 36% 46%,var(--f),transparent 100%),radial-gradient(ellipse 44% 48% at 64% 56%,var(--f),transparent 100%),radial-gradient(ellipse 58% 56% at 50% 50%,var(--giz-brilho) 0,var(--f) 45%,transparent 100%);
-  animation:fumaca 3.2s ease-in-out infinite alternate}
-@keyframes fumaca{to{transform:scale(1.07,.95) rotate(3deg);opacity:.8}}
-.giz-valor{position:relative;display:block;text-align:center;white-space:nowrap;font:800 .78rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
-  color:transparent;background:linear-gradient(105deg,#000 0,#000 40%,#8E8E93 47%,#D1D1D6 50%,#8E8E93 53%,#000 60%,#000 100%) 100% 0/260% 100%;-webkit-background-clip:text;background-clip:text;
-  transform:scale(1.22);animation:brilho 1.7s linear infinite}
-@keyframes brilho{to{background-position:-60% 0}}
-.giz svg{position:absolute;overflow:visible}
 @keyframes rasga{to{transform:translateX(-50%) translateY(115vh) rotate(calc(var(--r) * -4))}}
 
 /* Chuva de moedas ao baixar a planilha de oportunidades */
@@ -1126,7 +1133,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <p class="lede">Escolha o módulo. Cada um lê seus arquivos e devolve a planilha pronta para o seu controle de recuperação de crédito.</p>
         <div class="hero-meta"><span><b>8</b>módulos</span><span><b>5 anos</b>de rubricas na análise</span><span><b>100%</b>no seu navegador</span></div>
       </div>
-      <div class="maq-cena" data-calc="hero" aria-label="Calculadora de mesa"></div>
+      <div class="maq-cena" data-calc="hero" aria-label="Maquininha de cartão"></div>
     </section>
     <div class="home-cols">
     <aside class="home-side">
@@ -1257,7 +1264,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
     </div></div>
 
-    <aside class="rub-maq" aria-label="Calculadora de mesa"><div class="maq-cena" data-calc="rub"></div></aside>
+    <aside class="rub-maq" aria-label="Maquininha de cartão"><div class="maq-cena" data-calc="rub"></div></aside>
 
     <details class="how">
       <summary>Como o mapeamento funciona</summary>
@@ -2383,17 +2390,41 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     
     <div class="maq">
       <div class="fita"><span class="fita-curva" aria-hidden="true"></span><ol aria-live="polite"></ol></div>
+      <svg class="maq-mao tras" viewBox="-80 0 460 460" aria-hidden="true">
+          <defs><linearGradient id="manga__ID__" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB340"/><stop offset=".55" stop-color="#FF9F0A"/><stop offset="1" stop-color="#D97F00"/></linearGradient>
+            <linearGradient id="pele__ID__" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5E5EA"/><stop offset=".55" stop-color="#C7C7CC"/><stop offset="1" stop-color="#9C9CA1"/></linearGradient>
+            <linearGradient id="punho__ID__" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#AEAEB2"/></linearGradient>
+            <linearGradient id="some__ID__" x1="0" y1="0" x2="1" y2="0"><stop offset=".72" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <mask id="mangaSome__ID__" maskUnits="userSpaceOnUse" x="-80" y="0" width="460" height="460"><rect x="-80" width="460" height="460" fill="url(#some__ID__)"/></mask></defs>
+          <ellipse cx="150" cy="262" rx="104" ry="80" fill="url(#pele__ID__)"/>
+          <g transform="rotate(-16 270 250)">
+            <rect x="236" y="214" width="60" height="70" rx="22" fill="url(#pele__ID__)"/>
+            <rect x="282" y="196" width="140" height="108" rx="30" fill="url(#manga__ID__)" mask="url(#mangaSome__ID__)"/>
+            <rect x="272" y="200" width="26" height="100" rx="10" fill="url(#punho__ID__)"/>
+          </g>
+        </svg>
       <div class="maq-corpo">
         <div class="maq-boca" aria-hidden="true"><span class="cabeca"></span></div>
-        <output class="maq-visor">0</output>
+        <div class="maq-tela"><span class="maq-rotulo" aria-hidden="true"><span>VALOR</span><b>R$</b></span><output class="maq-visor">0</output></div>
+        <div class="maq-soft" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div class="maq-teclas">
-          <button type="button" data-k="AC" class="fn">AC</button><button type="button" data-k="±" class="fn" aria-label="Trocar o sinal">+/−</button><button type="button" data-k="%" class="fn">%</button><button type="button" data-k="÷" class="op">÷</button>
-          <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" data-k="×" class="op">×</button>
-          <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" data-k="−" class="op">−</button>
-          <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="+" class="op">+</button>
-          <button type="button" data-k="0" class="zero">0</button><button type="button" data-k=",">,</button><button type="button" data-k="=" class="op igual">=</button>
+          <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="AC" class="fn" aria-label="Cancelar">✕</button>
+          <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" data-k="⌫" class="fn corrige" aria-label="Corrigir">‹</button>
+          <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" data-k="=" class="op igual" aria-label="Entra">✓</button>
+          <button type="button" data-k=",">,</button><button type="button" data-k="0">0</button><button type="button" data-k="00">00</button>
         </div>
       </div>
+      <span class="maq-cartao" aria-hidden="true">•••• 0000</span>
+      <svg class="maq-mao frente" viewBox="-80 0 460 460" aria-hidden="true">
+          <g fill="url(#pele__ID__)" stroke="#8E8E93" stroke-opacity=".4" stroke-width="1">
+            <rect x="-23" y="228" width="37" height="33" rx="16.5" transform="rotate(-6 -4 244)"/>
+            <rect x="-26" y="259" width="39" height="34" rx="17"/>
+            <rect x="-25" y="291" width="38" height="33" rx="16.5" transform="rotate(4 -6 307)"/>
+            <rect x="-20" y="322" width="33" height="29" rx="14.5" transform="rotate(9 -3 336)"/>
+            <rect x="214" y="208" width="66" height="31" rx="15.5" transform="rotate(-38 247 223)"/>
+          </g>
+          <g fill="#fff" opacity=".45"><ellipse cx="-10" cy="233" rx="7" ry="3"/><ellipse cx="-12" cy="266" rx="7" ry="3"/><ellipse cx="-11" cy="300" rx="7" ry="3"/><ellipse cx="-8" cy="332" rx="6" ry="2.5"/><ellipse cx="230" cy="214" rx="8" ry="3" transform="rotate(-38 230 214)"/></g>
+        </svg>
     </div>`;
   const fmtCalc = n => Math.abs(n) >= 1e13 ? n.toExponential(4).replace(".", ",") : n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   // Número digitado do jeito que aparece no visor: 1.250,5
@@ -2404,10 +2435,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   }
 
   function criarCalculadora(cena){
-    cena.innerHTML = MOLDE_CALC;
+    cena.innerHTML = MOLDE_CALC.replace(/__ID__/g, "-" + (cena.dataset.calc || "x"));  // ids únicos: as duas máquinas convivem na página
     const visor = cena.querySelector(".maq-visor"), lista = cena.querySelector(".fita ol"), teclas = cena.querySelector(".maq-teclas");
-    const pilha = cena.querySelector(".moedas"), moedaPe = cena.querySelector(".moeda-pe"), tAC = teclas.querySelector('[data-k="AC"]');
-    let entrada = "", acc = null, op = null, posResultado = false, repOp = null, repNum = 0, pend = [], impressas = 0, rolando = false, demoTimer = 0, iguais = 0;
+    const pilha = cena.querySelector(".moedas"), moedaPe = cena.querySelector(".moeda-pe");
+    let entrada = "", acc = null, op = null, posResultado = false, repOp = null, repNum = 0, pend = [], impressas = 0, rolando = false, demoTimer = 0, iguais = 0, nf = 1200;
     const fita = cena.querySelector(".fita"), maq = cena.querySelector(".maq"), boca = cena.querySelector(".maq-boca");
     let fila = Promise.resolve();
 
@@ -2416,7 +2447,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     const calc = (a, o, b) => o === "+" ? a + b : o === "−" ? a - b : o === "×" ? a * b : o === "÷" ? (b ? a / b : 0) : b;
     function mostrar(txt){
       visor.textContent = txt;
-      const n = txt.length; visor.style.fontSize = n > 7 ? Math.max(1.5, 3.1 * 7 / n).toFixed(2) + "rem" : "";
+      const n = txt.length; visor.style.fontSize = n > 7 ? Math.max(1.2, 2.5 * 7 / n).toFixed(2) + "rem" : "";
       visor.classList.remove("pulsa"); void visor.offsetWidth; visor.classList.add("pulsa");
     }
     const acende = k => teclas.querySelectorAll("button.op").forEach(b => b.classList.toggle("ativa", b.dataset.k === k && k !== "="));
@@ -2471,12 +2502,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         if (posResultado){ acc = null; op = null; posResultado = false; }
         if (entrada.replace(/\D/g, "").length >= 12) return;
         entrada = entrada === "0" ? k : entrada === "-0" ? "-" + k : entrada + k;
-        tAC.textContent = "C"; acende(null); mostrar(fmtEntrada(entrada)); return;
+        acende(null); mostrar(fmtEntrada(entrada)); return;
       }
+      if (k === "00"){ if (entrada !== "" && entrada !== "0" && entrada !== "-"){ tecla("0"); tecla("0"); } return; }
       if (k === ","){
         if (posResultado){ acc = null; op = null; posResultado = false; }
         if (!entrada.includes(",")) entrada = (entrada === "" ? "0" : entrada === "-" ? "-0" : entrada) + ",";
-        tAC.textContent = "C"; acende(null); mostrar(fmtEntrada(entrada)); return;
+        acende(null); mostrar(fmtEntrada(entrada)); return;
       }
       if (k === "⌫"){ entrada = entrada.slice(0, -1); mostrar(fmtEntrada(entrada || "0")); return; }
       if (k === "±"){
@@ -2489,7 +2521,6 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         entrada = paraEntrada(r); mostrar(fmtEntrada(entrada)); return;
       }
       if (k === "AC"){
-        if (tAC.textContent === "C"){ entrada = ""; tAC.textContent = "AC"; mostrar("0"); acende(op); return; }
         entrada = ""; acc = null; op = null; pend = []; repOp = null; posResultado = false; acende(null); mostrar("0"); return;
       }
       if ("+−×÷".includes(k)){
@@ -2510,13 +2541,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           pend.push([fmtCalc(v), "="]); acc = calc(acc, op, v); repOp = op; repNum = v; op = null;
         } else if (repOp && acc !== null && entrada === ""){
           pend = [[fmtCalc(acc), repOp], [fmtCalc(repNum), "="]]; acc = calc(acc, repOp, repNum);
-        } else { acc = num(); pend.push([fmtCalc(acc), "="]); }
-        // Sempre que der "=", o resultado vai para a fita
-        const linhas = pend.map(l => [l[0], l[1], false]).concat([[fmtCalc(acc), "*", true]]); pend = [];
-        entrada = ""; posResultado = true; tAC.textContent = "AC"; acende(null); mostrar(fmtCalc(acc)); poeMoeda(true);
+        } else { acc = num(); }
+        // Cada "entra" imprime um holerite: o número e o valor da rubrica saem na fita
+        const linhas = pend.map(l => [l[0], l[1], false]).concat([["HOLERITE Nº " + String(++nf).padStart(4, "0"), "", false], [fmtCalc(acc), "R$", true]]); pend = [];
+        entrada = ""; posResultado = true; acende(null); mostrar(fmtCalc(acc)); poeMoeda(true);
         const impresso = imprimirConta(linhas);
-        // No terceiro "=", depois de imprimir: o valor é circulado a pincel e a tela dá zoom nele
-        if (++iguais >= 3){ iguais = 0; impresso.then(() => setTimeout(momentoBoom, reduzMov ? 0 : 350)); }
+        // No terceiro "entra", depois de imprimir: chuva de notas
+        if (++iguais >= 3){ iguais = 0; rolando = true; impresso.then(() => setTimeout(chuvaDeNotas, reduzMov ? 0 : 120)); }
       }
     }
     teclas.addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (!b) return; pararDemo(); tecla(b.dataset.k); });
@@ -2534,7 +2565,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     }
 
     // O rolo: a fita escapa da máquina e toma a tela; um clique rasga tudo
-    const ROTULOS = ["INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
+    const ROTULOS = ["HOLERITE", "HOLERITE", "INSS 20%", "RAT 3%", "FAP 1,0000", "TERCEIROS 5,8%", "S-1200", "S-5011", "S-1010", "DARF", "DCTFWEB", "IRRF", "FGTS 8%", "CRÉDITO", "13/2024", "PER/DCOMP", "SALDO", "RETENÇÃO"];
     const linhaFake = i => i % 9 === 8 ? `<li class="tot"><span>${fmtCalc(Math.random() * 900000 + 10000)}</span><b>*</b></li>`
       : `<li><span>${ROTULOS[Math.floor(Math.random() * ROTULOS.length)]}</span><span>${fmtCalc(Math.random() * 90000)}</span></li>`;
     function desenrolar(despenca){
@@ -2550,76 +2581,29 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       }
       ov.innerHTML = html;
       document.body.appendChild(ov);
-      // Se ninguém clicar, a fita se rasga sozinha em 7 segundos
+      // Se ninguém clicar, a fita se rasga sozinha em 5 segundos
       let sozinha = 0;
       const fechar = () => {
         if (ov.classList.contains("rasga")) return;
         clearTimeout(sozinha); ov.classList.add("rasga");
         setTimeout(() => { ov.remove(); rolando = false; impressas = 0; iguais = 0; }, reduzMov ? 0 : 950);
       };
-      sozinha = setTimeout(fechar, reduzMov ? 2500 : 7000);
+      sozinha = setTimeout(fechar, reduzMov ? 2500 : 5000);
       ov.addEventListener("click", fechar, { once: true });
       document.addEventListener("keydown", function sai(e){ if (e.key === "Escape"){ document.removeEventListener("keydown", sai); if (ov.isConnected) fechar(); } });
     }
 
-    // Antes do rolo: um pincel preto circula o total (uma volta e meia, pontas finas), o fundo cai em breu e a tela dá zoom no valor
-    function pincelGiz(w, h){
-      const cx = w / 2, cy = h / 2, rx = w * .61 + 6, ry = h * .61 + 4, rot = -2.5 * Math.PI / 180, N = 260, W = 1.5;
-      // começa em cima à esquerda, dá a volta inteira e passa do ponto, saindo para fora em cima à direita
-      const t0 = -2.75, t1 = -2.75 + 2 * Math.PI + 2.5, pts = [];
-      for (let i = 0; i <= N; i++){
-        const u = i / N, t = t0 + (t1 - t0) * u, k = 1 + .1 * u * u, x = rx * k * Math.cos(t), y = ry * (1 - .12 * u) * Math.sin(t) - 4 * u;
-        pts.push([cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot)]);
-      }
-      const L = [], R = [];
-      pts.forEach((q, i) => {
-        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, nx = -dy / m, ny = dx / m, u = i / N;
-        const wd = W * Math.pow(Math.min(1, u * 9), .7) * Math.pow(Math.min(1, (1 - u) * 4), .8) / 2;
-        L.push([q[0] + nx * wd, q[1] + ny * wd]); R.push([q[0] - nx * wd, q[1] - ny * wd]);
-      });
-      const f = n => n.toFixed(2), poly = L.concat(R.reverse()).map((q, i) => (i ? "L" : "M") + f(q[0]) + " " + f(q[1])).join("") + "Z";
-      return { contorno: poly, centro: pts.map((q, i) => (i ? "L" : "M") + f(q[0]) + " " + f(q[1])).join("") };
-    }
-    async function momentoBoom(){
-      rolando = true;
-      const li = [...lista.querySelectorAll("li.tot")].pop(), sp = li && li.firstElementChild;
-      if (!sp || reduzMov){ desenrolar(); return; }
-      const r = sp.getBoundingClientRect(), w = r.width + 12, h = r.height + 4, pad = 50, br = pincelGiz(w, h), mx = 42, my = 30;
-      const ov = document.createElement("div"); ov.className = "giz";
-      ov.innerHTML = `<div class="giz-fundo"></div>
-        <div class="giz-zoom" style="left:${r.left - 6}px;top:${r.top - 2}px;width:${w}px;height:${h}px">
-          <span class="giz-fumaca" style="left:${-mx}px;top:${-my}px;width:${w + mx * 2}px;height:${h + my * 2}px"></span>
-          <span class="giz-valor" style="width:${w}px;height:${h}px;font-size:${getComputedStyle(sp).fontSize}">${esc(sp.textContent)}</span>
-          <svg style="left:${-pad}px;top:${-pad}px" width="${w + pad * 2}" height="${h + pad * 2}" viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}">
-            <mask id="mascaraPincel" maskUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${w + pad * 2}" height="${h + pad * 2}"><path class="rastro" d="${br.centro}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
-            <path d="${br.contorno}" fill="#000" mask="url(#mascaraPincel)"/>
-          </svg>
-        </div>`;
-      document.body.appendChild(ov);
-      const zoom = ov.querySelector(".giz-zoom"), rastro = ov.querySelector(".rastro");
-      await espera(60); ov.classList.add("escurece");
-      // 1) o pincel circula o valor
-      await rastro.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" }).finished.catch(() => {});
-      await espera(90);
-      // 2) zoom no valor: seco, de uma vez
-      const alvo = Math.min(innerWidth * .6 / (w + mx * 2), innerHeight * .5 / (h + my * 2)), dx = innerWidth / 2 - (r.left - 6 + w / 2), dy = innerHeight / 2 - (r.top - 2 + h / 2);
-      const fim = `translate(${dx}px,${dy}px) scale(${alvo})`;
-      await zoom.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * 1.12})`, offset: .7 }, { transform: fim }],
-        { duration: 230, easing: "cubic-bezier(.5,0,.2,1)", fill: "forwards" }).finished.catch(() => {});
-      // 3) o tremelique do desespero: tudo chacoalha e as notas despencam junto
-      desenrolar(true);
-      const rolo = document.querySelector(".rolo"), pagina = document.querySelector(".wrap"), tremor = [];
+    // A chuva de notas: a tela chacoalha e as notas despencam de uma vez
+    function chuvaDeNotas(){
+      desenrolar(!reduzMov);
+      if (reduzMov) return;
+      const tremor = [];
       for (let i = 0, n = 16; i < n; i++){
-        const a = 26 * Math.pow(1 - i / n, 1.4), ang = (Math.random() - .5) * 3.2 * (1 - i / n);
+        const a = 24 * Math.pow(1 - i / n, 1.4), ang = (Math.random() - .5) * 3 * (1 - i / n);
         tremor.push({ transform: `translate(${((Math.random() - .5) * 2 * a).toFixed(1)}px,${((Math.random() - .5) * 2 * a).toFixed(1)}px) rotate(${ang.toFixed(2)}deg)` });
       }
       tremor.push({ transform: "none" });
-      [ov, pagina, rolo].forEach(el => el && el.animate(tremor, { duration: 760, easing: "linear" }));
-      const fundo = ov.querySelector(".giz-fundo"); fundo.style.transition = "opacity .35s ease"; fundo.style.opacity = "0";
-      // 4) o número segura um instante no meio da bagunça e some
-      await espera(820);
-      zoom.animate([{ transform: fim, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(${alvo * .9})`, opacity: 0 }], { duration: 260, easing: "ease-in", fill: "forwards" });
-      setTimeout(() => ov.remove(), 300);
+      [document.querySelector(".wrap"), document.querySelector(".rolo")].forEach(el => el && el.animate(tremor, { duration: 720, easing: "linear" }));
     }
     imprimir("0,00", "T");
     return { apertar, demo, pararDemo };
@@ -2630,7 +2614,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (h) calcHero = criarCalculadora(h);
     if (r) calcRub = criarCalculadora(r);
     // Teclado: vale para a calculadora que está na tela
-    const MAPA = { "*": "×", "x": "×", "/": "÷", "-": "−", "+": "+", "Enter": "=", "=": "=", "Backspace": "⌫", "Escape": "AC", "Delete": "AC", ",": ",", ".": ",", "%": "%" };
+    const MAPA = { "Enter": "=", "=": "=", "Backspace": "⌫", "Escape": "AC", "Delete": "AC", ",": ",", ".": "," };
     document.addEventListener("keydown", e => {
       if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || document.querySelector(".rolo")) return;
       const alvo = vista === "home" ? calcHero : (vista === "rubricas" && !$("viewRub").classList.contains("carregado") ? calcRub : null);
@@ -2643,7 +2627,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
   var demoRubFeita = false;
   function iniciarDemoRub(){
     if (demoRubFeita || !calcRub) return; demoRubFeita = true;
-    calcRub.demo(["1","2","5","0","0","×","2","8",",","8","%","=","+","3","6","0","0","="]);
+    calcRub.demo(["1","2","5","0","0","=","3","6","0","0","="]);
   }
 
 
