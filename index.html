@@ -3202,7 +3202,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     arquivos = [].concat(arquivos);
     const C = {};
     const regs = new Map(), grupos = new Map();
-    const info = { oe: new Map(), provisoes: 0, lidas: 0, invalidas: 0, foraTipo: 0, foraInc: 0, foraJanela: 0, zeradas: 0, usadas: 0, corte: corteRub(), faltando: [] };
+    const info = { oe: new Map(), provisoes: 0, lidas: 0, invalidas: 0, foraTipo: 0, foraCat: 0, foraInc: 0, foraJanela: 0, zeradas: 0, usadas: 0, corte: corteRub(), faltando: [] };
     const corte = info.corte;
     for (const [fi, file] of arquivos.entries()){
     await procTab(file, cols => {
@@ -3223,6 +3223,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       C.codSusp = locColEso(cols, ["TERCEIROS SUSPENSO"]);
       C.fpas = locColEstEso(cols, ["FPAS"]) || locColEso(cols, ["FPAS"]);
       C.grau = locColEso(cols, ["GRAU EXPOSICAO","GRAU DE EXPOSICAO"], ["ALIQUOTA"]);
+      C.cat = locColEstEso(cols, ["Código Categoria","Categoria Trabalhador","Categoria"]) || locColEso(cols, ["CATEGORIA"]);
       C.insEst = locColEstEso(cols, ["Número Inscrição Estabelecimento","Número Inscrição Lotação","CNPJ Estabelecimento","CNPJ/CNO"]) || locColEso(cols, ["INSCRICAO ESTABELECIMENTO","INSCRICAO LOTACAO","CNPJ ESTABELECIMENTO","INSC ESTAB"]);
       C.insEmp = locColEstEso(cols, ["Número Inscrição","Numero Inscricao","CNPJ","CNPJ Empregador","CNPJ Matriz","Nr Inscrição"]) || locColEso(cols, ["INSCRICAO EMPREGADOR","CNPJ EMPREGADOR","CNPJ MATRIZ","CNPJ RAIZ"]);
       const obrig = { per: "período", tipo: "Tipo Rubrica", inc: "Incidência Previdência Social", desc: "Descrição Rubrica", val: "Vlr Total Rubrica", valida: "Validade do evento", cod: "Código da Rubrica" };
@@ -3232,6 +3233,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     }, rows => {
       for (const r of rows){
         info.lidas++;
+        if (C.cat && !catEmpregadoEso(r[C.cat])){ info.foraCat++; continue; }
         if (!["VALIDO", "SIM"].includes(normTxt(r[C.valida]))){ info.invalidas++; continue; }
         if (C.desc && /provis|\bprov\b/i.test(String(r[C.desc] ?? ""))){ info.provisoes++; continue; }
         const tipoTxt = String(r[C.tipo] ?? "").trim();
@@ -3703,7 +3705,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     if (!rub.dados) return;
     const i = rub.dados.info;
     const gs = rub.dados.grupos.size;
-    const fora = [`${i.foraTipo.toLocaleString("pt-BR")} por tipo`, `${i.foraInc.toLocaleString("pt-BR")} por incidência`, `${i.foraJanela.toLocaleString("pt-BR")} fora dos 5 anos`];
+    const fora = [`${i.foraTipo.toLocaleString("pt-BR")} por tipo`, `${i.foraInc.toLocaleString("pt-BR")} por incidência`, `${(i.foraCat||0).toLocaleString("pt-BR")} por categoria`, `${i.foraJanela.toLocaleString("pt-BR")} fora dos 5 anos`];
     if (i.invalidas) fora.push(`${i.invalidas.toLocaleString("pt-BR")} corrompidos`);
     if (i.provisoes) fora.push(`${i.provisoes.toLocaleString("pt-BR")} provisões`);
     if (i.zeradas) fora.push(`${i.zeradas.toLocaleString("pt-BR")} com valor zero`);
@@ -4491,12 +4493,12 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
 
       logTerminal("Lendo S-1200...", "log-info", "consoleLogEso");
       progEsoK = 1; progEso.arquivo(1, rawFile1200Eso.name);
-      let cc1, cc2, cc3; const map1200C = new Map(), map1200G = new Map();
+      let cc1, cc2, cc3, cc4; const map1200C = new Map(), map1200G = new Map();
       await procTabEso(rawFile1200Eso, cols => {
-        cc1=locColEso(cols,['CPF']); cc2=locColEso(cols,['COMPETENCIA','PERIODO']); cc3=locColEso(cols,['GRAU EXPOSICAO','AGENTES NOCIVOS']); return [cc1,cc2,cc3].filter(Boolean);
+        cc1=locColEso(cols,['CPF']); cc2=locColEso(cols,['COMPETENCIA','PERIODO']); cc3=locColEso(cols,['GRAU EXPOSICAO','AGENTES NOCIVOS']); cc4=locColEstEso(cols,['Código Categoria','Categoria Trabalhador','Categoria'])||locColEso(cols,['CATEGORIA']); return [cc1,cc2,cc3,cc4].filter(Boolean);
       }, rws => {
         for (let r of rws){
-          const c=limpCPFEso(r[cc1]); if(!c)continue; const p=formPerEso(r[cc2]); const ge=parseInt(String(r[cc3]).trim())||0;
+          const c=limpCPFEso(r[cc1]); if(!c)continue; if(cc4&&!catEmpregadoEso(r[cc4]))continue; const p=formPerEso(r[cc2]); const ge=parseInt(String(r[cc3]).trim())||0;
           if(p) { const k=`${c}_${p}`; if(ge>(map1200C.get(k)||0)) map1200C.set(k,ge); }
           if(ge>(map1200G.get(c)||0)) map1200G.set(c,ge);
         }
@@ -6092,7 +6094,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
           const mR = lR[lR.length - 1]; const sh = new Set(), sr = new Set(); let bTS = 0, bR2 = 0, bR3 = 0;
           rPM[cM][mR].forEach(r => {
             const bN = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP', 'Valor Base Calculo CP', 'Vlr Base Calculo CP', 'Base Cálculo', 'Base Calculo'])), b15 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 15 anos', 'Vlr Base Calculo CP 15 anos', 'Valor Base Calculo CP 15 anos', 'Base Cálculo CP 15 anos'])), b20 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 20 anos', 'Vlr Base Calculo CP 20 anos', 'Valor Base Calculo CP 20 anos', 'Base Cálculo CP 20 anos'])), b25 = converterNumeroDiag(obChaveFlx(r, ['Vlr Base Cálculo CP 25 anos', 'Vlr Base Calculo CP 25 anos', 'Valor Base Calculo CP 25 anos', 'Base Cálculo CP 25 anos']));
-            const sl = bN + b15 + b20 + b25; if (sl <= 0) return;
+            const sl = bN + b15 + b20 + b25; if (sl <= 0) return; { const cc = String(obChaveFlx(r, ['Categoria Trabalhador', 'Categoria', 'Cod Categoria', 'Código Categoria']) || '').trim(); if (cc && !cc.startsWith('1')) return; }
             const st = String(obChaveFlx(r, ['Número Inscrição Estabelecimento', 'Numero Inscricao Estabelecimento', 'CNPJ Estabelecimento', 'Estabelecimento', 'Número Inscrição', 'Numero Inscricao']) || '').trim(), lt = String(obChaveFlx(r, ['Código Lotação', 'Codigo Lotacao', 'Lotação', 'Lotacao']) || '').trim(), ct = String(obChaveFlx(r, ['Categoria Trabalhador', 'Categoria', 'Cod Categoria']) || '').trim();
             const hs = `${st}_${lt}_${ct}_${bN.toFixed(2)}_${b15.toFixed(2)}_${b20.toFixed(2)}_${b25.toFixed(2)}`; if (!sh.has(hs)) { sh.add(hs); bTS += sl; }
             const rt = converterNumeroDiag(obChaveFlx(r, ['Alíquota RAT Estabelecimento', 'Aliquota RAT Estabelecimento'])); const hr = `${hs}_${rt}`; if (!sr.has(hr)) { sr.add(hr); if (Math.abs(rt - 2) < 1e-6) bR2 += sl; if (Math.abs(rt - 3) < 1e-6) bR3 += sl; }
