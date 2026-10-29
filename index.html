@@ -1604,7 +1604,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         <li>Cada XML pode ter um ou vários eventos (como no lote do portal). O tipo é reconhecido pela tag do evento: evtRemun (S-1200), evtTabRubrica (S-1010), evtCS (S-5011), evtBasesTrab (S-5001) e qualquer outro evento do eSocial.</li>
         <li>Duplicados saem pelo Id do evento. Vale sempre o recibo mais recente: nos S-1200, o de cada empregador, CPF, tipo de apuração e competência; nos S-5011, o de cada competência; nos S-5001, o de cada CPF e competência. A data de recepção do retorno do portal (quando o XML a traz) ou, sem ela, a data de geração do Id decide qual é o mais novo, e quem foi substituído por retificação (número do recibo retificado) não entra.</li>
         <li>Cruzamento de eventos: cada rubrica do S-1200 recebe tipo, natureza, descrição e incidência do S-1010 (vale a versão da tabela na competência) e as alíquotas de RAT, FAP, FPAS e terceiros do S-5011. Rubrica sem S-1010 não pode ser classificada e fica como “Corrompido” em Validade do evento (desconsiderada pelo módulo Rubricas); as demais ficam “Válido”. O arquivo tem as colunas que o módulo Rubricas já lê. Também entram nome, data de admissão e de desligamento do trabalhador (S-2200 e S-2299) e se a competência foi fechada (S-1299, ou reaberta pelo S-1298).</li>
-        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 e das verbas rescisórias (S-2299 e S-2399) com incidência 11, 12, 13 ou 14 na tabela S-1010, categorias que não começam com 1 são ignoradas por completo, no S-1200 e no S-5011) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
+        <li>Conferência: para cada empregador e competência, a remuneração do cruzamento (proventos do S-1200 e das verbas rescisórias do S-2299 com incidência 11, 12, 13 ou 14 na tabela S-1010, categorias que não começam com 1 são ignoradas por completo, no S-1200 e no S-5011) é comparada com a base de cálculo do S-5011 mais recente (soma dos campos vrBcCp). Diferença acima de R$ 1,00 é Divergência; também aparecem competências só de um lado.</li>
         <li>Os demais eventos viram uma tabela achatada: cada ramo repetido do XML vira uma linha, com os campos dos níveis acima repetidos.</li>
         <li>Ao exportar, o módulo sempre pergunta se você quer planilha (.xlsx) ou Parquet. Acima de 1 milhão de linhas, a planilha divide em abas; para volumes grandes, prefira o Parquet.</li>
       </ol>
@@ -5010,9 +5010,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       return;
     }
 
-    // S-2299 e S-2399: as verbas rescisórias também entram na base do S-5011, então vão para o confronto (e o evento segue para a tabela achatada)
-    if (nome === "evtDeslig" || nome === "evtTSVTermino"){
-      const cpf = xDig(xAcha(ev, "cpfTrab")), cat = xAcha(ev, "codCateg"), dt = xAcha(ev, "dtDeslig") || xAcha(ev, "dtTerm"), mat = xAcha(ev, "matricula");
+    // S-2299: as verbas rescisórias também entram na base do S-5011, então vão para o confronto (o S-2399 não entra; o evento segue para a tabela achatada)
+    if (nome === "evtDeslig"){
+      const cpf = xDig(xAcha(ev, "cpfTrab")), cat = xAcha(ev, "codCateg"), dt = xAcha(ev, "dtDeslig"), mat = xAcha(ev, "matricula");
       const linhas = [];
       if (!cat || cat.startsWith("1")) for (const dm of xDesc(ev, ["dmDev"])){
         const ind = xTxt(dm, "indPerApur") === "2" ? "2" : "1";
@@ -5152,7 +5152,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       cols: ["Período", "Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "Código Categoria", "CPF Trabalhador", "Nome Trabalhador", "Indicador Apuração", "Indicador Retificação", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo", "Período Fechado (S-1299)"],
       rows: s1200, num: new Set(["Vlr Rubrica"]), arquivo: "S-1200 Remuneracao" });
 
-    // 1c) As verbas rescisórias (S-2299 e S-2399), na mesma lógica da tabela do S-1200
+    // 1c) As verbas rescisórias do S-2299, na mesma lógica da tabela do S-1200
     const s2299 = [], somaResc = new Map();
     rescs.forEach(e => {
       const t = estado.trab.get(e.cpf) || {};
@@ -5163,13 +5163,13 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         const entra = !r ? "Sem S-1010" : (r.tp === "1" && XML_INC_BASE.has(r.incCP)) ? "Sim" : "Não";
         if (entra === "Sim") acc.rem += l.val;
         else if (entra === "Não"){ const k = `Rescisão · ${XML_TP_RUBR[r.tp] || "tipo " + r.tp} · incidência ${r.incCP || "?"}`; acc.fora.set(k, (acc.fora.get(k) || 0) + l.val); }
-        s2299.push([xCompOut(l.perApur), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, e.cpf, t.nome || "", e.nome === "evtDeslig" ? "S-2299" : "S-2399", e.dt, l.ind, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
+        s2299.push([xCompOut(l.perApur), xCnpj(e.nrEmp), estado.emps.get(e.nrEmp.slice(0, 8)) || "", xCnpj(l.estNr), l.lot, e.cpf, t.nome || "", "S-2299", e.dt, l.ind, l.cod, l.tab, r ? r.desc : "", r ? xTp(r) : "", r ? r.incCP : "", entra, l.val, e.id, e.recibo || ""]);
       });
     });
     s2299.sort((x, y) => ordS(x[0]).localeCompare(ordS(y[0])) || x[5].localeCompare(y[5]));
-    if (s2299.length) conjuntos.push({ id: "s2299", titulo: "S-2299 e S-2399 · Verbas rescisórias", sub: "Uma linha por rubrica, só o mais recente de cada desligamento. A Conferência soma daqui as linhas com “Entra na base” = Sim",
+    if (s2299.length) conjuntos.push({ id: "s2299", titulo: "S-2299 · Verbas rescisórias", sub: "Uma linha por rubrica, só o mais recente de cada desligamento. A Conferência soma daqui as linhas com “Entra na base” = Sim",
       cols: ["Período Apuração", "Número Inscrição", "Empresa", "Número Inscrição Estabelecimento", "Código Lotação", "CPF Trabalhador", "Nome Trabalhador", "Evento", "Data Desligamento", "Indicador Apuração", "Código Rubrica", "Tabela de Rubricas", "Descrição Rubrica", "Tipo Rubrica", "Incidência Previdência Social", "Entra na base", "Vlr Rubrica", "Id Evento", "Recibo"],
-      rows: s2299, num: new Set(["Vlr Rubrica"]), arquivo: "S-2299 e S-2399 Verbas rescisorias" });
+      rows: s2299, num: new Set(["Vlr Rubrica"]), arquivo: "S-2299 Verbas rescisorias" });
 
     // 2) Conferência: remuneração do S-1200 + verbas rescisórias x base do S-5011 (válidos = recibo mais recente)
     const somaBase = new Map();
@@ -5188,9 +5188,9 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     });
     conf.sort((x, y) => xPerOrd(x[2]).localeCompare(xPerOrd(y[2])) || x[1].localeCompare(y[1]));
     conf.forEach(r => { r[1] = xCnpj(r[1]); r[2] = xCompOut(r[2]); });
-    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299/S-2399) × S-5011", sub: "Soma das tabelas S-1200 e de verbas rescisórias (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
-      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299/S-2399)", "Total S-1200 + rescisórias", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
-      rows: conf, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299/S-2399)", "Total S-1200 + rescisórias", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
+    if (conf.length) conjuntos.push({ id: "conferencia", titulo: "Conferência (S-1200 + S-2299) × S-5011", sub: "Soma das tabelas S-1200 e S-2299 (linhas com “Entra na base” = Sim, por Período Apuração) contra a base do S-5011",
+      cols: ["Empresa", "Número Inscrição", "Período", "Apuração", "Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Situação", "Fechamento (S-1299)", "Trabalhadores no S-1200", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)", "Rubricas fora da soma (tipo · incidência)"],
+      rows: conf, num: new Set(["Remuneração S-1200", "Verbas rescisórias (S-2299)", "Total S-1200 + S-2299", "Base S-5011", "Diferença", "Valor sem S-1010", "Total das rubricas do S-1200 (todas)"]), arquivo: "Conferencia S-1200 e S-2299 x S-5011" });
 
     // 3) Tabela de rubricas
     const tr = [...unicas.values()].sort((a, b) => a.cod.localeCompare(b.cod) || a.ini.localeCompare(b.ini))
@@ -5229,7 +5229,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     $("xmlKArq").textContent = xmlN(xmlEstado.arquivos); $("xmlKEv").textContent = xmlN(evs);
     $("xmlKDup").textContent = xmlN(xmlEstado.descartados + xmlEstado.porRecibo); $("xmlKInv").textContent = xmlN(xmlEstado.invalidos);
     const avisos = [];
-    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299/S-2399) × S-5011”)`);
+    if (xmlRes.divergencias) avisos.push(`${xmlN(xmlRes.divergencias)} de ${xmlN(xmlRes.comparadas)} competência${xmlRes.comparadas === 1 ? "" : "s"} com divergência entre a remuneração (S-1200 + verbas rescisórias) e a base do S-5011 (veja “Conferência (S-1200 + S-2299) × S-5011”)`);
     if (xmlRes.faltam) avisos.push(`${xmlN(xmlRes.faltam)} rubrica${xmlRes.faltam === 1 ? "" : "s"} sem S-1010 (ficam como “Corrompido” em Validade do evento e são desconsideradas; envie o S-1010 para classificar)`);
     if (xmlRes.semCS) avisos.push(`${xmlN(xmlRes.semCS)} linha${xmlRes.semCS === 1 ? "" : "s"} sem S-5011 (sem alíquotas de RAT, FPAS e terceiros)`);
     const av = $("xmlAvisos"); av.hidden = !avisos.length; av.textContent = avisos.join(". ") + (avisos.length ? "." : "");
