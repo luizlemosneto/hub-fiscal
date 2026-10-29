@@ -4938,6 +4938,8 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     }
   }
 
+  // Com uma só empresa no relatório, o nome dela abre o nome do arquivo; com mais de uma, fica só o nome do arquivo
+  const nomeArqDctf = (empresas, base) => { const u = new Set(empresas.map(x => String(x || "").trim()).filter(x => x && x !== "-")); return (u.size === 1 ? limpaNome([...u][0]) + " - " : "") + base + ".xlsx"; };
   function exportarRelatorioDctfFinal() {
     const wb = XLSX.utils.book_new();
 
@@ -4946,9 +4948,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       linhasSaldoDctf().forEach(l => data.push([empSaldoDctf(l.empresa), cnpjSaldoDctf(l.cnpj), removerCaps(l.comp), l.darf, l.retencao]));
       const ws = XLSX.utils.aoa_to_sheet(data); formataAbaExcelLimpissima(ws);
       XLSX.utils.book_append_sheet(wb, ws, removerCaps("Saldo Disponível"));
-      XLSX.writeFile(wb, "Hub fiscal & Tributário - Saldo Disponível.xlsx");
+      const nmSaldo = nomeArqDctf(linhasSaldoDctf().map(l => empSaldoDctf(l.empresa)), "Saldo Disponível");
+      XLSX.writeFile(wb, nmSaldo);
       logTerminal("Relatório de Saldos Magnéticos exportado com sucesso.", "log-sucesso", "consoleLogDctf");
-      toast("Planilha gerada: Hub fiscal & Tributário - Saldo Disponível.xlsx");
+      toast("Planilha gerada: " + nmSaldo);
 
     } else {
       const mapAba = (filtrados, cols, mapFn) => {
@@ -4961,9 +4964,10 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       XLSX.utils.book_append_sheet(wb, mapAba(confrontosDctf.filter(c=>c.st.includes('Somente')), ["Competência", "Crédito Planilha", "DARF DCTFWeb", "Retenção DCTFWeb", "Total DCTFWeb", "Diagnóstico"], c=>[c.comp, c.cP, c.dD, c.rD, c.tD, c.st]), removerCaps("Inconsistências"));
       XLSX.utils.book_append_sheet(wb, mapAba(confrontosDctf, ["Competência", "Crédito Planilha", "DARF DCTFWeb", "Retenção DCTFWeb", "Total DCTFWeb", "Diferença", "Diagnóstico", "Cnpj", "Empresa"], c=>[c.comp, c.cP, c.dD, c.rD, c.tD, c.dif, c.st, c.cnpj, c.emp]), removerCaps("Visão Geral"));
 
-      XLSX.writeFile(wb, "Hub fiscal & Tributário - Confronto DCTFWeb.xlsx");
+      const nmConf = nomeArqDctf(confrontosDctf.map(c => c.empresa), "Confronto DCTFWeb");
+      XLSX.writeFile(wb, nmConf);
       logTerminal("Relatório Confronto DCTFWeb exportado impecavelmente limpo.", "log-sucesso", "consoleLogDctf");
-      toast("Planilha gerada: Hub fiscal & Tributário - Confronto DCTFWeb.xlsx");
+      toast("Planilha gerada: " + nmConf);
     }
   }
   $('btnExportarDctf').addEventListener('click', exportarRelatorioDctfFinal);
@@ -5648,7 +5652,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
     }
     return { nome: base + ".xlsx", dados: XLSX.write(wb, { bookType: "xlsx", type: "array" }), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
   }
-  const nomeBaseXml = ds => `${xmlNomeEmpresa() ? xmlNomeEmpresa() + " - " : "XML eSocial - "}${ds.arquivo}`;
+  const nomeBaseXml = ds => `${xmlNomeEmpresa() ? xmlNomeEmpresa() + " - " : ""}${ds.arquivo}`;
   async function exportarXml(ds){
     const fmt = await perguntarFormatoXml(ds); if (!fmt) return;
     try {
@@ -5677,7 +5681,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       }
       btn.textContent = "Compactando…"; await pausa();
       const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 3 } });
-      const emp = xmlNomeEmpresa(), nomeZip = `${emp ? emp + " - " : "XML eSocial - "}Todos os arquivos.zip`;
+      const emp = xmlNomeEmpresa(), nomeZip = `${emp ? emp + " - " : ""}Todos os arquivos.zip`;
       baixarArquivoXml(nomeZip, blob, "application/zip");
       logXml(`Exportados ${xmlN(lista.length)} arquivos em ${nomeZip}.`, "log-sucesso"); toast(`${xmlN(lista.length)} arquivos salvos em ${nomeZip}`);
     } catch(e){ logXml("Falha ao exportar em lote: " + e.message, "log-erro"); toast("Não foi possível exportar tudo. " + e.message); }
@@ -6398,7 +6402,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
       async function salvarDashboard() {
         if(document.querySelector('.card-detalhe.expanded')) fecharRubricas();
         const doc = "<!DOCTYPE html>\\n<html lang=\\\"pt-BR\\\">\\n" + document.documentElement.outerHTML + "\\n</html>";
-        const nomeSugerido = 'Diagnóstico PRO - ' + window.primeiroNomeEmpresa + '.html';
+        const nomeSugerido = window.primeiroNomeEmpresa + ' - Diagnóstico PRO.html';
 
         if ('showSaveFilePicker' in window) {
           try {
@@ -6444,7 +6448,7 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
             totalGeral
           );
 
-          const nomeSugerido = 'Diagnóstico PRO (Project) - ' + window.primeiroNomeEmpresa + '.xlsx';
+          const nomeSugerido = window.primeiroNomeEmpresa + ' - Diagnóstico PRO (Project).xlsx';
 
           if ('showSaveFilePicker' in window) {
             try {
@@ -6609,11 +6613,11 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
          rubricaMesMap: rMM
       });
 
-      $('lblProjectMatrizDiag').textContent = `Diag. PRO - ${pNmE}.xlsx`;
-      $('lblPainelHTMLDiag').textContent = `Diag. PRO - ${pNmE}.html`;
-      $('lblMemoria5011Diag').textContent = `S-5011 - ${pNmE}.xlsx`;
-      $('lblMemoriaCBODiag').textContent = `CBO - ${pNmE}.xlsx`;
-      $('lblMemoriaCompletaDiag').textContent = `Auditoria (${lMe.length.toLocaleString('pt-BR')}) - ${pNmE}`;
+      $('lblProjectMatrizDiag').textContent = `${pNmE} - Diag. PRO.xlsx`;
+      $('lblPainelHTMLDiag').textContent = `${pNmE} - Diag. PRO.html`;
+      $('lblMemoria5011Diag').textContent = `${pNmE} - S-5011.xlsx`;
+      $('lblMemoriaCBODiag').textContent = `${pNmE} - CBO.xlsx`;
+      $('lblMemoriaCompletaDiag').textContent = `${pNmE} - Auditoria (${lMe.length.toLocaleString('pt-BR')})`;
 
       const nmPe = (nRz || pNmE).replace(/[\\/*?:"<>|]/g, "").trim();
       $('lblPastaEmpresaDiag').textContent = `Salvar lote em: ${nmPe}`;
@@ -6625,27 +6629,27 @@ body[data-mod]:not([data-mod="home"]) .rodape{display:none}
         this.disabled = true;
         try {
           const pH = await obterOuSolicitarPastaRaiz(); const pE = await pH.getDirectoryHandle(nmPe, { create: true });
-          await gravarArquivoNaPasta(pE, `Diagnóstico PRO (Project) - ${pNmE}.xlsx`, bProj);
-          await gravarArquivoNaPasta(pE, `Diagnóstico PRO - ${pNmE}.html`, hC);
-          if (b5011) await gravarArquivoNaPasta(pE, `Diagnóstico PRO (S-5011) - ${pNmE}.xlsx`, b5011);
-          if (bCBO) await gravarArquivoNaPasta(pE, `Diagnóstico PRO (CBO) - ${pNmE}.xlsx`, bCBO);
-          const { buffer: bM, ext: eM } = await oMCB(); await gravarArquivoNaPasta(pE, `Diagnóstico PRO (Memória Auditoria) - ${pNmE}.${eM}`, bM);
+          await gravarArquivoNaPasta(pE, `${pNmE} - Diagnóstico PRO (Project).xlsx`, bProj);
+          await gravarArquivoNaPasta(pE, `${pNmE} - Diagnóstico PRO.html`, hC);
+          if (b5011) await gravarArquivoNaPasta(pE, `${pNmE} - Diagnóstico PRO (S-5011).xlsx`, b5011);
+          if (bCBO) await gravarArquivoNaPasta(pE, `${pNmE} - Diagnóstico PRO (CBO).xlsx`, bCBO);
+          const { buffer: bM, ext: eM } = await oMCB(); await gravarArquivoNaPasta(pE, `${pNmE} - Diagnóstico PRO (Memória Auditoria).${eM}`, bM);
           logTerminal(`Lote salvo com extremo sucesso na pasta: ${nmPe}`, 'log-sucesso', 'logBoxDiag');
           toast(`Lote salvo na pasta ${nmPe}.`);
         } catch (e) { if(e.name!=='AbortError') toast(e.message); } finally { this.disabled = false; }
       };
 
-      $('btnSalvarProjectDiretoDiag').onclick = () => salArqDirDiag(`Diagnóstico PRO (Project) - ${pNmE}.xlsx`, bProj);
-      $('btnDownloadHTMLDiag').onclick = () => salArqDirDiag(`Diagnóstico PRO - ${pNmE}.html`, hC);
+      $('btnSalvarProjectDiretoDiag').onclick = () => salArqDirDiag(`${pNmE} - Diagnóstico PRO (Project).xlsx`, bProj);
+      $('btnDownloadHTMLDiag').onclick = () => salArqDirDiag(`${pNmE} - Diagnóstico PRO.html`, hC);
 
       $('liDownload5011Diag').hidden = !b5011;
-      if (b5011) $('btnDownload5011Diag').onclick = () => salArqDirDiag(`Diagnóstico PRO (S-5011) - ${pNmE}.xlsx`, b5011);
+      if (b5011) $('btnDownload5011Diag').onclick = () => salArqDirDiag(`${pNmE} - Diagnóstico PRO (S-5011).xlsx`, b5011);
 
       $('liDownloadCBODiag').hidden = !bCBO;
-      if (bCBO) $('btnDownloadCBODiag').onclick = () => salArqDirDiag(`Diagnóstico PRO (CBO) - ${pNmE}.xlsx`, bCBO);
+      if (bCBO) $('btnDownloadCBODiag').onclick = () => salArqDirDiag(`${pNmE} - Diagnóstico PRO (CBO).xlsx`, bCBO);
 
       const btM = $('btnDownloadMemoriaCompletaDiag');
-      btM.onclick = async () => { btM.disabled = true; try { const { buffer, ext } = await oMCB(); await salArqDirDiag(`Diagnóstico PRO (Auditoria Completa) - ${pNmE}.${ext}`, buffer); } finally { btM.disabled = false; } };
+      btM.onclick = async () => { btM.disabled = true; try { const { buffer, ext } = await oMCB(); await salArqDirDiag(`${pNmE} - Diagnóstico PRO (Auditoria Completa).${ext}`, buffer); } finally { btM.disabled = false; } };
 
       progDiag.fim(upl5011File ? 2 : 1);
       $('downloadsAreaDiag').hidden = false;
