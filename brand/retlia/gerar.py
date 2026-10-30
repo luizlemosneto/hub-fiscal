@@ -175,6 +175,9 @@ open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#5E5E
 # cores da bandeira em tom pastel (losango amarelo, globo azul) e nome no cinza grafite
 open(OUT+"retlia-lateral-pastel.svg","w").write(lateral(loz="#EBDC92", ball="#9DB7D5", text="#3D3D3D"))
 open(OUT+"retlia-lateral-pastel-negativo.svg","w").write(lateral(True, loz="#E3D58C", ball="#8DA9C8", text="#D6D6D6"))
+# nome num verde fresco e bem claro, na mesma família dos pastéis
+open(OUT+"retlia-lateral-verde.svg","w").write(lateral(loz="#EBDC92", ball="#9DB7D5", text="#A9CF91"))
+open(OUT+"retlia-lateral-verde-negativo.svg","w").write(lateral(True, loz="#E3D58C", ball="#8DA9C8", text="#BEE0A6"))
 # variante eSocial: o R vira uma folha com a orelha dobrada
 open(OUT+"retlia-dobra.svg","w").write(lateral(fold=True))
 open(OUT+"retlia-dobra-negativo.svg","w").write(lateral(True, fold=True))
