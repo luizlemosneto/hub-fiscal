@@ -91,18 +91,18 @@ for p in glob.glob(OUT+"*.svg"):
 
 # --- Variante lateral: metade lateral do losango atrás do nome, com borda branca ---
 import math
-def lateral(dark=False, loz=None, ball=None):
+def lateral(dark=False, loz=None, ball=None, text=None):
     ink, paper = ("#fff", INK) if dark else (INK, "#fff")
-    loz=loz or ink; ball=ball or ink
+    loz=loz or ink; ball=ball or ink; text=text or ink
     pad=40
-    H=CAP*1.45                    # altura total do losango (metade lateral)
+    H=CAP*1.75                    # altura total do losango (metade lateral)
     W=H*8.3/10.6                  # metade da largura do losango
     top=pad; base_y=pad+(H-CAP)/2+CAP   # nome centrado na altura do símbolo
     x0=pad; cy=top+H/2
     f=TTFont(BOLD); gs=f.getGlyphSet(); sc=SIZE/f['head'].unitsPerEm
     bp=BoundsPen(gs); gs[f.getBestCmap()[ord("I")]].draw(bp); ix0,_,ix1,_=bp.bounds
     lsb=f['hmtx'][f.getBestCmap()[ord("R")]][1]*sc; stem=(ix1-ix0)*sc
-    border=SIZE*0.045
+    border=SIZE*0.07
     # ponta para a esquerda; o lado reto fica escondido atrás da haste do R
     flat=x0+W
     tx=flat-lsb-stem
@@ -131,13 +131,13 @@ def lateral(dark=False, loz=None, ball=None):
             f'<path d="{sym}" fill="{loz}"/><path d="{globe}" fill="{ball}"/>'
             # borda branca: recorte reto em volta da haste do R, quinas vivas
             f'<rect x="{r_left:.2f}" y="{base_y-CAP-border:.2f}" width="{flat+0.3-r_left:.2f}" height="{CAP+2*border:.2f}" fill="{paper}"/>'
-            f'<path d="{t}" fill="{ink}"/></svg>')
+            f'<path d="{t}" fill="{text}"/></svg>')
 
 open(OUT+"retlia-lateral.svg","w").write(lateral())
 open(OUT+"retlia-lateral-negativo.svg","w").write(lateral(True))
 # tons de cinza: nome no preto, losango no cinza médio, bola no cinza escuro
-open(OUT+"retlia-lateral-cinza.svg","w").write(lateral(loz="#A3A3A3", ball="#5C5C5C"))
-open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#6B6B6B", ball="#B8B8B8"))
+open(OUT+"retlia-lateral-cinza.svg","w").write(lateral(loz="#ABABAB", ball="#6E6E6E", text="#3D3D3D"))
+open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#5E5E5E", ball="#A6A6A6", text="#D6D6D6"))
 for p in glob.glob(OUT+"retlia-lateral*.svg"):
     svg=open(p).read()
     w,h=re.search(r'viewBox="0 0 (\S+) (\S+)"',svg).groups()
