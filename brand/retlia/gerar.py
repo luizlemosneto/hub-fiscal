@@ -107,19 +107,25 @@ def lateral(dark=False):
     tx=flat-lsb-stem
     # bola: mesmo raio da bandeira, deslocada para o lado aparente;
     # só uma fração pequena aparece à esquerda do R
-    R=(H/2)*3.5/5.3
+    R=(H/2)*3.5/5.3*0.82         # bola um pouco menor que a da bandeira
     r_left=tx+lsb-border
     cx=r_left-R*0.45+R
     dy=math.sqrt(R*R-(flat-cx)**2)
-    sym=(f"M{flat:.2f} {top:.2f}L{x0:.2f} {cy:.2f}L{flat:.2f} {top+H:.2f}"
-         f"L{flat:.2f} {cy+dy:.2f}A{R:.2f} {R:.2f} 0 1 1 {flat:.2f} {cy-dy:.2f}Z")
+    # um pouquinho da descida do losango, só acima e abaixo do R — tudo num contorno só
+    slope=(H/2)/W; e=W*0.15
+    band_top=base_y-CAP-border; band_bot=base_y+border
+    sym=(f"M{flat:.2f} {top:.2f}L{flat+e:.2f} {top+e*slope:.2f}L{flat+e:.2f} {band_top:.2f}"
+         f"L{flat:.2f} {band_top:.2f}L{flat:.2f} {cy-dy:.2f}"
+         f"A{R:.2f} {R:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
+         f"L{flat:.2f} {band_bot:.2f}L{flat+e:.2f} {band_bot:.2f}L{flat+e:.2f} {top+H-e*slope:.2f}"
+         f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
     w=endx+pad; h=H+2*pad
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
             f'<rect width="100%" height="100%" fill="{paper}"/>'
             f'<path d="{sym}" fill="{ink}"/>'
             # borda branca: recorte reto em volta da haste do R, quinas vivas
-            f'<rect x="{r_left:.2f}" y="{base_y-CAP-border:.2f}" width="{flat+border-r_left:.2f}" height="{CAP+2*border:.2f}" fill="{paper}"/>'
+            f'<rect x="{r_left:.2f}" y="{base_y-CAP-border:.2f}" width="{flat+0.3-r_left:.2f}" height="{CAP+2*border:.2f}" fill="{paper}"/>'
             f'<path d="{t}" fill="{ink}"/></svg>')
 
 open(OUT+"retlia-lateral.svg","w").write(lateral())
