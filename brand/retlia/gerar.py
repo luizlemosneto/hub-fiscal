@@ -105,20 +105,24 @@ def lateral(dark=False):
     # ponta para a esquerda; o lado reto fica escondido atrás da haste do R
     flat=x0+W
     tx=flat-lsb-stem
-    # bola: mesmo raio da bandeira, deslocada para o lado aparente;
-    # só uma fração pequena aparece à esquerda do R
-    R=(H/2)*3.5/5.3*0.82         # bola um pouco menor que a da bandeira
+    # bola: corpo sólido (o globo), separado do losango pela mesma borda branca do R;
+    # só uma fração aparece à esquerda do R
+    Rb=(H/2)*3.5/5.3*0.82         # bola um pouco menor que a da bandeira
+    Rw=Rb+border                  # recorte branco em volta da bola
     r_left=tx+lsb-border
-    cx=r_left-R*0.45+R
-    dy=math.sqrt(R*R-(flat-cx)**2)
-    # um pouquinho da descida do losango, só acima e abaixo do R — tudo num contorno só
-    slope=(H/2)/W; e=W*0.15
+    cx=r_left-Rb*0.40+Rb
+    dy=math.sqrt(Rw*Rw-(flat-cx)**2)
+    hb=math.sqrt(Rb*Rb-(r_left-cx)**2)
+    # a descida do losango continua até ser interrompida pela borda branca do R
+    slope=(H/2)/W
     band_top=base_y-CAP-border; band_bot=base_y+border
-    sym=(f"M{flat:.2f} {top:.2f}L{flat+e:.2f} {top+e*slope:.2f}L{flat+e:.2f} {band_top:.2f}"
+    e=(band_top-top)/slope
+    sym=(f"M{flat:.2f} {top:.2f}L{flat+e:.2f} {band_top:.2f}"
          f"L{flat:.2f} {band_top:.2f}L{flat:.2f} {cy-dy:.2f}"
-         f"A{R:.2f} {R:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
-         f"L{flat:.2f} {band_bot:.2f}L{flat+e:.2f} {band_bot:.2f}L{flat+e:.2f} {top+H-e*slope:.2f}"
-         f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z")
+         f"A{Rw:.2f} {Rw:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
+         f"L{flat:.2f} {band_bot:.2f}L{flat+e:.2f} {band_bot:.2f}"
+         f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z"
+         f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
     w=endx+pad; h=H+2*pad
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
