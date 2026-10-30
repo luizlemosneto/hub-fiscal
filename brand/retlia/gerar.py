@@ -172,6 +172,9 @@ open(OUT+"retlia-lateral-negativo.svg","w").write(lateral(True))
 # tons de cinza: nome no preto, losango no cinza médio, bola no cinza escuro
 open(OUT+"retlia-lateral-cinza.svg","w").write(lateral(loz="#ABABAB", ball="#6E6E6E", text="#3D3D3D"))
 open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#5E5E5E", ball="#A6A6A6", text="#D6D6D6"))
+# cores da bandeira em tom pastel (losango amarelo, globo azul) e nome em verde-musgo
+open(OUT+"retlia-lateral-musgo.svg","w").write(lateral(loz="#EBDC92", ball="#9DB7D5", text="#4A5A2C"))
+open(OUT+"retlia-lateral-musgo-negativo.svg","w").write(lateral(True, loz="#E3D58C", ball="#8DA9C8", text="#C2CFA0"))
 # variante eSocial: o R vira uma folha com a orelha dobrada
 open(OUT+"retlia-dobra.svg","w").write(lateral(fold=True))
 open(OUT+"retlia-dobra-negativo.svg","w").write(lateral(True, fold=True))
