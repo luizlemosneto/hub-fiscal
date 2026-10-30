@@ -91,9 +91,11 @@ for p in glob.glob(OUT+"*.svg"):
 
 # --- Variante lateral: metade lateral do losango atrás do nome, com borda branca ---
 import math
-def lateral(dark=False, loz=None, ball=None, text=None, fold=False):
+def lateral(dark=False, loz=None, ball=None, text=None, fold=False, flapc=None):
     ink, paper = ("#fff", INK) if dark else (INK, "#fff")
     loz=loz or ink; ball=ball or ink; text=text or ink
+    flapc=flapc or (('#8E8E8E','#5A5A5A') if dark else ('#E6E6E6','#A4A4A4'))
+    defs=''
     pad=40
     H=CAP*1.75                    # altura total do losango (metade lateral)
     W=H*8.3/10.6                  # metade da largura do losango
@@ -134,20 +136,32 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False):
     w=endx+pad; h=H+2*pad
     rx=tx+lsb; rtop=base_y-CAP
     if fold:
-        # orelha de página no canto do R (o documento a retificar):
-        # canto cortado na diagonal + aba dobrada, separada por um fio branco
-        fs=stem                            # a dobra ocupa toda a largura da haste
-        g=border*0.3                       # vinco branco entre a aba e o resto da folha
+        # orelha de página de verdade: o canto A-B-C é cortado na diagonal (vinco B-C) e a ponta
+        # dobrada cai sobre a folha como o reflexo exato do canto, com o ângulo reto em A'
+        fs=stem*0.92
+        Ax,Ay=rx,rtop; Bx,By=rx+fs,rtop; Cx,Cy=rx,rtop+fs; Px,Py=rx+fs,rtop+fs
+        rr=fs*0.10                          # quina da aba levemente arredondada
+        c0=Ax+Ay+fs                          # reta do vinco: x + y = c0
+        cut=(f'<path d="M{Ax-1:.2f} {Ay-1:.2f}L{Bx+1:.2f} {Ay-1:.2f}L{Ax-1:.2f} {Cy+1:.2f}Z" fill="{paper}"/>')
+        flap_d=(f"M{Bx:.2f} {By:.2f}L{Px:.2f} {Py-rr:.2f}A{rr:.2f} {rr:.2f} 0 0 1 {Px-rr:.2f} {Py:.2f}L{Cx:.2f} {Cy:.2f}Z")
+        mx,my=(Bx+Cx)/2,(By+Cy)/2
+        sh=fs*0.06
+        defs=(f'<defs><linearGradient id="fg" gradientUnits="userSpaceOnUse" x1="{mx:.2f}" y1="{my:.2f}" x2="{Px:.2f}" y2="{Py:.2f}">'
+              f'<stop offset="0" stop-color="{flapc[0]}"/><stop offset="1" stop-color="{flapc[1]}"/></linearGradient>'
+              f'<filter id="fb" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="{fs*0.045:.2f}"/></filter>'
+              f'<clipPath id="fc"><path d="M{Bx+40:.2f} {By-40:.2f}L{Bx+40:.2f} {Cy+40:.2f}L{Ax-40:.2f} {Cy+40:.2f}Z"/></clipPath></defs>')
+        flap=(cut
+              # sombra suave da aba sobre a folha (só do lado de baixo do vinco)
+              +f'<g clip-path="url(#fc)"><path d="{flap_d}" transform="translate({sh:.2f} {sh:.2f})" fill="#000" fill-opacity="0.38" filter="url(#fb)"/></g>'
+              +f'<path d="{flap_d}" fill="url(#fg)"/>')
         knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
                   f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>')
-        flap=(f'<rect x="{rx-0.3:.2f}" y="{rtop-0.3:.2f}" width="{fs+0.3:.2f}" height="{fs+0.3:.2f}" fill="{paper}"/>'
-              f'<path d="M{rx+fs-g:.2f} {rtop+g:.2f}L{rx+fs-g:.2f} {rtop+fs-g:.2f}L{rx+g:.2f} {rtop+fs-g:.2f}Z" fill="{ball}"/>')
     else:
         # cantos do lado aparente arredondados, concêntricos às quinas do R
         knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
                   f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>')
         flap=""
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'+defs+
             f'<rect width="100%" height="100%" fill="{paper}"/>'
             f'<path d="{sym}" fill="{loz}"/><path d="{globe}" fill="{ball}"/>'
             + knockout +
