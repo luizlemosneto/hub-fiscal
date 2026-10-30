@@ -91,8 +91,9 @@ for p in glob.glob(OUT+"*.svg"):
 
 # --- Variante lateral: metade lateral do losango atrás do nome, com borda branca ---
 import math
-def lateral(dark=False):
+def lateral(dark=False, loz=None, ball=None):
     ink, paper = ("#fff", INK) if dark else (INK, "#fff")
+    loz=loz or ink; ball=ball or ink
     pad=40
     H=CAP*1.45                    # altura total do losango (metade lateral)
     W=H*8.3/10.6                  # metade da largura do losango
@@ -121,19 +122,22 @@ def lateral(dark=False):
          f"L{flat:.2f} {band_top:.2f}L{flat:.2f} {cy-dy:.2f}"
          f"A{Rw:.2f} {Rw:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
          f"L{flat:.2f} {band_bot:.2f}L{flat+e:.2f} {band_bot:.2f}"
-         f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z"
-         f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
+         f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z")
+    globe=(f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
     w=endx+pad; h=H+2*pad
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
             f'<rect width="100%" height="100%" fill="{paper}"/>'
-            f'<path d="{sym}" fill="{ink}"/>'
+            f'<path d="{sym}" fill="{loz}"/><path d="{globe}" fill="{ball}"/>'
             # borda branca: recorte reto em volta da haste do R, quinas vivas
             f'<rect x="{r_left:.2f}" y="{base_y-CAP-border:.2f}" width="{flat+0.3-r_left:.2f}" height="{CAP+2*border:.2f}" fill="{paper}"/>'
             f'<path d="{t}" fill="{ink}"/></svg>')
 
 open(OUT+"retlia-lateral.svg","w").write(lateral())
 open(OUT+"retlia-lateral-negativo.svg","w").write(lateral(True))
+# tons de cinza: nome no preto, losango no cinza médio, bola no cinza escuro
+open(OUT+"retlia-lateral-cinza.svg","w").write(lateral(loz="#A3A3A3", ball="#5C5C5C"))
+open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#6B6B6B", ball="#B8B8B8"))
 for p in glob.glob(OUT+"retlia-lateral*.svg"):
     svg=open(p).read()
     w,h=re.search(r'viewBox="0 0 (\S+) (\S+)"',svg).groups()
