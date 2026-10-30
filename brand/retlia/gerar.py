@@ -118,10 +118,16 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False):
     slope=(H/2)/W
     band_top=base_y-CAP-border; band_bot=base_y+border
     e=(band_top-top)/slope
-    sym=(f"M{flat:.2f} {top:.2f}L{flat+e:.2f} {band_top:.2f}"
+    # a ponta aguda onde a descida encontra o branco ganha um arredondamento
+    a=math.atan(slope); fr=border*0.45; d=fr/math.tan(a/2)
+    ca,sa=math.cos(a),math.sin(a)
+    px=flat+e
+    sym=(f"M{flat:.2f} {top:.2f}L{px-d*ca:.2f} {band_top-d*sa:.2f}"
+         f"A{fr:.2f} {fr:.2f} 0 0 1 {px-d:.2f} {band_top:.2f}"
          f"L{flat:.2f} {band_top:.2f}L{flat:.2f} {cy-dy:.2f}"
          f"A{Rw:.2f} {Rw:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
-         f"L{flat:.2f} {band_bot:.2f}L{flat+e:.2f} {band_bot:.2f}"
+         f"L{flat:.2f} {band_bot:.2f}L{px-d:.2f} {band_bot:.2f}"
+         f"A{fr:.2f} {fr:.2f} 0 0 1 {px-d*ca:.2f} {band_bot+d*sa:.2f}"
          f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z")
     globe=(f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
@@ -130,13 +136,12 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False):
     if fold:
         # orelha de página no canto do R (o documento a retificar):
         # canto cortado na diagonal + aba dobrada, separada por um fio branco
-        fs=stem*0.8
-        # vinco: fio fino quando a aba tem outro tom; mais aberto quando é da mesma cor do R
-        g=border*(0.12 if ball!=text else 0.3)*math.sqrt(2); o=0.6
+        fs=stem                            # a dobra ocupa toda a largura da haste
+        g=border*0.3                       # vinco branco entre a aba e o resto da folha
         knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
                   f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>')
         flap=(f'<rect x="{rx-0.3:.2f}" y="{rtop-0.3:.2f}" width="{fs+0.3:.2f}" height="{fs+0.3:.2f}" fill="{paper}"/>'
-              f'<path d="M{rx+fs+o:.2f} {rtop+g-o:.2f}L{rx+fs+o:.2f} {rtop+fs+o:.2f}L{rx+g-o:.2f} {rtop+fs+o:.2f}Z" fill="{ball}"/>')
+              f'<path d="M{rx+fs-g:.2f} {rtop+g:.2f}L{rx+fs-g:.2f} {rtop+fs-g:.2f}L{rx+g:.2f} {rtop+fs-g:.2f}Z" fill="{ball}"/>')
     else:
         # cantos do lado aparente arredondados, concêntricos às quinas do R
         knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
