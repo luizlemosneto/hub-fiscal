@@ -130,7 +130,9 @@ def lateral(dark=False, loz=None, ball=None, text=None):
             f'<rect width="100%" height="100%" fill="{paper}"/>'
             f'<path d="{sym}" fill="{loz}"/><path d="{globe}" fill="{ball}"/>'
             # borda branca: recorte reto em volta da haste do R, quinas vivas
-            f'<rect x="{r_left:.2f}" y="{base_y-CAP-border:.2f}" width="{flat+0.3-r_left:.2f}" height="{CAP+2*border:.2f}" fill="{paper}"/>'
+            # cantos do lado aparente arredondados, concêntricos às quinas do R
+            f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
+            f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>'
             f'<path d="{t}" fill="{text}"/></svg>')
 
 open(OUT+"retlia-lateral.svg","w").write(lateral())
