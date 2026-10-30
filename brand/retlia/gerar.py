@@ -111,7 +111,8 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False, flapc=None):
     # bola: corpo sólido (o globo), separado do losango pela mesma borda branca do R;
     # só uma fração aparece à esquerda do R
     Rb=(H/2)*3.5/5.3*0.82         # bola um pouco menor que a da bandeira
-    Rw=Rb+border                  # recorte branco em volta da bola
+    ring=border*0.5               # anel branco da bola, mais fino que a borda do R
+    Rw=Rb+ring                    # recorte branco em volta da bola
     r_left=tx+lsb-border
     cx=r_left-Rb*0.40+Rb
     dy=math.sqrt(Rw*Rw-(flat-cx)**2)
@@ -120,16 +121,11 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False, flapc=None):
     slope=(H/2)/W
     band_top=base_y-CAP-border; band_bot=base_y+border
     e=(band_top-top)/slope
-    # a ponta aguda onde a descida encontra o branco ganha um arredondamento
-    a=math.atan(slope); fr=border*0.45; d=fr/math.tan(a/2)
-    ca,sa=math.cos(a),math.sin(a)
     px=flat+e
-    sym=(f"M{flat:.2f} {top:.2f}L{px-d*ca:.2f} {band_top-d*sa:.2f}"
-         f"A{fr:.2f} {fr:.2f} 0 0 1 {px-d:.2f} {band_top:.2f}"
+    sym=(f"M{flat:.2f} {top:.2f}L{px:.2f} {band_top:.2f}"
          f"L{flat:.2f} {band_top:.2f}L{flat:.2f} {cy-dy:.2f}"
          f"A{Rw:.2f} {Rw:.2f} 0 1 0 {flat:.2f} {cy+dy:.2f}"
-         f"L{flat:.2f} {band_bot:.2f}L{px-d:.2f} {band_bot:.2f}"
-         f"A{fr:.2f} {fr:.2f} 0 0 1 {px-d*ca:.2f} {band_bot+d*sa:.2f}"
+         f"L{flat:.2f} {band_bot:.2f}L{px:.2f} {band_bot:.2f}"
          f"L{flat:.2f} {top+H:.2f}L{x0:.2f} {cy:.2f}Z")
     globe=(f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
