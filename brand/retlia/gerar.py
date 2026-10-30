@@ -91,7 +91,7 @@ for p in glob.glob(OUT+"*.svg"):
 
 # --- Variante lateral: metade lateral do losango atrás do nome, com borda branca ---
 import math
-def lateral(dark=False, loz=None, ball=None, text=None):
+def lateral(dark=False, loz=None, ball=None, text=None, fold=False):
     ink, paper = ("#fff", INK) if dark else (INK, "#fff")
     loz=loz or ink; ball=ball or ink; text=text or ink
     pad=40
@@ -126,21 +126,39 @@ def lateral(dark=False, loz=None, ball=None, text=None):
     globe=(f"M{r_left:.2f} {cy-hb:.2f}A{Rb:.2f} {Rb:.2f} 0 0 0 {r_left:.2f} {cy+hb:.2f}Z")
     t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
     w=endx+pad; h=H+2*pad
+    rx=tx+lsb; rtop=base_y-CAP
+    if fold:
+        # orelha de página no canto do R (o documento a retificar):
+        # canto cortado na diagonal + aba dobrada, separada por um fio branco
+        fs=stem*0.8
+        # vinco: fio fino quando a aba tem outro tom; mais aberto quando é da mesma cor do R
+        g=border*(0.12 if ball!=text else 0.3)*math.sqrt(2); o=0.6
+        knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
+                  f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>')
+        flap=(f'<rect x="{rx-0.3:.2f}" y="{rtop-0.3:.2f}" width="{fs+0.3:.2f}" height="{fs+0.3:.2f}" fill="{paper}"/>'
+              f'<path d="M{rx+fs+o:.2f} {rtop+g-o:.2f}L{rx+fs+o:.2f} {rtop+fs+o:.2f}L{rx+g-o:.2f} {rtop+fs+o:.2f}Z" fill="{ball}"/>')
+    else:
+        # cantos do lado aparente arredondados, concêntricos às quinas do R
+        knockout=(f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
+                  f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>')
+        flap=""
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
             f'<rect width="100%" height="100%" fill="{paper}"/>'
             f'<path d="{sym}" fill="{loz}"/><path d="{globe}" fill="{ball}"/>'
-            # borda branca: recorte reto em volta da haste do R, quinas vivas
-            # cantos do lado aparente arredondados, concêntricos às quinas do R
-            f'<path d="M{flat+0.3:.2f} {band_top:.2f}H{r_left+border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left:.2f} {band_top+border:.2f}'
-            f'V{band_bot-border:.2f}A{border:.2f} {border:.2f} 0 0 0 {r_left+border:.2f} {band_bot:.2f}H{flat+0.3:.2f}Z" fill="{paper}"/>'
-            f'<path d="{t}" fill="{text}"/></svg>')
+            + knockout +
+            f'<path d="{t}" fill="{text}"/>' + flap + '</svg>')
 
 open(OUT+"retlia-lateral.svg","w").write(lateral())
 open(OUT+"retlia-lateral-negativo.svg","w").write(lateral(True))
 # tons de cinza: nome no preto, losango no cinza médio, bola no cinza escuro
 open(OUT+"retlia-lateral-cinza.svg","w").write(lateral(loz="#ABABAB", ball="#6E6E6E", text="#3D3D3D"))
 open(OUT+"retlia-lateral-cinza-negativo.svg","w").write(lateral(True, loz="#5E5E5E", ball="#A6A6A6", text="#D6D6D6"))
-for p in glob.glob(OUT+"retlia-lateral*.svg"):
+# variante eSocial: o R vira uma folha com a orelha dobrada
+open(OUT+"retlia-dobra.svg","w").write(lateral(fold=True))
+open(OUT+"retlia-dobra-negativo.svg","w").write(lateral(True, fold=True))
+open(OUT+"retlia-dobra-cinza.svg","w").write(lateral(loz="#ABABAB", ball="#6E6E6E", text="#3D3D3D", fold=True))
+open(OUT+"retlia-dobra-cinza-negativo.svg","w").write(lateral(True, loz="#5E5E5E", ball="#A6A6A6", text="#D6D6D6", fold=True))
+for p in glob.glob(OUT+"retlia-lateral*.svg")+glob.glob(OUT+"retlia-dobra*.svg"):
     svg=open(p).read()
     w,h=re.search(r'viewBox="0 0 (\S+) (\S+)"',svg).groups()
     open(p,"w").write(svg.replace("<svg ",f'<svg width="{w}" height="{h}" ',1))
