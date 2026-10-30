@@ -110,11 +110,12 @@ def lateral(dark=False, loz=None, ball=None, text=None, fold=False, flapc=None):
     tx=flat-lsb-stem
     # bola: corpo sólido (o globo), separado do losango pela mesma borda branca do R;
     # só uma fração aparece à esquerda do R
-    Rb=(H/2)*3.5/5.3*0.82         # bola um pouco menor que a da bandeira
-    ring=border*0.7               # anel branco da bola, mais fino que a borda do R
+    BALL_F, CAP_K, RING_K = 0.88, 0.50, 0.90   # tamanho da bola, fração dela que aparece, espessura do anel
+    Rb=(H/2)*3.5/5.3*BALL_F       # raio da bola (a da bandeira = 1.0)
+    ring=border*RING_K            # anel branco da bola, um pouco mais fino que a borda do R
     Rw=Rb+ring                    # recorte branco em volta da bola
     r_left=tx+lsb-border
-    cx=r_left-Rb*0.40+Rb
+    cx=r_left+Rb*(1-CAP_K)
     dy=math.sqrt(Rw*Rw-(flat-cx)**2)
     hb=math.sqrt(Rb*Rb-(r_left-cx)**2)
     # a descida do losango continua até ser interrompida pela borda branca do R
