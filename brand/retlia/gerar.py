@@ -88,3 +88,36 @@ for p in glob.glob(OUT+"*.svg"):
     if 'width="' not in svg.split(">",1)[0]:
         w,h=re.search(r'viewBox="0 0 (\S+) (\S+)"',svg).groups()
         open(p,"w").write(svg.replace("<svg ",f'<svg width="{w}" height="{h}" ',1))
+
+# --- Variante lateral: metade lateral do losango atrás do nome, com borda branca ---
+import math
+def lateral(dark=False):
+    ink, paper = ("#fff", INK) if dark else (INK, "#fff")
+    pad=40
+    H=CAP*1.45                    # altura total do losango (metade lateral)
+    W=H*8.3/10.6                  # metade da largura do losango
+    top=pad; base_y=pad+(H-CAP)/2+CAP   # nome centrado na altura do símbolo
+    x0=pad; cy=top+H/2
+    R=(H/2)*3.5/5.3; off=R*0.62; d=math.sqrt(R*R-off*off)
+    # lado reto vertical à esquerda, ponta para a direita; calota da bola recortada no lado reto
+    sym=(f"M{x0:.2f} {top:.2f}L{x0+W:.2f} {cy:.2f}L{x0:.2f} {top+H:.2f}"
+         f"L{x0:.2f} {cy+d:.2f}A{R:.2f} {R:.2f} 0 0 0 {x0:.2f} {cy-d:.2f}Z")
+    # a ponta do símbolo termina no meio da haste do R (nunca aparece dentro do olho do R)
+    f=TTFont(BOLD); gs=f.getGlyphSet(); sc=SIZE/f['head'].unitsPerEm
+    bp=BoundsPen(gs); gs[f.getBestCmap()[ord("I")]].draw(bp); ix0,_,ix1,_=bp.bounds
+    lsb=f['hmtx'][f.getBestCmap()[ord("R")]][1]
+    tx=x0+W-(lsb+(ix1-ix0)*0.5)*sc
+    t,endx=text_path(BOLD,"RetLia",SIZE,tx,base_y,TRACK,KERN)
+    w=endx+pad; h=H+2*pad
+    border=SIZE*0.045
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}">'
+            f'<rect width="100%" height="100%" fill="{paper}"/>'
+            f'<path d="{sym}" fill="{ink}"/>'
+            f'<path d="{t}" fill="{ink}" stroke="{paper}" stroke-width="{border*2:.1f}" stroke-linejoin="round" paint-order="stroke"/></svg>')
+
+open(OUT+"retlia-lateral.svg","w").write(lateral())
+open(OUT+"retlia-lateral-negativo.svg","w").write(lateral(True))
+for p in glob.glob(OUT+"retlia-lateral*.svg"):
+    svg=open(p).read()
+    w,h=re.search(r'viewBox="0 0 (\S+) (\S+)"',svg).groups()
+    open(p,"w").write(svg.replace("<svg ",f'<svg width="{w}" height="{h}" ',1))
